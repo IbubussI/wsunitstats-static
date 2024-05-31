@@ -1,0 +1,2 @@
+External project sources (JVDF) used.
+See: https://github.com/PlatinumDigitalGroup/JVDF
