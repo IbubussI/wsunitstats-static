@@ -16,13 +16,6 @@ export const EntitySelectorPage = ({ selectorOptions, getSelectorOptions }) => {
   const options = getSelectorOptions(rootContext, searchParams);
   const localizedSelectorContext = Utils.localize(selectorContext, rootContext.localization[params.locale]);
   
-  console.log("EntitySelectorPage render")
-  console.log("Loaded context")
-  console.log(localizedSelectorContext)
-  console.log("params")
-  console.log(params)
-  console.log("localizedOptions")
-  console.log(options)
   return (
     // key here is required to force remount the selector grid component upon data source change
     // to avoid rendering old data on the new page (avoid data-fetch related flicker)

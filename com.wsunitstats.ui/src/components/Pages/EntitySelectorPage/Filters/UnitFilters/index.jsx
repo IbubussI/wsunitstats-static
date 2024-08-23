@@ -36,13 +36,6 @@ export const UnitFilters = ({ filterOptions }) => {
     || unitTagOptionsController.hasQueryString
     || searchTagOptionsController.hasQueryString;
 
-  console.log("UnitFilters render")
-  console.log("nationOptionsController")
-  console.log(nationOptionsController)
-  console.log("unitTagOptionsController")
-  console.log(unitTagOptionsController)
-  console.log("searchTagOptionsController")
-  console.log(searchTagOptionsController)
   return (
     <FilterPanel>
       <CheckmarksSelect

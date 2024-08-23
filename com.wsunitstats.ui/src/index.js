@@ -1,9 +1,10 @@
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Footer } from 'components/Footer';
-import { Navigate, Outlet, createBrowserRouter, RouterProvider, useLoaderData, useParams } from 'react-router-dom';
+import { Navigate, Outlet, createBrowserRouter, RouterProvider, useLoaderData, useParams, redirect } from 'react-router-dom';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
+import * as React from 'react';
 import { Header } from 'components/Header';
 import { ErrorPage } from 'components/Pages/ErrorPage';
 import { EntityPage } from 'components/Pages/EntityPage';
@@ -27,24 +28,24 @@ const theme = createTheme({
 const Root = () => {
   const params = useParams();
   const context = useLoaderData();
-  const localizedUnitOptions = Utils.localize(context.units, context.localization[params.locale]);
-  const localizedResearchOptions = Utils.localize(context.researches, context.localization[params.locale]);
+  const localizationData = context.localization[params.locale];
+  if (!localizationData && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
+    return <Navigate
+      to={`/${Constants.DEFAULT_LOCALE_OPTION}/${Constants.ERROR_PAGE_PATH}`}
+      state={{ msg: "Requested locale not found", code: 404 }} replace={true} />;
+  }
+
+  const localizedUnitOptions = Utils.localize(context.units, localizationData);
+  const localizedResearchOptions = Utils.localize(context.researches, localizationData);
   context.localizedUnits = localizedUnitOptions;
   context.localizedResearches = localizedResearchOptions;
 
-  console.log("Root render")
-  console.log("localizedUnitOptions")
-  console.log(localizedUnitOptions)
-  console.log("context")
-  console.log(context)
-  console.log("locale")
-  console.log(params.locale)
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Header context={context}/>
+      <Header context={context} />
       <div className="body-root">
-        <Outlet context={context}/>
+        <Outlet context={context} />
       </div>
       <Footer />
     </ThemeProvider>
@@ -53,12 +54,16 @@ const Root = () => {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-const entityLoader = (param, path) => {
-  return fetch(new URL(Constants.HOST + path + "/" + param + ".json"));
+const entityLoader = async (route, path) => {
+  const entity = await fetch(new URL(Constants.HOST + path + "/" + route.params.gameId + ".json"));
+  if (!entity) {
+    return redirect(`/${route.params.locale}`);
+  }
+  return entity;
 };
 
-const unitLoader = (route) => entityLoader(route.params.gameId, Constants.UNIT_DATA_PATH);
-const researchLoader = (route) => entityLoader(route.params.gameId, Constants.RESEARCH_DATA_PATH);
+const unitLoader = (route) => entityLoader(route, Constants.UNIT_DATA_PATH);
+const researchLoader = (route) => entityLoader(route, Constants.RESEARCH_DATA_PATH);
 const contextLoader = () => fetch(new URL(Constants.HOST + Constants.CONTEXT_DATA_PATH));
 const unitSelectorLoader = () => fetch(new URL(Constants.HOST + Constants.UNIT_SELECTOR_DATA_PATH));
 
@@ -100,7 +105,7 @@ const researchSelectorOptions = {
 // Removing it will lead to multiple re-renders with side-effects due to data being refetched every time
 const router = createBrowserRouter([
   {
-    path: '*',
+    index: true,
     element: <Navigate to={Constants.DEFAULT_LOCALE_OPTION} replace />
   },
   {
@@ -112,6 +117,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Navigate to={Constants.UNIT_SELECTOR_PAGE_PATH} replace />
+      },
+      {
+        path: '*',
+        element: <Navigate to={Constants.ERROR_PAGE_PATH} state={{ msg: "Not found", code: 404 }} replace />
       },
       {
         path: Constants.ERROR_PAGE_PATH,

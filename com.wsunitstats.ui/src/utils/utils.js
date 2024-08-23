@@ -68,16 +68,19 @@ export const getUrlWithPathParams = (params, removeFrom = 0) => {
   return pathItems.join('/') + search;
 };
 
-export const navigateToError = (navHook, msg, code) => {
+export const navigateToError = (navHook, msg, code, keepLocale) => {
   const path = window.location.pathname;
   const pathItems = path.split('/');
   pathItems.length = 3;
+  if (!keepLocale) {
+    pathItems[1] = Constants.DEFAULT_LOCALE_OPTION;
+  }
   pathItems[2] = Constants.ERROR_PAGE_PATH;
   navHook(pathItems.join('/'), { replace: true, state: { msg: msg, code: code } });
 };
 
-export const navigateTo404 = (navHook) => {
-  navigateToError(navHook, 'Not found', 404);
+export const navigateTo404 = (navHook, keepLocale) => {
+  navigateToError(navHook, 'Not found', 404, keepLocale);
 };
 
 /**

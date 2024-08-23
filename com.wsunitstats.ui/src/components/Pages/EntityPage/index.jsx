@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as Utils from 'utils/utils';
-import { Outlet, useLoaderData, useOutletContext, useParams } from 'react-router-dom';
+import { Navigate, Outlet, useLoaderData, useOutletContext, useParams } from 'react-router-dom';
 import { Box, styled } from '@mui/material';
 import { useResearches } from 'components/Hooks/useResearches';
 
@@ -15,9 +15,15 @@ export const EntityPage = () => {
   const entity = useLoaderData();
   const applyResearches = useResearches();
 
+  if (!entity || typeof entity !== "object") {
+    return <Navigate
+      to={`/${params.locale}/error`}
+      state={{ msg: "Requested entity is not found", code: 404 }} replace={true} />;
+  }
+
   const modifiedEntity = applyResearches(entity);
   const localizedEntity = Utils.localize(modifiedEntity, context.localization[params.locale]);
-  
+
   return (
     <StyledRootContainer>
       <Outlet context={localizedEntity} />

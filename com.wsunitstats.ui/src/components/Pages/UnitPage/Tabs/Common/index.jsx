@@ -6,7 +6,6 @@ const OVERFLOW_WIDTH = 200;
 const COLUMN_WIDTH = 500;
 
 export const CommonTab = ({ entity: unit }) => {
-  console.log("CommonTab render")
   return (
     <>
       <h3>Common properties</h3>
