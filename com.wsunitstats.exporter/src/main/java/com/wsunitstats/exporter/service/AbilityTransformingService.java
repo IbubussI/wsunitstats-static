@@ -5,6 +5,6 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 
 import java.util.List;
 
-public interface AbilityMappingService {
-      List<GenericAbilityContainer> mapAbilities(UnitJsonModel unitJsonModel);
+public interface AbilityTransformingService {
+      List<GenericAbilityContainer> transformAbilities(UnitJsonModel unitJsonModel);
 }

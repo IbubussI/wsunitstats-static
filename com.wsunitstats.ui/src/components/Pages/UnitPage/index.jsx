@@ -74,6 +74,7 @@ export const UnitPage = () => {
     },
   ].filter(element => element.isShow);
 
+  console.log("UnitPage render")
   return (
     <EntityTabsView entity={unit} tabsData={tabsData} tabsView={TabsUnitWrapper} />
   );

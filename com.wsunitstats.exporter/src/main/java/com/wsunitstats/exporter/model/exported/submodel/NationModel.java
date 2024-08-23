@@ -9,4 +9,5 @@ import lombok.ToString;
 @ToString
 public class NationModel {
     private String name;
+    private int nationId;
 }

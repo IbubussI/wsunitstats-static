@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.FileWriter;
 import java.io.Writer;
-import java.util.List;
+import java.util.Collection;
 
 @Component
 public class WriteFileTask implements ExecutionTask {
@@ -28,13 +28,13 @@ public class WriteFileTask implements ExecutionTask {
     @Autowired
     private LocalizationService localizationService;
 
-    @Value("${com.wsunitstats.exporter.file.name}")
+    @Value("${file.name}")
     private String fileName;
-    @Value("${com.wsunitstats.exporter.file.pretty}")
+    @Value("${file.pretty}")
     private boolean filePretty;
-    @Value("${com.wsunitstats.exporter.file.locale}")
+    @Value("${file.locale}")
     private String fileLocale;
-    @Value("${com.wsunitstats.exporter.file.localize}")
+    @Value("${file.localize}")
     private boolean fileLocalize;
 
     @Override
@@ -45,12 +45,12 @@ public class WriteFileTask implements ExecutionTask {
     @Override
     public void execute(ExecutionPayload payload) throws TaskExecutionException {
         try {
-            List<UnitModel> unitModels = payload.getUnits();
-            List<ResearchModel> researchModels = payload.getResearches();
+            Collection<UnitModel> unitModels = payload.getUnits();
+            Collection<ResearchModel> researchModels = payload.getResearches();
             ExportWrapper exportWrapper = new ExportWrapper();
             exportWrapper.setUnits(unitModels);
             exportWrapper.setResearches(researchModels);
-            List<LocalizationModel> localizationModels = payload.getLocalization();
+            Collection<LocalizationModel> localizationModels = payload.getLocalization();
             try (Writer fileWriter = new FileWriter(fileName, false)) {
                 LOG.info("Converting to json...");
                 String unitsJson = filePretty
@@ -77,7 +77,7 @@ public class WriteFileTask implements ExecutionTask {
     @Setter
     @Getter
     private static final class ExportWrapper {
-        private List<UnitModel> units;
-        private List<ResearchModel> researches;
+        private Collection<UnitModel> units;
+        private Collection<ResearchModel> researches;
     }
 }

@@ -16,22 +16,23 @@ import java.io.Serial;
 @Service
 public class ModelExporterServiceImpl implements ModelExporterService {
     @Override
-    public <T> String exportToJson(T model) throws JsonProcessingException {
-        return getExportMapper().writeValueAsString(model);
+    public String exportToJson(Object object) throws JsonProcessingException {
+        return getExportMapper().writeValueAsString(object);
     }
 
     @Override
-    public <T> String exportToPrettyJson(T model) throws JsonProcessingException {
+    public String exportToPrettyJson(Object object) throws JsonProcessingException {
         DefaultPrettyPrinter prettyWriter = new DefaultPrettyPrinter();
         DefaultPrettyPrinter.Indenter indenter = new DefaultIndenter("\t", DefaultIndenter.SYS_LF);
         prettyWriter.indentObjectsWith(indenter);
         prettyWriter.indentArraysWith(indenter);
-        return getExportMapper().writer(prettyWriter).writeValueAsString(model);
+        return getExportMapper().writer(prettyWriter).writeValueAsString(object);
     }
 
     public ObjectMapper getExportMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new ExporterModule());
+        // add @JsonInclude to change this to Include.ALWAYS where it is required
         mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         return mapper;
     }

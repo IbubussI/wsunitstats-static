@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Footer } from 'components/Footer';
-import { Navigate, Outlet, createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { Navigate, Outlet, createBrowserRouter, RouterProvider, useLoaderData, useParams } from 'react-router-dom';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import { Header } from 'components/Header';
@@ -25,31 +25,42 @@ const theme = createTheme({
 });
 
 const Root = () => {
+  const params = useParams();
+  const context = useLoaderData();
+  const localizedUnitOptions = Utils.localize(context.units, context.localization[params.locale]);
+  const localizedResearchOptions = Utils.localize(context.researches, context.localization[params.locale]);
+  context.localizedUnits = localizedUnitOptions;
+  context.localizedResearches = localizedResearchOptions;
+
+  console.log("Root render")
+  console.log("localizedUnitOptions")
+  console.log(localizedUnitOptions)
+  console.log("context")
+  console.log(context)
+  console.log("locale")
+  console.log(params.locale)
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Header />
+      <Header context={context}/>
       <div className="body-root">
-        <Outlet />
+        <Outlet context={context}/>
       </div>
       <Footer />
     </ThemeProvider>
   );
-}
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-const entityLoader = (route, apiPath) => {
-  const searchParams = new URLSearchParams(new URL(route.request.url).searchParams);
-  searchParams.set('gameIds', route.params.gameId);
-  searchParams.set('locale', route.params.locale);
-  const apiUrl = new URL(Constants.HOST + apiPath);
-  apiUrl.search = searchParams;
-  return fetch(apiUrl);
-}
+const entityLoader = (param, path) => {
+  return fetch(new URL(Constants.HOST + path + "/" + param + ".json"));
+};
 
-const unitLoader = (route) => entityLoader(route, Constants.UNIT_DATA_API);
-const researchLoader = (route) => entityLoader(route, Constants.RESEARCH_DATA_API);
+const unitLoader = (route) => entityLoader(route.params.gameId, Constants.UNIT_DATA_PATH);
+const researchLoader = (route) => entityLoader(route.params.gameId, Constants.RESEARCH_DATA_PATH);
+const contextLoader = () => fetch(new URL(Constants.HOST + Constants.CONTEXT_DATA_PATH));
+const unitSelectorLoader = () => fetch(new URL(Constants.HOST + Constants.UNIT_SELECTOR_DATA_PATH));
 
 const unitSelectorOptions = {
   title: 'WS Units',
@@ -59,10 +70,19 @@ const unitSelectorOptions = {
     { param: id, pos: 3 },
     { param: Constants.INITIAL_TAB, pos: 4 }
   ]),
-  Filters: UnitFilters, 
-  optionsSize: Constants.SELECTOR_OPTIONS_SIZE,
-  apiPath:  Constants.UNIT_OPTIONS_API
-}
+  Filters: UnitFilters,
+  viewSize: Constants.SELECTOR_OPTIONS_SIZE
+};
+
+const filterUnitSelectorOptions = (context, searchParams) => {
+  const nations = searchParams.get(Constants.PARAM_NATIONS)?.split(',').map(v => Number(v)).filter(v => !isNaN(v));
+  const searchTags = searchParams.get(Constants.PARAM_SEARCH_TAGS)?.split(',').map(v => Number(v)).filter(v => !isNaN(v));
+  const unitTags = searchParams.get(Constants.PARAM_UNIT_TAGS)?.split(',').map(v => Number(v)).filter(v => !isNaN(v));
+  return context.localizedUnits.filter(option =>
+    (!nations || nations.some(nation => option.nationId === nation)) &&
+    (!searchTags || searchTags.some(searchTag => option.searchTags.includes(searchTag))) &&
+    (!unitTags || unitTags.some(unitTag => option.unitTags.includes(unitTag))));
+};
 
 const researchSelectorOptions = {
   title: 'WS Researches',
@@ -72,10 +92,12 @@ const researchSelectorOptions = {
     { param: id, pos: 3 },
     { param: Constants.INITIAL_TAB, pos: 4 }
   ]),
-  optionsSize: Constants.SELECTOR_OPTIONS_SIZE,
-  apiPath:  Constants.RESEARCH_OPTIONS_API
-}
+  viewSize: Constants.SELECTOR_OPTIONS_SIZE
+};
 
+// 'shouldRevalidate: () => false' here is used to prevent
+// loaders refetch data since it is static and does not change.
+// Removing it will lead to multiple re-renders with side-effects due to data being refetched every time
 const router = createBrowserRouter([
   {
     path: '*',
@@ -84,6 +106,8 @@ const router = createBrowserRouter([
   {
     path: `/${Constants.PARAM_LOCALE}`,
     element: <Root />,
+    loader: contextLoader,
+    shouldRevalidate: () => false,
     children: [
       {
         index: true,
@@ -99,12 +123,15 @@ const router = createBrowserRouter([
       },
       {
         path: Constants.UNIT_SELECTOR_PAGE_PATH,
-        element: <EntitySelectorPage selectorOptions={unitSelectorOptions} />,
+        element: <EntitySelectorPage selectorOptions={unitSelectorOptions} getSelectorOptions={filterUnitSelectorOptions} />,
+        loader: unitSelectorLoader,
+        shouldRevalidate: () => false,
       },
       {
         path: `${Constants.UNIT_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,
         loader: unitLoader,
+        shouldRevalidate: () => false,
         children: [
           {
             index: true,
@@ -118,12 +145,13 @@ const router = createBrowserRouter([
       },
       {
         path: Constants.RESEARCH_SELECTOR_PAGE_PATH,
-        element: <EntitySelectorPage selectorOptions={researchSelectorOptions} />,
+        element: <EntitySelectorPage selectorOptions={researchSelectorOptions} getSelectorOptions={(context) => context.localizedResearches} />
       },
       {
         path: `${Constants.RESEARCH_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,
         loader: researchLoader,
+        shouldRevalidate: () => false,
         children: [
           {
             index: true,

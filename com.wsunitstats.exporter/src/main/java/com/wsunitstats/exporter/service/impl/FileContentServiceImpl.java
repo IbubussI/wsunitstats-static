@@ -61,7 +61,7 @@ public class FileContentServiceImpl implements FileContentService {
     @Autowired
     private ImageService imageService;
 
-    @Value("${com.wsunitstats.exporter.warselection.unit.types.number}")
+    @Value("${warselection.unit.types.number}")
     private int unitTypesNumber;
 
     @Override

@@ -5,7 +5,7 @@ import com.wsunitstats.exporter.model.exported.UnitModel;
 
 import java.util.List;
 
-public interface ModelResolver {
-    List<UnitModel> resolveUnits();
-    List<ResearchModel> resolveResearches();
+public interface ModelBuilder {
+    List<UnitModel> buildUnits();
+    List<ResearchModel> buildResearches();
 }

@@ -14,6 +14,7 @@ export const Image = ({ data }) => {
         width: data.width,
       }}
       alt=''
+      loading="lazy"
       src={Utils.resolveImage(data.path)}
     />
   );

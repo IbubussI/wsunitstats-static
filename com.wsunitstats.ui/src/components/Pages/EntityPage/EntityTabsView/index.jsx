@@ -39,10 +39,12 @@ export const EntityTabsView = ({
     }
   }, [currentTab, tabsData, setTab, isTabValid, navigate]);
 
+  console.log("EntityTabsView render")
   return <TabsViewComponent tabsData={tabsData} currentTab={currentTab} setTab={setTab} entity={entity} />;
 }
 
 export const TabsView = ({ tabsData, currentTab, setTab, entity }) => {
+  console.log("TabsView render")
   return (
     <>
       <Box display="flex" justifyContent="center" width="100%">

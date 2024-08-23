@@ -1,13 +1,12 @@
 import * as React from 'react';
-import * as Utils from 'utils/utils';
 import { useSearchParams } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 
 /**
- * Options controller intended to be used to handle dynamic options. Does not sync options with query string
+ * Options controller intended to be used to handle dynamic options. Sync options with query string
  * 
  * @param paramName query string parameter to use;
- * @param fetchURL URL string to fetch options list;
+ * @param options the options array;
  * @param valueToQueryString function to get the query string param from the value.
  * If it is not specified default one will use 'id', 'gameId' or 'name', checking them in the specified order.
  * Must return unique string for every option
@@ -21,25 +20,16 @@ import isEqual from 'lodash/isEqual';
  * 
  * isApplied - true if only all the selected options are applied, false - otherwise
  */
-export function useOptionsController(paramName, fetchURL,
+export function useOptionsController(paramName, options,
   valueToQueryString = (value) => value.id?.toString() || value.gameId?.toString() || value.name?.toString()) {
 
   const [searchParams] = useSearchParams();
   const [values, setValues] = React.useState([]);
-  const [options, setOptions] = React.useState([]);
 
   const queryStringValues = React.useMemo(() => {
     const currentQuerySearchParams = searchParams.get(paramName)?.split(',');
     return currentQuerySearchParams ? [...currentQuerySearchParams] : [];
   }, [searchParams, paramName]);
-
-  // receive options list
-  React.useEffect(() => {
-    // clear initial selected array to ensure there will be no invalid values until fetch is completed
-    setValues([]);
-
-    Utils.fetchJson(fetchURL, (result) => setOptions(result));
-  }, [fetchURL]);
 
   // Sync query string params with options
   React.useEffect(() => {
@@ -65,6 +55,15 @@ export function useOptionsController(paramName, fetchURL,
   // eslint-disable-next-line
   }, [options, queryStringValues]);
 
+  console.log("useStaticOptionsController call")
+  console.log("options")
+  console.log(options)
+  console.log("paramName")
+  console.log(paramName)
+  console.log("queryStringValues")
+  console.log(queryStringValues)
+  console.log("values")
+  console.log(values)
   return {
     values: values,
     options: options,

@@ -4,11 +4,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.List;
-
 @Getter
 @Setter
 @ToString
-public class AirfieldJsonModel {
-    private List<AirfieldContainerEntryJsonModel> container;
+public class AirfieldContainerEntryJsonModel {
+    private Integer height;
+    private Boolean on;
+    private Integer pathLanding;
+    private Integer pathTakeoff;
 }

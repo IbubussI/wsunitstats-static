@@ -1,8 +1,9 @@
 import * as Constants from "utils/constants";
+const LOCALIZATION_REGEX = new RegExp("<\\*[a-zA-Z0-9/]+>", "g");
 
 export const resolveImage = (name) => {
   return `/files/images/${name}`;
-}
+};
 
 export const makeEntityLink = (link) => {
   if (link.path === Constants.NO_LINK_INDICATOR) {
@@ -12,7 +13,7 @@ export const makeEntityLink = (link) => {
     return `/${link.locale}/${link.path}`;
   }
   return `/${link.locale}/${link.path}/${link.id}/${Constants.INITIAL_TAB}`;
-}
+};
 
 /**
  * Returns route to page for given entity type if supported or default page otherwise
@@ -41,7 +42,7 @@ export const getEntityRoute = (entityType) => {
     default: result = Constants.NO_LINK_INDICATOR;
   }
   return result;
-}
+};
 
 /**
  * Sets given path params to current url
@@ -65,7 +66,7 @@ export const getUrlWithPathParams = (params, removeFrom = 0) => {
     pathItems.length = removeFrom;
   }
   return pathItems.join('/') + search;
-}
+};
 
 export const navigateToError = (navHook, msg, code) => {
   const path = window.location.pathname;
@@ -73,11 +74,11 @@ export const navigateToError = (navHook, msg, code) => {
   pathItems.length = 3;
   pathItems[2] = Constants.ERROR_PAGE_PATH;
   navHook(pathItems.join('/'), { replace: true, state: { msg: msg, code: code } });
-}
+};
 
 export const navigateTo404 = (navHook) => {
   navigateToError(navHook, 'Not found', 404);
-}
+};
 
 /**
  * Shorhand for Utils.getEntityRoute()
@@ -99,12 +100,12 @@ export const getAbilityRoute = (abilityType) => {
     default: result = getEntityRoute('');
   }
   return result;
-}
+};
 
 export const getSearchParamList = (searchParams, paramName) => {
   const currentQuerySearchParams = searchParams.get(paramName)?.split(',');
   return currentQuerySearchParams ? [...currentQuerySearchParams] : [];
-}
+};
 
 export const fetchJson = (fetchURI, callback) => {
   fetch(fetchURI)
@@ -112,3 +113,44 @@ export const fetchJson = (fetchURI, callback) => {
     .then(callback)
     .catch(console.log);
 }
+
+/**
+ * Replaces found localization tokens with values provided in localeData
+ * 
+ * @param {*} target anything to be localized
+ * @param {*} localeData object that reprtesents a list of localization key-value pairs
+ * @returns 
+ */
+export const localize = (target, localeData) => {
+  let result;
+  if (Array.isArray(target)) {
+    result = new Array(target.length);
+    for (let i = 0; i < target.length; ++i) {
+      const x = localize(target[i], localeData);
+      result[i] = x;
+    }
+  } else if (typeof target === 'string' || target instanceof String) {
+    const keys = [...target.matchAll(LOCALIZATION_REGEX)];
+    result = target;
+    if (keys) {
+      for (const key of keys) {
+        const replacement = localeData[key];
+        if (replacement) {
+          result = result.replace(key, replacement);
+        } else {
+          result = result.replace(key, "");
+        }
+      }
+    }
+  } else if (typeof target === 'object' && target !== null) {
+    result = {};
+    for (const prop in target) {
+      const x = localize(target[prop], localeData);
+      result[prop] = x;
+    }
+  } else {
+    result = target;
+  }
+  return result;
+};
+

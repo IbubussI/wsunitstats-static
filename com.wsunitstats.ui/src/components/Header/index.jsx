@@ -28,7 +28,7 @@ const pages = [
   }
 ];
 
-export const Header = () => {
+export const Header = ({ context }) => {
   const navigate = useNavigate();
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const { locale } = useParams();
@@ -114,9 +114,9 @@ export const Header = () => {
               </NavLink>
             ))}
           </Box>
-          <EntityPicker onSelect={onEntityChange}/>
+          <EntityPicker onSelect={onEntityChange} unitOptions={context.localizedUnits} researchOptions={context.localizedResearches}/>
           <Stack sx={{ width: '135px', gap: 1, alignItems: 'center', flexDirection: 'row', paddingTop: 1, paddingBottom: 1 }}>
-            <LocaleSelector currentLocale={locale} />
+            <LocaleSelector currentLocale={locale} options={context.localeOptions}/>
             {locale !== Constants.DEFAULT_LOCALE_OPTION && <Tooltip arrow title='Only in-game values are localized using game localization files. Most of the UI is available only in English now'>
               <WarningAmberIcon sx={{ color: '#fd853c', filter: 'drop-shadow(0px 0px 3px rgb(0 0 0 / 0.8))', fontSize: 25 }} />
             </Tooltip>}

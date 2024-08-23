@@ -2,18 +2,14 @@ import * as React from 'react';
 import * as Constants from 'utils/constants';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
-import Autocomplete, { autocompleteClasses } from '@mui/material/Autocomplete';
+import Autocomplete, { autocompleteClasses, createFilterOptions } from '@mui/material/Autocomplete';
 import Grid from '@mui/material/Grid';
 import parse from 'autosuggest-highlight/parse';
 import match from 'autosuggest-highlight/match';
 import SearchIcon from '@mui/icons-material/Search';
-import { debounce } from '@mui/material/utils';
 import { Image } from 'components/Atoms/Renderer';
 import { InputAdornment, Popper, Stack, Typography, alpha, inputBaseClasses, outlinedInputClasses, styled, svgIconClasses } from '@mui/material';
 import { useParams } from 'react-router-dom';
-
-// half of list for units, half of list for researches
-const MAX_GROUP_SIZE = Math.floor(Constants.ENTITY_PICKER_OPTIONS_SIZE / 2)
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -51,12 +47,21 @@ const StyledPopper = styled(Popper)(({ theme }) => ({
   },
 }));
 
-export const EntityPicker = ({ onSelect }) => {
+export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
   const [value, setValue] = React.useState(null);
   const [inputValue, setInputValue] = React.useState('');
-  const [options, setOptions] = React.useState([]);
-  const [open, setOpen] = React.useState(false);
-  const params = useParams();
+
+  const addOptionMetadata = (array, entityRoute, optionGroupName) => {
+    array.forEach((element) => {
+      element.entityRoute = entityRoute;
+      element.optionGroupName = optionGroupName;
+    });
+    return array
+  };
+
+  const unitOptionsSource = addOptionMetadata(unitOptions, Constants.UNIT_PAGE_PATH, "Units");
+  const researchOptionsSource = addOptionMetadata(researchOptions, Constants.RESEARCH_PAGE_PATH, "Researches");
+  const options = [...unitOptionsSource, ...researchOptionsSource]
 
   const selectValue = React.useCallback((newValue) => {
     if (newValue && typeof newValue.gameId === 'number') {
@@ -64,71 +69,6 @@ export const EntityPicker = ({ onSelect }) => {
     }
     setValue(newValue);
   }, [onSelect, setValue]);
-
-  // collect responses for both unit and research options into one set
-  const fetchHandler = React.useCallback(
-    (params, callback) => {
-      const addOptionMetadata = (array, entityRoute, optionGroupName) => {
-        array.forEach((element) => {
-          element.entityRoute = entityRoute;
-          element.optionGroupName = optionGroupName;
-        });
-        return array
-      }
-
-      const getOptionGroupName = (prefix, length) => {
-        if (length === MAX_GROUP_SIZE) {
-          return `${prefix} (${length}+)`;
-        } else {
-          return `${prefix} (${length})`;
-        }
-      }
-
-      const unitOptionsPromise = fetch(Constants.HOST + Constants.UNIT_OPTIONS_API + '?' + params)
-        .then(response => response.ok ? response.json() : [])
-        .then(units => addOptionMetadata(units, Constants.UNIT_PAGE_PATH, getOptionGroupName("Units", units.length)))
-
-      const researchOptionsPromise = fetch(Constants.HOST + Constants.RESEARCH_OPTIONS_API + '?' + params)
-        .then(response => response.ok ? response.json() : [])
-        .then(researches => addOptionMetadata(researches, Constants.RESEARCH_PAGE_PATH, getOptionGroupName("Researches", researches.length)))
-
-      Promise.all([unitOptionsPromise, researchOptionsPromise])
-        .then(entitySets => entitySets.flat())
-        .then(callback)
-        .catch(console.log)
-    }, []
-  );
-
-  const debouncedFetchHandler = React.useMemo(
-    () => debounce(fetchHandler, 400),
-    [fetchHandler],
-  );
-
-  // update options on input text change
-  React.useEffect(() => {
-    let active = true;
-
-    if (active && open) {
-      const queryParams = {
-        name: inputValue,
-        locale: params.locale,
-        size: MAX_GROUP_SIZE
-      }
-      
-      if (inputValue.length === 0) {
-        delete queryParams.nameFilter
-      }
-
-      debouncedFetchHandler(
-        new URLSearchParams(queryParams),
-        (results) => setOptions(results)
-      );
-    }
-
-    return () => {
-      active = false;
-    };
-  }, [open, inputValue, debouncedFetchHandler, params.locale]);
 
   return (
     <Search>
@@ -142,10 +82,11 @@ export const EntityPicker = ({ onSelect }) => {
         getOptionLabel={(option) => option.name ? option.name : ''}
         isOptionEqualToValue={(option, value) => value && option.gameId === value.gameId}
         groupBy={option => option.optionGroupName}
-        onOpen={() => setOpen(true)}
-        onClose={() => setOpen(false)}
         options={options}
         value={value}
+        filterOptions={createFilterOptions({
+          limit: Constants.ENTITY_PICKER_OPTIONS_SIZE
+        })}
         componentsProps={{
           paper: {
             elevation: 3

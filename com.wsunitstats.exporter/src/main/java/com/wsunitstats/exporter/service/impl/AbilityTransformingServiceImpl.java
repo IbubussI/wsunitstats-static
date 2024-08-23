@@ -23,10 +23,10 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.ZoneEventJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityOnActionJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.work.WorkJsonModel;
-import com.wsunitstats.exporter.service.AbilityMappingService;
+import com.wsunitstats.exporter.service.AbilityTransformingService;
 import com.wsunitstats.exporter.service.FileContentService;
 import com.wsunitstats.exporter.service.ImageService;
-import com.wsunitstats.exporter.service.ModelMappingService;
+import com.wsunitstats.exporter.service.ModelTransformingService;
 import com.wsunitstats.exporter.service.NationResolver;
 import com.wsunitstats.exporter.service.TagResolver;
 import com.wsunitstats.exporter.utils.Constants;
@@ -39,17 +39,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
-public class AbilityMappingServiceImpl implements AbilityMappingService {
+public class AbilityTransformingServiceImpl implements AbilityTransformingService {
     @Autowired
     private ImageService imageService;
     @Autowired
     private FileContentService fileContentService;
     @Autowired
-    private ModelMappingService modelMappingService;
+    private ModelTransformingService modelTransformingService;
     @Autowired
     private NationResolver nationResolver;
     @Autowired
@@ -65,7 +66,7 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
     }
 
     @Override
-    public List<GenericAbilityContainer> mapAbilities(UnitJsonModel unitJsonModel) {
+    public List<GenericAbilityContainer> transformAbilities(UnitJsonModel unitJsonModel) {
         List<GenericAbilityContainer> result = new ArrayList<>();
         List<Integer> specialIdList = new ArrayList<>();
         List<Integer> defaultIdList = new ArrayList<>(IntStream.range(0, unitJsonModel.getAbility().getAbilities().size())
@@ -100,6 +101,7 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
         defaultIdList.removeAll(specialIdList);
         result.addAll(defaultIdList.stream()
                 .map(abilityId -> mapContainer(unitJsonModel, abilityId))
+                .filter(Objects::nonNull)
                 .toList());
         return result;
     }
@@ -140,7 +142,7 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
         Integer abilityId = abilityOnActionJsonModel.getAbility();
         AbilityJsonModel abilityJsonModel = unitJsonModel.getAbility().getAbilities().get(abilityId);
         onActionAbilityContainer.setAbility(mapAbility(unitJsonModel, abilityJsonModel, abilityId));
-        onActionAbilityContainer.setDistance(modelMappingService.map(abilityOnActionJsonModel.getDistance()));
+        onActionAbilityContainer.setDistance(modelTransformingService.transformDistance(abilityOnActionJsonModel.getDistance()));
         onActionAbilityContainer.setOnAgro(abilityOnActionJsonModel.getOnAgro());
         onActionAbilityContainer.setEnabled(abilityOnActionJsonModel.getEnabled() != null ? abilityOnActionJsonModel.getEnabled() : true );
         onActionAbilityContainer.setRechargeTime(Utils.intToDoubleShift(abilityOnActionJsonModel.getRestore()));
@@ -180,7 +182,7 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
                 return null;
             }
         }
-        genericAbility.setRequirements(modelMappingService.map(abilityJsonModel.getRequirements()));
+        genericAbility.setRequirements(modelTransformingService.transformRequirements(abilityJsonModel.getRequirements()));
         genericAbility.setAbilityId(abilityId);
         genericAbility.setAbilityType(abilityType.getType());
         return genericAbility;
@@ -201,7 +203,7 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
 
     private GenericAbility mapDamageAbility(AbilityJsonModel abilityJsonModel) {
         DamageAbilityModel abilityModel = new DamageAbilityModel();
-        abilityModel.setDamage(modelMappingService.map(abilityJsonModel.getData()));
+        abilityModel.setDamage(modelTransformingService.transformDamage(abilityJsonModel.getData()));
         return abilityModel;
     }
 
@@ -281,7 +283,7 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
         workModel.setCost(getWorkCost(workJsonModel));
         if (workJsonModel != null) {
             workModel.setMakeTime(Utils.intToDoubleShift(workJsonModel.getMaketime()));
-            workModel.setReserve(modelMappingService.map(workJsonModel.getReserve()));
+            workModel.setReserve(modelTransformingService.transformReserve(workJsonModel.getReserve()));
             workModel.setEnabled(workJsonModel.getEnabled() != null ? workJsonModel.getEnabled() : true);
         }
         return workModel;
@@ -289,20 +291,20 @@ public class AbilityMappingServiceImpl implements AbilityMappingService {
 
     private List<ResourceModel> getWorkCost(WorkJsonModel workSource) {
         if (workSource == null) {
-            return modelMappingService.mapResources(Arrays.asList(0, 0, 0));
+            return modelTransformingService.transformResources(Arrays.asList(0, 0, 0));
         }
         List<Integer> costOrder = workSource.getCostOrder();
         List<Integer> costProcess = workSource.getCostProcess();
         List<Integer> costStart = workSource.getCostStart();
 
         if (costOrder != null && costProcess == null && costStart == null) {
-            return modelMappingService.mapResources(costOrder);
+            return modelTransformingService.transformResources(costOrder);
         } else if (costOrder == null && costProcess != null && costStart == null) {
-            return modelMappingService.mapResources(costProcess);
+            return modelTransformingService.transformResources(costProcess);
         } else if (costOrder == null && costProcess == null && costStart != null) {
-            return modelMappingService.mapResources(costStart);
+            return modelTransformingService.transformResources(costStart);
         } else {
-            return modelMappingService.mapResources(Arrays.asList(0, 0, 0));
+            return modelTransformingService.transformResources(Arrays.asList(0, 0, 0));
         }
     }
 

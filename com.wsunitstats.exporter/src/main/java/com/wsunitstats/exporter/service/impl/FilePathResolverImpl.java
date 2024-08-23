@@ -32,33 +32,33 @@ public class FilePathResolverImpl implements FilePathResolver {
     private static final String APPS = "apps";
     private static final String LIBRARY_FOLDERS = "libraryfolders";
 
-    @Value("${com.wsunitstats.exporter.warselection.dir}")
+    @Value("${warselection.dir}")
     private String gameDirGiven;
-    @Value("${com.wsunitstats.exporter.reg.steam.key.64}")
+    @Value("${reg.steam.key.64}")
     private String steam64RegKey;
-    @Value("${com.wsunitstats.exporter.reg.steam.key.32}")
+    @Value("${reg.steam.key.32}")
     private String steam32RegKey;
-    @Value("${com.wsunitstats.exporter.reg.steam.install.path}")
+    @Value("${reg.steam.install.path}")
     private String steamInstallPath;
-    @Value("${com.wsunitstats.exporter.steam.libraryfolders.file}")
+    @Value("${steam.libraryfolders.file}")
     private String steamLibraryFoldersFile;
-    @Value("${com.wsunitstats.exporter.warselection.path}")
+    @Value("${warselection.path}")
     private String steamWSPath;
-    @Value("${com.wsunitstats.exporter.warselection.app.id}")
+    @Value("${warselection.app.id}")
     private String steamWSAppId;
-    @Value("${com.wsunitstats.exporter.warselection.root.folder}")
+    @Value("${warselection.root.folder}")
     private String wsRootFolderPath;
-    @Value("${com.wsunitstats.exporter.warselection.gameplay.file}")
+    @Value("${warselection.gameplay.file}")
     private String wsGameplayFilePath;
-    @Value("${com.wsunitstats.exporter.warselection.main.file}")
+    @Value("${warselection.main.file}")
     private String wsMainFilePath;
-    @Value("${com.wsunitstats.exporter.warselection.visual.file}")
+    @Value("${warselection.visual.file}")
     private String wsVisualFilePath;
-    @Value("${com.wsunitstats.exporter.warselection.localization.folder}")
+    @Value("${warselection.localization.folder}")
     private String wsLocalizationFolderPath;
-    @Value("${com.wsunitstats.exporter.warselection.interfaces.session.init.file}")
+    @Value("${warselection.interfaces.session.init.file}")
     private String wsInterfacesSessionInitFilePath;
-    @Value("${com.wsunitstats.exporter.warselection.main.startup.file}")
+    @Value("${warselection.main.startup.file}")
     private String wsMainStartupFilePath;
 
     @Override

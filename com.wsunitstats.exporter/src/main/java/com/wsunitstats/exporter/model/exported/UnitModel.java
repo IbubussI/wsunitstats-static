@@ -14,13 +14,14 @@ import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.model.exported.submodel.TransportingModel;
 import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
+import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -49,7 +50,7 @@ public class UnitModel extends GenericEntityModel {
     private List<ArmorModel> armor;
 
     // Technical data to render research selector
-    private Set<Integer> applicableResearches;
+    private Collection<UnitResearchModel> applicableResearches;
 
     // Movable unit traits
     private MovementModel movement;

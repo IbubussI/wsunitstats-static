@@ -2,8 +2,9 @@ package com.wsunitstats.exporter.service.impl;
 
 import com.wsunitstats.exporter.model.exported.LocalizationModel;
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
-import com.wsunitstats.exporter.service.LocalizationModelResolver;
+import com.wsunitstats.exporter.service.LocalizationModelBuilder;
 import com.wsunitstats.exporter.utils.Utils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -16,23 +17,29 @@ import static com.wsunitstats.exporter.utils.Constants.CLOSING_ANGLE_BRACKET;
 import static com.wsunitstats.exporter.utils.Constants.LOCALIZATION_INDEX_DELIMITER;
 
 @Service
-public class LocalizationModelResolverImpl implements LocalizationModelResolver {
+public class LocalizationModelBuilderImpl implements LocalizationModelBuilder {
     private static final Pattern LOC_FILENAME_PATTERN = Pattern.compile("(.+)\\.loc");
 
+    @Value("${localization.key.names}")
+    private List<String> keyNames;
+
     @Override
-    public LocalizationModel resolveFromJsonModel(LocalizationFileModel localizationFileModel) {
+    public LocalizationModel buildFromFileModel(LocalizationFileModel localizationFileModel) {
         LocalizationModel localizationModel = new LocalizationModel();
         localizationModel.setLocale(getLocaleFromFilename(localizationFileModel.getFilename()));
         Map<String, String> entryMap = new HashMap<>();
         for (Map.Entry<String, List<String>> mapEntry : localizationFileModel.getValues().entrySet()) {
             List<String> list = mapEntry.getValue();
-            int listSize = list.size();
-            for (int i = 0; i < listSize; ++i) {
-                StringBuilder key = new StringBuilder(mapEntry.getKey());
-                if (listSize > 1) {
-                    key.insert(key.indexOf(CLOSING_ANGLE_BRACKET), LOCALIZATION_INDEX_DELIMITER + i);
+            String key = mapEntry.getKey();
+            if (filter(key)) {
+                int listSize = list.size();
+                for (int i = 0; i < listSize; ++i) {
+                    StringBuilder keyBuilder = new StringBuilder(key);
+                    if (listSize > 1) {
+                        keyBuilder.insert(keyBuilder.indexOf(CLOSING_ANGLE_BRACKET), LOCALIZATION_INDEX_DELIMITER + i);
+                    }
+                    entryMap.put(keyBuilder.toString(), Utils.clearCurlyBraces(list.get(i)));
                 }
-                entryMap.put(key.toString(), Utils.clearCurlyBraces(list.get(i)));
             }
         }
         localizationModel.setEntries(entryMap);
@@ -46,5 +53,11 @@ public class LocalizationModelResolverImpl implements LocalizationModelResolver 
         } else {
             throw new IllegalArgumentException("Localization filename is not valid: " + filename);
         }
+    }
+
+    private boolean filter(String key) {
+        return keyNames.stream()
+                .map(LocalizationKeyFilter::new)
+                .anyMatch(filter -> filter.matches(key));
     }
 }

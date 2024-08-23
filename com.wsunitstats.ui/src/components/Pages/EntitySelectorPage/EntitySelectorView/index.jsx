@@ -1,11 +1,9 @@
 import * as React from 'react';
-import * as Utils from "utils/utils";
-import * as Constants from "utils/constants";
 import { styled, useTheme } from '@mui/material/styles';
 import Drawer from '@mui/material/Drawer';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { Button, Grid, Toolbar, Typography, Container } from '@mui/material';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroller';
 
 const Main = styled('main')(() => ({
@@ -19,42 +17,33 @@ const FlexFilterDrawer = styled(Drawer)(({ theme }) => ({
   flexShrink: 0
 }));
 
-export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, optionsSize, apiPath }) => {
+export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, options, selectorContext, viewSize }) => {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
-  const [searchParams] = useSearchParams();
-  const params = useParams();
   const [loadedOptions, setLoadedOptions] = React.useState([]);
   const [hasMore, setHasMore] = React.useState(true);
   const [page, setPage] = React.useState(0);
 
   // TODO: reconsider approach below to avoid flicker (since we are clearing all values explicitly)
 
-  // if search params changes we need to reset to ensure only valid data is present
+  // if option list changes we need to reset to ensure only valid data is present
   React.useEffect(() => {
     if (page > 0) {
       setLoadedOptions([]);
       setHasMore(true);
       setPage(0);
     }
-  // adding page here will lead to constant resets;
-  // searchParams and params were added to react on url changes (filters & locale)
+  // adding page here will lead to constant resets
   // eslint-disable-next-line
-  }, [searchParams, params]);
+  }, [options]);
 
   const fetchMoreData = () => {
-    const requestSearchParams = new URLSearchParams(searchParams);
-    requestSearchParams.set('locale', params.locale);
-    requestSearchParams.set('page', page);
-    requestSearchParams.set('size', optionsSize);
-
-    const fetchUrl = Constants.HOST + apiPath + '?' + requestSearchParams;
-    Utils.fetchJson(fetchUrl, (received) => {
-      setLoadedOptions((prevItems) => [...prevItems, ...received]);
-      setPage((prevPage) => prevPage + 1);
-      received.length > 0 ? setHasMore(true) : setHasMore(false);
-    });
+    const lastIndex = viewSize * (page + 1);
+    const items = options.slice(0, lastIndex);
+    setLoadedOptions(items);
+    setPage((prevPage) => prevPage + 1);
+    setHasMore(options.length > lastIndex);
   };
 
   const handleDrawerClose = (event) => {
@@ -75,6 +64,15 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
     }
   };
 
+  console.log("EntitySelectorView render")
+  console.log("loadedOptions:")
+  console.log(loadedOptions)
+  console.log("hasMore:")
+  console.log(hasMore)
+  console.log("page:")
+  console.log(page)
+  console.log("options:")
+  console.log(options)
   return (
     <Container maxWidth='xl'>
       {Filters && <FlexFilterDrawer
@@ -83,7 +81,7 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
         onClose={handleDrawerClose}
         ModalProps={{ keepMounted: true }}
       >
-        <Filters />
+        <Filters filterOptions={selectorContext}/>
       </FlexFilterDrawer>}
 
       <Main>
@@ -106,7 +104,7 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
         >
           <Grid container spacing={4}>
             {loadedOptions.map((option) =>
-              <Grid key={option.id} item sx={{ display: 'flex' }}>
+              <Grid key={option.gameId} item sx={{ display: 'flex' }}>
                 <Card option={option} onClick={() => onSelect(option.gameId)} />
               </Grid>
             )}

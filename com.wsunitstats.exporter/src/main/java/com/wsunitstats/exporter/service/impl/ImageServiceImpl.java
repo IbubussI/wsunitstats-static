@@ -29,7 +29,7 @@ public class ImageServiceImpl implements ImageService {
     private static final Logger LOG = LoggerFactory.getLogger(ImageServiceImpl.class);
     private static final String PATH_DELIMITER = "/";
 
-    @Value("${com.wsunitstats.exporter.image.file.extension}")
+    @Value("${image.file.extension}")
     private String imageExtension;
 
     @Override

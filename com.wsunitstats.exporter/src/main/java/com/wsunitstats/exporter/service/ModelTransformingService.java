@@ -14,7 +14,6 @@ import com.wsunitstats.exporter.model.exported.submodel.ReserveModel;
 import com.wsunitstats.exporter.model.exported.submodel.ResourceModel;
 import com.wsunitstats.exporter.model.exported.submodel.SubmarineDepthModel;
 import com.wsunitstats.exporter.model.exported.submodel.SupplyModel;
-import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.model.exported.submodel.TransportingModel;
 import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
 import com.wsunitstats.exporter.model.exported.submodel.requirement.RequirementsModel;
@@ -46,75 +45,64 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.DamageJsonMo
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.DistanceJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.WeaponJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.work.WorkReserveJsonModel;
-import com.wsunitstats.exporter.utils.Constants;
 
 import java.util.List;
-import java.util.function.IntFunction;
+import java.util.Map;
 
-public interface ModelMappingService {
-    ArmorModel map(ArmorJsonModel.Entry source, int probabilitiesSum);
+public interface ModelTransformingService {
+    ArmorModel transformArmor(ArmorJsonModel.Entry source, int probabilitiesSum);
 
-    GatherModel map(int index, GatherJsonModel source);
+    GatherModel transformGather(int index, GatherJsonModel source);
 
-    List<ResourceModel> mapResources(List<Integer> source);
+    List<ResourceModel> transformResources(List<Integer> source);
 
-    ResourceModel mapResource(Integer resourceId, Integer resourceValue);
+    ResourceModel transformResource(Integer resourceId, Integer resourceValue);
 
-    TransportingModel map(TransportingJsonModel transportingSource, TransportJsonModel transportSource);
+    TransportingModel transformTransport(TransportingJsonModel transportingSource, TransportJsonModel transportSource);
 
-    MovementModel map(MovementJsonModel source);
+    MovementModel transformMovement(MovementJsonModel source);
 
-    ReserveModel map(WorkReserveJsonModel reserveSource);
+    ReserveModel transformReserve(WorkReserveJsonModel reserveSource);
 
-    RequirementsModel map(RequirementsJsonModel source);
+    RequirementsModel transformRequirements(RequirementsJsonModel source);
 
-    WeaponModel map(int weaponId,
-                    WeaponJsonModel weaponSource,
-                    Boolean attackGround,
-                    boolean isTurret,
-                    Integer onDeathId);
+    WeaponModel transformWeapon(int weaponId,
+                                WeaponJsonModel weaponSource,
+                                Boolean attackGround,
+                                boolean isTurret,
+                                Integer onDeathId);
 
-    DamageWrapperModel map(DamageJsonModel damageJsonModel);
+    DamageWrapperModel transformDamage(DamageJsonModel damageJsonModel);
 
-    List<DamageModel> mapDamages(List<List<Integer>> damagesSource);
+    List<DamageModel> transformDamages(List<List<Integer>> damagesSource);
 
-    DistanceModel map(DistanceJsonModel distanceSource);
+    DistanceModel transformDistance(DistanceJsonModel distanceSource);
 
-    ProjectileModel map(int id, ProjectileJsonModel projectileSource);
+    ProjectileModel transformProjectile(int id, ProjectileJsonModel projectileSource);
 
-    BuffModel map(BuffJsonModel buffSource);
+    BuffModel transformBuff(BuffJsonModel buffSource);
 
-    TurretModel map(int turretId, TurretJsonModel turretSource, List<WeaponModel> turretWeapons);
+    TurretModel transformTurret(int turretId, TurretJsonModel turretSource, List<WeaponModel> turretWeapons);
 
-    SupplyModel map(SupplyJsonModel supplySource);
+    SupplyModel transformSupply(SupplyJsonModel supplySource);
 
-    BuildingModel map(int buildId, UnitJsonModel unitSource, BuildJsonModel buildSource);
+    BuildingModel transformBuilding(int buildId, UnitJsonModel unitSource, BuildJsonModel buildSource);
 
-    IncomeModel map(IncomeJsonModel incomeSource);
+    IncomeModel transformIncome(IncomeJsonModel incomeSource);
 
-    AirplaneModel mapAirplane(AirplaneJsonModel airplaneSource);
+    AirplaneModel transformAirplane(AirplaneJsonModel airplaneSource);
 
-    SubmarineDepthModel mapSubmarine(AirplaneJsonModel submarineSource);
+    SubmarineDepthModel transformSubmarine(AirplaneJsonModel submarineSource);
 
-    /**
-     * Works fine for all tags except unit tags. Use {@link ModelMappingService#mapUnitTags} for them
-     */
-    List<TagModel> mapTags(Constants.TagGroupName groupName, Long tags, IntFunction<String> nameGetter);
+    List<EnvTagModel> transformEnvTags(Long tags);
 
-    /**
-     * Use this for unit tags
-     */
-    List<TagModel> mapUnitTags(Long tags);
+    HealModel transformHeal(HealJsonModel healSource);
 
-    List<EnvTagModel> mapEnvTags(Long tags);
+    ConstructionModel transformConstruction(int id, BuildingJsonModel buildingSource);
 
-    HealModel map(HealJsonModel healSource);
+    GroundAttackDataWrapper transformGroundAttack(String attackGroundString);
 
-    ConstructionModel map(int id, BuildingJsonModel buildingSource);
+    UpgradeModel transformUpgrade(int id, UpgradeJsonModel upgradeSource);
 
-    GroundAttackDataWrapper map(String attackGroundString);
-
-    UpgradeModel map(int id, UpgradeJsonModel upgradeSource);
-
-    List<String> mapParameters(String parametersSource);
+    Map<String, String> transformParameters(String parametersSource);
 }

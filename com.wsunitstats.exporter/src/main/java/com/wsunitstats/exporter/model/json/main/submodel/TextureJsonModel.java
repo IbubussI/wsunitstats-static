@@ -20,4 +20,5 @@ public class TextureJsonModel {
     private Integer target;
     private List<Object> urls;
     private Object wrapMode;
+    private Object anisotropy;
 }

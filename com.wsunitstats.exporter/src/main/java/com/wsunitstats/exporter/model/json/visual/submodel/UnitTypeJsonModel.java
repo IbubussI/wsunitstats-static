@@ -21,4 +21,5 @@ public class UnitTypeJsonModel {
     private Object shadow;
     @JsonProperty("skins_")
     private Object skins;
+    private Object emitters;
 }

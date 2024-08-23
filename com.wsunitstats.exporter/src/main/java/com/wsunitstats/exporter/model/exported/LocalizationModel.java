@@ -18,10 +18,10 @@ public class LocalizationModel {
      * Tries to find localized value
      *
      * @param key   key to find value for
-     * @return localized value or empty string if there are no values for such a key
+     * @return localized value or the key if there are no values for such a key
      */
     public String getValue(String key) {
         String entry = entries.get(key);
-        return entry != null ? entry : StringUtils.EMPTY;
+        return entry != null ? entry : key;
     }
 }

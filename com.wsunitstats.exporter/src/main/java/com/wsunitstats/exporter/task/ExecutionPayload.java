@@ -2,23 +2,24 @@ package com.wsunitstats.exporter.task;
 
 import com.wsunitstats.exporter.model.exported.LocalizationModel;
 import com.wsunitstats.exporter.model.exported.ResearchModel;
+import com.wsunitstats.exporter.model.exported.ContextModel;
 import com.wsunitstats.exporter.model.exported.UnitModel;
+import com.wsunitstats.exporter.model.exported.UnitSelectorModel;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.awt.image.BufferedImage;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 @Getter
 @Setter
 public class ExecutionPayload {
-    private List<UnitModel> units;
-    private List<ResearchModel> researches;
-    private List<LocalizationModel> localization;
+    private Collection<UnitModel> units;
+    private Collection<ResearchModel> researches;
     private Map<String, BufferedImage> images;
-    private String hostname;
-    private String authPath;
-    private String username;
-    private String password;
+    private FileExportPayloadEntry<UnitSelectorModel> unitSelector;
+    private FileExportPayloadEntry<ContextModel> context;
+    // for local tasks
+    private Collection<LocalizationModel> localization;
 }

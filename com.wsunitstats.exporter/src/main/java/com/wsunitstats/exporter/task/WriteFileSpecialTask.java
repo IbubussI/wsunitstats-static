@@ -13,11 +13,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.FileWriter;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import java.util.stream.Collectors;
-
-;
 
 /**
  * Task to get any file with any content (for informational and test purposes)
@@ -42,8 +40,8 @@ public class WriteFileSpecialTask implements ExecutionTask {
     @Override
     public void execute(ExecutionPayload payload) throws TaskExecutionException {
         try {
-            List<UnitModel> unitModels = payload.getUnits();
-            List<LocalizationModel> localizationModels = payload.getLocalization();
+            Collection<UnitModel> unitModels = payload.getUnits();
+            Collection<LocalizationModel> localizationModels = payload.getLocalization();
             try (Writer fileWriter = new FileWriter(FILENAME, false)) {
                 LOG.info("Converting data to string...");
 
@@ -65,7 +63,7 @@ public class WriteFileSpecialTask implements ExecutionTask {
         }
     }
 
-    private String getBuildIdList(List<UnitModel> unitModels) {
+    private String getBuildIdList(Collection<UnitModel> unitModels) {
         String template = "%s -> %s(%s):[%s]";
         return unitModels.stream()
                 .filter(unitModel -> unitModel.getBuild() != null)

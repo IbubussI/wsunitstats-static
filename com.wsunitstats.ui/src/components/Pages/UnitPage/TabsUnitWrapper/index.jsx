@@ -4,6 +4,8 @@ import { Box } from "@mui/material";
 
 export const TabsUnitWrapper = (props) => {
   const researches = props.entity.applicableResearches;
+
+  console.log("TabsUnitWrapper render")
   return (
     <>
       {researches && <Box display="flex" justifyContent="center" width="100%">

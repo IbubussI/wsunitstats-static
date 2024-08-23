@@ -1,0 +1,3254 @@
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFNode.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFNode.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFNode.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFNode.java	
++++ /dev/null	
+@@ -1,209 +0,0 @@
+-/*
+-Copyright 2017 Platinum Digital Group LLC
+-
+-Licensed under the Apache License, Version 2.0 (the "License");
+-you may not use this file except in compliance with the License.
+-You may obtain a copy of the License at
+-
+-    http://www.apache.org/licenses/LICENSE-2.0
+-
+-Unless required by applicable law or agreed to in writing, software
+-distributed under the License is distributed on an "AS IS" BASIS,
+-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-See the License for the specific language governing permissions and
+-limitations under the License.
+-*/
+-
+-package com.wsunitstats.exporter.jvdf;
+-
+-import java.awt.Color;
+-import java.util.Arrays;
+-import java.util.Map;
+-import java.util.TreeMap;
+-
+-/**
+- * An iterable tree structure that represents a set of key-value pairs in a VDF document.
+- * @author Brendan Heinonen
+- */
+-public class VDFNode extends TreeMap<String, Object[]> {
+-
+-    /**
+-     * Puts a key/value pair into the map, or push it to the back of the multimap
+-     * @param key the key of the value
+-     * @param value the value which corresponds to the key
+-     * @return the value
+-     */
+-    public Object put(String key, Object value) {
+-        Object[] values = this.get(key);
+-        if(values == null) {
+-            this.put(key, new Object[]{ value });
+-        } else {
+-            Object[] appendTo = Arrays.copyOf(values, values.length + 1);
+-            appendTo[values.length] = value;
+-            this.put(key, appendTo);
+-        }
+-        return value;
+-    }
+-
+-    /**
+-     * Returns the number of values that correspond to the specified key.
+-     * @param key the key name to get the value count for
+-     * @return the number of values that correspond to the key
+-     */
+-    public int values(String key) {
+-        Object[] values = this.get(key);
+-        if(values == null)
+-            return 0;
+-        return values.length;
+-    }
+-
+-    /**
+-     * Fetches a string value by name and index.
+-     * @param key the key name
+-     * @param index the nth key
+-     * @return the string value of the specified key, or null if the key does not exist in this node
+-     */
+-    public String getString(String key, int index) {
+-       return (String)this.get(key)[index];
+-    }
+-
+-    /**
+-     * Fetches a string value by name.
+-     * @param key the key name
+-     * @return the string value of the specified key, or null if the key does not exist in this node
+-     */
+-    public String getString(String key) {
+-        return getString(key, 0);
+-    }
+-    /**
+-     * Fetches an integer value by name.
+-     * @param key the key name
+-     * @return the int value of the specified key, or 0 if the key does not exist in this node
+-     */
+-    public int getInt(String key) {
+-        return Integer.parseInt(getString(key));
+-    }
+-
+-    /**
+-     * Fetches a float value by name.
+-     * @param key the key name
+-     * @return the float value of the specified key, or 0.f if the key does not exist in this node
+-     */
+-    public float getFloat(String key) {
+-        return Float.parseFloat(getString(key));
+-    }
+-
+-    /**
+-     * Fetches a long value by name.
+-     * @param key the key name
+-     * @return the long value of the specified key, or 0 if the key does not exist in this node
+-     */
+-    public long getLong(String key) {
+-        return Long.parseLong(getString(key));
+-    }
+-
+-    /**
+-     * Fetches a pointer value by name.  Java does not have pointers, so this will really return a long.
+-     * @param key the key name
+-     * @return the long value of the specified key, or 0 if the key does not exist in this node
+-     */
+-    public long getPointer(String key) {
+-        return Long.parseLong(getString(key), 16);
+-    }
+-
+-    /**
+-     * Proxy for getString for spec compliance reasons.
+-     * @param key the key name
+-     * @return the string value of the specified key, or null if the key does not exist in this node
+-     */
+-    public String getWideString(String key) {
+-        return getString(key);
+-    }
+-
+-    /**
+-     * Fetches a color value by name.
+-     * @param key the key name
+-     * @return the AWT color value of the specified key, or null if the key does not exist in this node
+-     */
+-    public Color getColor(String key) {
+-        return Color.getColor(getString(key));
+-    }
+-
+-    /**
+-     * Fetches a VDF child node by name.
+-     * @param key the key name
+-     * @return a VDFNode instance of the specified key, or null if the key does not exist in this node
+-     */
+-    public VDFNode getSubNode(String key) {
+-        return this.getSubNode(key, 0);
+-    }
+-
+-    /**
+-     * Fetches a VDF child node by name and index.
+-     * @param key the key name
+-     * @param index the nth key
+-     * @return a VDFNode instance of the specified key, or null if the key does not exist in this node
+-     */
+-    public VDFNode getSubNode(String key, int index) {
+-        return (VDFNode)this.get(key)[index];
+-    }
+-
+-    /**
+-     * Reduces multimapped keys into a single key.
+-     * @param recursive if subnodes should be reduced as well
+-     * @return this
+-     */
+-    public VDFNode reduce(boolean recursive) {
+-        this.entrySet()
+-                .parallelStream()
+-                // filter keys that have more than 1 value (multimapped)
+-                .filter(e -> e.getValue()[0] instanceof VDFNode)
+-                .forEach(e -> reduceKeyValue(e, recursive));
+-        return this;
+-    }
+-
+-    private void reduceKeyValue(Map.Entry<String, Object[]> entry, boolean recursive) {
+-        Object[] nodes = entry.getValue();
+-
+-        // The first value becomes the node that we're joining
+-        VDFNode newNode = (VDFNode)nodes[0];
+-
+-        // If recursion is enabled, we need to reduce every subnode
+-        if (recursive)
+-            newNode.reduce(true);
+-
+-        if(nodes.length <= 1)
+-            return;
+-
+-
+-        for (int i = 1, nodesLength = nodes.length; i < nodesLength; i++) {
+-            VDFNode node = (VDFNode)nodes[i];
+-
+-            // Merge this node into the new node
+-            node.join(newNode);
+-        }
+-
+-        this.put(entry.getKey(), new Object[] { newNode });
+-    }
+-
+-    /**
+-     * Put the key/value pairs in this node into another node.
+-     * @param other the node to merge into
+-     */
+-    public void join(VDFNode other) {
+-        for(Map.Entry<String, Object[]> e : this.entrySet()) {
+-            for(Object o : e.getValue())
+-                other.put(e.getKey(), o);
+-        }
+-    }
+-
+-    /**
+-     * Recursively reduces multimapped keys into single keys.
+-     * @return this
+-     */
+-    public VDFNode reduce() {
+-        return reduce(true);
+-    }
+-
+-
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParseException.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParseException.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParseException.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParseException.java	
++++ /dev/null	
+@@ -1,28 +0,0 @@
+-/*
+-Copyright 2017 Platinum Digital Group LLC
+-
+-Licensed under the Apache License, Version 2.0 (the "License");
+-you may not use this file except in compliance with the License.
+-You may obtain a copy of the License at
+-
+-    http://www.apache.org/licenses/LICENSE-2.0
+-
+-Unless required by applicable law or agreed to in writing, software
+-distributed under the License is distributed on an "AS IS" BASIS,
+-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-See the License for the specific language governing permissions and
+-limitations under the License.
+-*/
+-
+-package com.wsunitstats.exporter.jvdf;
+-
+-/**
+- * @author Brendan Heinonen
+- */
+-public class VDFParseException extends RuntimeException {
+-
+-    public VDFParseException(String str) {
+-        super(str);
+-    }
+-
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileTask.java	
++++ /dev/null	
+@@ -1,83 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.LocalizationModel;
+-import com.wsunitstats.exporter.model.exported.ResearchModel;
+-import com.wsunitstats.exporter.model.exported.UnitModel;
+-import com.wsunitstats.exporter.exception.TaskExecutionException;
+-import com.wsunitstats.exporter.service.LocalizationService;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import lombok.Getter;
+-import lombok.Setter;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Component;
+-
+-import java.io.FileWriter;
+-import java.io.Writer;
+-import java.util.Collection;
+-
+-@Component
+-public class WriteFileTask implements ExecutionTask {
+-    private static final Logger LOG = LogManager.getLogger(WriteFileTask.class);
+-    private static final String TASK_NAME = "writeFile";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-    @Autowired
+-    private LocalizationService localizationService;
+-
+-    @Value("${file.name}")
+-    private String fileName;
+-    @Value("${file.pretty}")
+-    private boolean filePretty;
+-    @Value("${file.locale}")
+-    private String fileLocale;
+-    @Value("${file.localize}")
+-    private boolean fileLocalize;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    public void execute(ExecutionPayload payload) throws TaskExecutionException {
+-        try {
+-            Collection<UnitModel> unitModels = payload.getUnits();
+-            Collection<ResearchModel> researchModels = payload.getResearches();
+-            ExportWrapper exportWrapper = new ExportWrapper();
+-            exportWrapper.setUnits(unitModels);
+-            exportWrapper.setResearches(researchModels);
+-            Collection<LocalizationModel> localizationModels = payload.getLocalization();
+-            try (Writer fileWriter = new FileWriter(fileName, false)) {
+-                LOG.info("Converting to json...");
+-                String unitsJson = filePretty
+-                        ? exporterService.exportToPrettyJson(exportWrapper)
+-                        : exporterService.exportToJson(exportWrapper);
+-                if (fileLocalize) {
+-                    LOG.info("Localizing...");
+-                    LOG.info("Locale: {}", fileLocale);
+-                    LocalizationModel localizationModel = localizationModels.stream()
+-                            .filter(locModel -> locModel.getLocale().equals(fileLocale))
+-                            .findAny()
+-                            .orElse(null);
+-                    unitsJson = localizationService.localize(unitsJson, localizationModel);
+-                }
+-                LOG.info("Writing to file {}", fileName);
+-                fileWriter.write(unitsJson);
+-                fileWriter.flush();
+-            }
+-        } catch (Exception ex) {
+-            throw new TaskExecutionException(ex);
+-        }
+-    }
+-
+-    @Setter
+-    @Getter
+-    private static final class ExportWrapper {
+-        private Collection<UnitModel> units;
+-        private Collection<ResearchModel> researches;
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExecutionPayload.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExecutionPayload.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExecutionPayload.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExecutionPayload.java	
++++ /dev/null	
+@@ -1,25 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.LocalizationModel;
+-import com.wsunitstats.exporter.model.exported.ResearchModel;
+-import com.wsunitstats.exporter.model.exported.ContextModel;
+-import com.wsunitstats.exporter.model.exported.UnitModel;
+-import com.wsunitstats.exporter.model.exported.UnitSelectorModel;
+-import lombok.Getter;
+-import lombok.Setter;
+-
+-import java.awt.image.BufferedImage;
+-import java.util.Collection;
+-import java.util.Map;
+-
+-@Getter
+-@Setter
+-public class ExecutionPayload {
+-    private Collection<UnitModel> units;
+-    private Collection<ResearchModel> researches;
+-    private Map<String, BufferedImage> images;
+-    private FileExportPayloadEntry<UnitSelectorModel> unitSelector;
+-    private FileExportPayloadEntry<ContextModel> context;
+-    // for local tasks
+-    private Collection<LocalizationModel> localization;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportImagesTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportImagesTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportImagesTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportImagesTask.java	
++++ /dev/null	
+@@ -1,53 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.exception.TaskExecutionException;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Component;
+-
+-import javax.imageio.ImageIO;
+-import java.awt.image.BufferedImage;
+-import java.io.File;
+-import java.util.Map;
+-
+-@Component
+-public class ExportImagesTask implements ExecutionTask {
+-    private static final Logger LOG = LogManager.getLogger(ExportImagesTask.class);
+-    private static final String TASK_NAME = "exportImages";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Value("${image.path}")
+-    private String path;
+-    @Value("${image.file.extension}")
+-    private String imageExtension;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    public void execute(ExecutionPayload payload) throws TaskExecutionException {
+-        try {
+-            LOG.info("Exporting images to {}", path);
+-            File dir = new File(path);
+-            if (dir.exists() || dir.mkdirs()) {
+-                for (Map.Entry<String, BufferedImage> entry : payload.getImages().entrySet()) {
+-                    String filename = entry.getKey();
+-                    File file = new File(path + "/" + filename);
+-                    LOG.info("Writing image {} to file...", filename);
+-                    ImageIO.write(entry.getValue(), imageExtension, file);
+-                }
+-            } else {
+-                throw new TaskExecutionException("Cannot create/access file directory: " + path);
+-            }
+-        } catch (Exception ex) {
+-            throw new TaskExecutionException(ex);
+-        }
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileJsonExportTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileJsonExportTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileJsonExportTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileJsonExportTask.java	
++++ /dev/null	
+@@ -1,47 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.exception.TaskExecutionException;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.stereotype.Component;
+-
+-import java.io.File;
+-import java.io.FileWriter;
+-import java.io.Writer;
+-
+-@Component
+-public abstract class FileJsonExportTask<T> implements ExecutionTask {
+-    private static final Logger LOG = LogManager.getLogger(FileJsonExportTask.class);
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Override
+-    public void execute(ExecutionPayload payload) throws TaskExecutionException {
+-        try {
+-            String path = getPath();
+-            LOG.info("Exporting option json files to {}", path);
+-            File dir = new File(path);
+-            if (dir.exists() || dir.mkdirs()) {
+-                FileExportPayloadEntry<T> entry = getObject(payload);
+-                String filename = entry.getFilename();
+-                LOG.info("Converting object {} to json...", filename);
+-                String json = exporterService.exportToJson(entry.getExportedObject());
+-                File file = new File(path + "/" + filename + ".json");
+-                try (Writer fileWriter = new FileWriter(file)) {
+-                    fileWriter.write(json);
+-                    fileWriter.flush();
+-                }
+-            } else {
+-                throw new TaskExecutionException("Cannot create/access file directory: " + path);
+-            }
+-        } catch (Exception ex) {
+-            throw new TaskExecutionException(ex);
+-        }
+-    }
+-
+-    protected abstract String getPath();
+-    protected abstract FileExportPayloadEntry<T> getObject(ExecutionPayload payload);
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitsJsonTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitsJsonTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitsJsonTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitsJsonTask.java	
++++ /dev/null	
+@@ -1,43 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.UnitModel;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Component;
+-
+-@Component
+-public class ExportUnitsJsonTask extends BulkFileJsonExportTask<UnitModel> {
+-    private static final String TASK_NAME = "exportUnits";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Value("${units.path}")
+-    private String path;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    protected String getPath() {
+-        return path;
+-    }
+-
+-    @Override
+-    protected String getFilename(UnitModel unitModel) {
+-        return String.valueOf(unitModel.getGameId());
+-    }
+-
+-    @Override
+-    protected Iterable<UnitModel> getObjects(ExecutionPayload payload) {
+-        return payload.getUnits();
+-    }
+-
+-    @Override
+-    protected Object getExportedObject(UnitModel unitModel) {
+-        return unitModel;
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileSpecialTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileSpecialTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileSpecialTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/WriteFileSpecialTask.java	
++++ /dev/null	
+@@ -1,74 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.LocalizationModel;
+-import com.wsunitstats.exporter.model.exported.UnitModel;
+-import com.wsunitstats.exporter.exception.TaskExecutionException;
+-import com.wsunitstats.exporter.service.LocalizationService;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.apache.commons.lang3.StringUtils;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.stereotype.Component;
+-
+-import java.io.FileWriter;
+-import java.io.Writer;
+-import java.util.Collection;
+-import java.util.Comparator;
+-import java.util.stream.Collectors;
+-
+-/**
+- * Task to get any file with any content (for informational and test purposes)
+- */
+-@Component
+-public class WriteFileSpecialTask implements ExecutionTask {
+-    private static final Logger LOG = LogManager.getLogger(WriteFileSpecialTask.class);
+-    private static final String TASK_NAME = "writeFileSpecial";
+-    private static final String FILENAME = "specialTaskResults.txt";
+-    private static final String LOCALE = "en";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-    @Autowired
+-    private LocalizationService localizationService;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    public void execute(ExecutionPayload payload) throws TaskExecutionException {
+-        try {
+-            Collection<UnitModel> unitModels = payload.getUnits();
+-            Collection<LocalizationModel> localizationModels = payload.getLocalization();
+-            try (Writer fileWriter = new FileWriter(FILENAME, false)) {
+-                LOG.info("Converting data to string...");
+-
+-                // change this to whatever is needed;
+-                String content = getBuildIdList(unitModels);
+-
+-                LocalizationModel localizationModel = localizationModels.stream()
+-                        .filter(locModel -> locModel.getLocale().equals(LOCALE))
+-                        .findAny()
+-                        .orElse(null);
+-                String localized = localizationService.localize(content, localizationModel);
+-
+-                LOG.info("Writing to file {}", FILENAME);
+-                fileWriter.write(localized);
+-                fileWriter.flush();
+-            }
+-        } catch (Exception ex) {
+-            throw new TaskExecutionException(ex);
+-        }
+-    }
+-
+-    private String getBuildIdList(Collection<UnitModel> unitModels) {
+-        String template = "%s -> %s(%s):[%s]";
+-        return unitModels.stream()
+-                .filter(unitModel -> unitModel.getBuild() != null)
+-                .sorted(Comparator.comparingInt(unitModel -> unitModel.getBuild().getBuildId()))
+-                .map(unitModel -> String.format(template, unitModel.getBuild().getBuildId(), unitModel.getName(), unitModel.getNation(), unitModel.getGameId()))
+-                .collect(Collectors.joining(StringUtils.LF));
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportContextJsonTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportContextJsonTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportContextJsonTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportContextJsonTask.java	
++++ /dev/null	
+@@ -1,33 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.ContextModel;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Component;
+-
+-@Component
+-public class ExportContextJsonTask extends FileJsonExportTask<ContextModel> {
+-    private static final String TASK_NAME = "exportContext";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Value("${context.path}")
+-    private String path;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    protected String getPath() {
+-        return path;
+-    }
+-
+-    @Override
+-    protected FileExportPayloadEntry<ContextModel> getObject(ExecutionPayload payload) {
+-        return payload.getContext();
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/BulkFileJsonExportTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/BulkFileJsonExportTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/BulkFileJsonExportTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/BulkFileJsonExportTask.java	
++++ /dev/null	
+@@ -1,48 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.exception.TaskExecutionException;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-
+-import java.io.File;
+-import java.io.FileWriter;
+-import java.io.Writer;
+-
+-public abstract class BulkFileJsonExportTask<T> implements ExecutionTask {
+-    private static final Logger LOG = LogManager.getLogger(BulkFileJsonExportTask.class);
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Override
+-    public void execute(ExecutionPayload payload) throws TaskExecutionException {
+-        try {
+-            String path = getPath();
+-            LOG.info("Exporting bulk json files to {}", path);
+-            File dir = new File(path);
+-            if (dir.exists() || dir.mkdirs()) {
+-                for (T object : getObjects(payload)) {
+-                    String filename = getFilename(object);
+-                    LOG.info("Converting object {} to json...", filename);
+-                    String json = exporterService.exportToJson(getExportedObject(object));
+-                    File file = new File(path + "/" + filename + ".json");
+-                    try (Writer fileWriter = new FileWriter(file)) {
+-                        fileWriter.write(json);
+-                        fileWriter.flush();
+-                    }
+-                }
+-            } else {
+-                throw new TaskExecutionException("Cannot create/access file directory: " + path);
+-            }
+-        } catch (Exception ex) {
+-            throw new TaskExecutionException(ex);
+-        }
+-    }
+-
+-    protected abstract String getPath();
+-    protected abstract String getFilename(T object);
+-    protected abstract Iterable<T> getObjects(ExecutionPayload payload);
+-    protected abstract Object getExportedObject(T object);
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileExportPayloadEntry.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileExportPayloadEntry.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileExportPayloadEntry.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/FileExportPayloadEntry.java	
++++ /dev/null	
+@@ -1,11 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import lombok.AllArgsConstructor;
+-import lombok.Getter;
+-
+-@Getter
+-@AllArgsConstructor
+-public class FileExportPayloadEntry<T> {
+-    private String filename;
+-    private T exportedObject;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportResearchesJsonTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportResearchesJsonTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportResearchesJsonTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportResearchesJsonTask.java	
++++ /dev/null	
+@@ -1,43 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.ResearchModel;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Component;
+-
+-@Component
+-public class ExportResearchesJsonTask extends BulkFileJsonExportTask<ResearchModel> {
+-    private static final String TASK_NAME = "exportResearches";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Value("${researches.path}")
+-    private String path;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    protected String getPath() {
+-        return path;
+-    }
+-
+-    @Override
+-    protected String getFilename(ResearchModel researchModel) {
+-        return String.valueOf(researchModel.getGameId());
+-    }
+-
+-    @Override
+-    protected Iterable<ResearchModel> getObjects(ExecutionPayload payload) {
+-        return payload.getResearches();
+-    }
+-
+-    @Override
+-    protected Object getExportedObject(ResearchModel researchModel) {
+-        return researchModel;
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitSelectorJsonTask.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitSelectorJsonTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitSelectorJsonTask.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExportUnitSelectorJsonTask.java	
++++ /dev/null	
+@@ -1,33 +0,0 @@
+-package com.wsunitstats.exporter.task;
+-
+-import com.wsunitstats.exporter.model.exported.UnitSelectorModel;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Component;
+-
+-@Component
+-public class ExportUnitSelectorJsonTask extends FileJsonExportTask<UnitSelectorModel> {
+-    private static final String TASK_NAME = "exportUnitSelector";
+-
+-    @Autowired
+-    private ModelExporterService exporterService;
+-
+-    @Value("${units.path}")
+-    private String path;
+-
+-    @Override
+-    public String getName() {
+-        return TASK_NAME;
+-    }
+-
+-    @Override
+-    protected String getPath() {
+-        return path;
+-    }
+-
+-    @Override
+-    protected FileExportPayloadEntry<UnitSelectorModel> getObject(ExecutionPayload payload) {
+-        return payload.getUnitSelector();
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/TextureJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/TextureJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/TextureJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/TextureJsonModel.java	
++++ /dev/null	
+@@ -1,24 +0,0 @@
+-package com.wsunitstats.exporter.model.json.main.submodel;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class TextureJsonModel {
+-    private Boolean mipmap;
+-    private String name;
+-    private Integer purpose;
+-    private Boolean repeat;
+-    private List<Integer> size;
+-    private Boolean smooth;
+-    private Integer source;
+-    private Integer target;
+-    private List<Object> urls;
+-    private Object wrapMode;
+-    private Object anisotropy;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/visual/submodel/UnitTypeJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/visual/submodel/UnitTypeJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/visual/submodel/UnitTypeJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/visual/submodel/UnitTypeJsonModel.java	
++++ /dev/null	
+@@ -1,25 +0,0 @@
+-package com.wsunitstats.exporter.model.json.visual.submodel;
+-
+-import com.fasterxml.jackson.annotation.JsonProperty;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitTypeJsonModel {
+-    private Object attack;
+-    private Object corpses;
+-    private Object gather;
+-    private Object healthBar;
+-    private String externalData;
+-    private Object occlusion;
+-    private Object reflection;
+-    private Object selectionPriority;
+-    private Object selectionType;
+-    private Object shadow;
+-    @JsonProperty("skins_")
+-    private Object skins;
+-    private Object emitters;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldJsonModel.java	
++++ /dev/null	
+@@ -1,14 +0,0 @@
+-package com.wsunitstats.exporter.model.json.gameplay.submodel.air;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class AirfieldJsonModel {
+-    private List<AirfieldContainerEntryJsonModel> container;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldContainerEntryJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldContainerEntryJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldContainerEntryJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirfieldContainerEntryJsonModel.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.model.json.gameplay.submodel.air;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class AirfieldContainerEntryJsonModel {
+-    private Integer height;
+-    private Boolean on;
+-    private Integer pathLanding;
+-    private Integer pathTakeoff;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/ResearchesJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/ResearchesJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/ResearchesJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/ResearchesJsonModel.java	
++++ /dev/null	
+@@ -1,16 +0,0 @@
+-package com.wsunitstats.exporter.model.json.gameplay.submodel.researches;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class ResearchesJsonModel {
+-    private List<ResearchJsonModel> list;
+-    private List<UpgradeJsonModel> upgrades;
+-}
+-
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UnitJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UnitJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UnitJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UnitJsonModel.java	
++++ /dev/null	
+@@ -1,42 +0,0 @@
+-package com.wsunitstats.exporter.model.json.gameplay.submodel;
+-
+-import com.fasterxml.jackson.annotation.JsonProperty;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AirfieldJsonModel;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-import java.util.Map;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitJsonModel {
+-    private AbilityWrapperJsonModel ability;
+-    private Integer adjustToGround;
+-    private AirfieldJsonModel airfields;
+-    private AttackJsonModel attack;
+-    private Boolean controllable;
+-    private List<CreateEnvJsonModel> createEnvs;
+-    private DeathabilityJsonModel deathability;
+-    private HealJsonModel heal;
+-    private Integer hiddenInFows;
+-    private MovementJsonModel movement;
+-    private IncomeJsonModel income;
+-    private Integer openFows;
+-    private Boolean parentMustIdle;
+-    private Map<String, Object> passability;
+-    @JsonProperty("scale_")
+-    private Integer scale;
+-    private Long searchTags;
+-    private Integer size;
+-    private Integer storageMultiplier;
+-    private SupplyJsonModel supply;
+-    private Long tags;
+-    private TransportJsonModel transport;
+-    private Integer viewRange;
+-    private ZoneEventJsonModel zoneEvent;
+-    private Object paths;
+-}
+-
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UpgradesScriptsJsonModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UpgradesScriptsJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UpgradesScriptsJsonModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UpgradesScriptsJsonModel.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.model.json.gameplay.submodel;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UpgradesScriptsJsonModel {
+-    private List<UpgradeScriptJsonModel> list;
+-    private String path;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/TagOption.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/TagOption.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/TagOption.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/TagOption.java	
++++ /dev/null	
+@@ -1,33 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.option;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.Objects;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class TagOption implements Comparable<TagOption> {
+-    private String name;
+-    private int gameId;
+-
+-    @Override
+-    public boolean equals(Object o) {
+-        if (this == o) return true;
+-        if (o == null || getClass() != o.getClass()) return false;
+-        TagOption tagOption = (TagOption) o;
+-        return gameId == tagOption.gameId;
+-    }
+-
+-    @Override
+-    public int hashCode() {
+-        return Objects.hash(gameId);
+-    }
+-
+-    @Override
+-    public int compareTo(TagOption other) {
+-        return Integer.compare(gameId, other.gameId);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/UnitOption.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/UnitOption.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/UnitOption.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/UnitOption.java	
++++ /dev/null	
+@@ -1,25 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.option;
+-
+-import com.fasterxml.jackson.annotation.JsonInclude;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitOption {
+-    private String nation;
+-    private String name;
+-    private String image;
+-    private int gameId;
+-
+-    // filters
+-    private int nationId;
+-    @JsonInclude //To include empty list in json
+-    private List<Integer> searchTags;
+-    @JsonInclude //To include empty list in json
+-    private List<Integer> unitTags;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/NationOption.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/NationOption.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/NationOption.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/NationOption.java	
++++ /dev/null	
+@@ -1,33 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.option;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.Objects;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class NationOption implements Comparable<NationOption> {
+-    private String name;
+-    private int gameId;
+-
+-    @Override
+-    public boolean equals(Object o) {
+-        if (this == o) return true;
+-        if (o == null || getClass() != o.getClass()) return false;
+-        NationOption that = (NationOption) o;
+-        return gameId == that.gameId;
+-    }
+-
+-    @Override
+-    public int hashCode() {
+-        return Objects.hash(gameId);
+-    }
+-
+-    @Override
+-    public int compareTo(NationOption other) {
+-        return Integer.compare(gameId, other.gameId);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/ResearchOption.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/ResearchOption.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/ResearchOption.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/option/ResearchOption.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.option;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class ResearchOption {
+-    private String description;
+-    private String name;
+-    private String image;
+-    private int gameId;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/DeathAbilityContainer.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/DeathAbilityContainer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/DeathAbilityContainer.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/DeathAbilityContainer.java	
++++ /dev/null	
+@@ -1,13 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.submodel.ability.container;
+-
+-import com.wsunitstats.exporter.model.exported.submodel.ability.GenericAbility;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class DeathAbilityContainer extends GenericAbilityContainer {
+-    private GenericAbility ability;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/GenericAbilityContainer.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/GenericAbilityContainer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/GenericAbilityContainer.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/GenericAbilityContainer.java	
++++ /dev/null	
+@@ -1,13 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.submodel.ability.container;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Setter
+-@Getter
+-@ToString
+-public abstract class GenericAbilityContainer {
+-    private Integer containerType;
+-    private String containerName;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchModel.java	
++++ /dev/null	
+@@ -1,22 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.submodel.research;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitResearchModel {
+-    private String name;
+-    private String image;
+-    private int gameId;
+-    private List<UnitResearchUpgrade> upgrades = new ArrayList<>();
+-
+-    public void addUpgrade(UnitResearchUpgrade upgrade) {
+-        upgrades.add(upgrade);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchUpgrade.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchUpgrade.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchUpgrade.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UnitResearchUpgrade.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.submodel.research;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.Map;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitResearchUpgrade {
+-    private Map<String, String> parameters;
+-    private int programId;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/NationModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/NationModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/NationModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/NationModel.java	
++++ /dev/null	
+@@ -1,13 +0,0 @@
+-package com.wsunitstats.exporter.model.exported.submodel;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class NationModel {
+-    private String name;
+-    private int nationId;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitModel.java	
++++ /dev/null	
+@@ -1,76 +0,0 @@
+-package com.wsunitstats.exporter.model.exported;
+-
+-import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
+-import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ConstructionModel;
+-import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
+-import com.wsunitstats.exporter.model.exported.submodel.HealModel;
+-import com.wsunitstats.exporter.model.exported.submodel.MovementModel;
+-import com.wsunitstats.exporter.model.exported.submodel.NationModel;
+-import com.wsunitstats.exporter.model.exported.submodel.SubmarineDepthModel;
+-import com.wsunitstats.exporter.model.exported.submodel.SupplyModel;
+-import com.wsunitstats.exporter.model.exported.submodel.TagModel;
+-import com.wsunitstats.exporter.model.exported.submodel.TransportingModel;
+-import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
+-import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
+-import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.Collection;
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitModel extends GenericEntityModel {
+-    // Unit traits
+-    private NationModel nation;
+-    private String description;
+-    private Double size;
+-    private Double viewRange;
+-    private Double health;
+-    private Double regenerationSpeed;
+-    private Integer weaponOnDeath;
+-    private boolean controllable;
+-    private List<TagModel> tags;
+-    private List<TagModel> searchTags;
+-    private Double lifetime;
+-    private Boolean parentMustIdle;
+-    private Boolean receiveFriendlyDamage;
+-    private Integer threat;
+-    private Integer weight;
+-    private Integer storageMultiplier;
+-    private List<GenericAbilityContainer> abilities;
+-    private List<WeaponModel> weapons;
+-    private List<TurretModel> turrets;
+-    private List<ArmorModel> armor;
+-
+-    // Technical data to render research selector
+-    private Collection<UnitResearchModel> applicableResearches;
+-
+-    // Movable unit traits
+-    private MovementModel movement;
+-    private TransportingModel transporting;
+-    private SupplyModel supply;
+-
+-    // Worker traits
+-    private List<GatherModel> gather;
+-    private HealModel heal;
+-    private List<ConstructionModel> construction;
+-
+-    // Building traits
+-    private BuildingModel build;
+-
+-    // Jet traits
+-    private AirplaneModel airplane;
+-
+-    // Submarine traits
+-    private SubmarineDepthModel submarine;
+-
+-    // Goats and fowls
+-    private Integer limit;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ContextModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ContextModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ContextModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ContextModel.java	
++++ /dev/null	
+@@ -1,23 +0,0 @@
+-package com.wsunitstats.exporter.model.exported;
+-
+-import com.wsunitstats.exporter.model.exported.option.ResearchOption;
+-import com.wsunitstats.exporter.model.exported.option.UnitOption;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.Collection;
+-import java.util.Map;
+-
+-/**
+- * Contains objects that are immutable part of any page
+- */
+-@Getter
+-@Setter
+-@ToString
+-public class ContextModel {
+-    private Map<String, Map<String, String>> localization;
+-    private Collection<String> localeOptions;
+-    private Collection<ResearchOption> researches;
+-    private Collection<UnitOption> units;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ResearchModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ResearchModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ResearchModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/ResearchModel.java	
++++ /dev/null	
+@@ -1,16 +0,0 @@
+-package com.wsunitstats.exporter.model.exported;
+-
+-import com.wsunitstats.exporter.model.exported.submodel.research.UpgradeModel;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class ResearchModel extends GenericEntityModel {
+-    private String description;
+-    private List<UpgradeModel> upgrades;
+-}
+\ No newline at end of file
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/LocalizationModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/LocalizationModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/LocalizationModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/LocalizationModel.java	
++++ /dev/null	
+@@ -1,27 +0,0 @@
+-package com.wsunitstats.exporter.model.exported;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-import org.apache.commons.lang3.StringUtils;
+-
+-import java.util.Map;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class LocalizationModel {
+-    private String locale;
+-    private Map<String, String> entries;
+-
+-    /**
+-     * Tries to find localized value
+-     *
+-     * @param key   key to find value for
+-     * @return localized value or the key if there are no values for such a key
+-     */
+-    public String getValue(String key) {
+-        String entry = entries.get(key);
+-        return entry != null ? entry : key;
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitSelectorModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitSelectorModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitSelectorModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/UnitSelectorModel.java	
++++ /dev/null	
+@@ -1,18 +0,0 @@
+-package com.wsunitstats.exporter.model.exported;
+-
+-import com.wsunitstats.exporter.model.exported.option.NationOption;
+-import com.wsunitstats.exporter.model.exported.option.TagOption;
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.Collection;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class UnitSelectorModel {
+-    private Collection<TagOption> unitTags;
+-    private Collection<TagOption> searchTags;
+-    private Collection<NationOption> nations;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/GenericEntityModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/GenericEntityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/GenericEntityModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/GenericEntityModel.java	
++++ /dev/null	
+@@ -1,14 +0,0 @@
+-package com.wsunitstats.exporter.model.exported;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Setter
+-@Getter
+-@ToString
+-public abstract class GenericEntityModel {
+-    protected int gameId;
+-    protected String name;
+-    protected String image;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/FilePathWrapper.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/FilePathWrapper.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/FilePathWrapper.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/FilePathWrapper.java	
++++ /dev/null	
+@@ -1,18 +0,0 @@
+-package com.wsunitstats.exporter.model;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class FilePathWrapper {
+-    private String rootFolderPath;
+-    private String gameplayFilePath;
+-    private String mainFilePath;
+-    private String visualFilePath;
+-    private String localizationFolderPath;
+-    private String mainStartupFilePath;
+-    private String sessionInitFilePath;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/LocalizationKeyModel.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/LocalizationKeyModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/LocalizationKeyModel.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/LocalizationKeyModel.java	
++++ /dev/null	
+@@ -1,30 +0,0 @@
+-package com.wsunitstats.exporter.model;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-import java.util.List;
+-import java.util.Map;
+-
+-/**
+- * Allows to get localization key by game entity id (through list index).
+- * Example: localizationKeyModel.getNationNames().get(nationId), which returns <*nationName...>
+- */
+-@Getter
+-@Setter
+-@ToString
+-public class LocalizationKeyModel {
+-    private List<String> nationNames;
+-    private List<String> researchNames;
+-    private List<String> researchTexts;
+-    private List<String> unitNames;
+-    private List<String> unitTexts;
+-    private List<String> unitTagNames;
+-    private List<String> unitSearchTagNames;
+-    private Map<Integer, String> envNames;
+-    private List<String> envTagNames;
+-    private List<String> envSearchTagNames;
+-    private List<String> ageNames;
+-    private List<String> resourceNames;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/GroundAttackDataWrapper.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/GroundAttackDataWrapper.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/GroundAttackDataWrapper.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/GroundAttackDataWrapper.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.model;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class GroundAttackDataWrapper {
+-    private boolean isAttackGround;
+-    // 0 - weapon, 1 - turret
+-    private Integer weaponTypeDescriptor;
+-    private Integer weaponId;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/AbilityEntityInfoWrapper.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/AbilityEntityInfoWrapper.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/AbilityEntityInfoWrapper.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/AbilityEntityInfoWrapper.java	
++++ /dev/null	
+@@ -1,14 +0,0 @@
+-package com.wsunitstats.exporter.model;
+-
+-import lombok.Getter;
+-import lombok.Setter;
+-import lombok.ToString;
+-
+-@Getter
+-@Setter
+-@ToString
+-public class AbilityEntityInfoWrapper {
+-    private Integer entityId;
+-    private String entityType;
+-    private Integer createEnvId;
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ImageServiceImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ImageServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ImageServiceImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ImageServiceImpl.java	
++++ /dev/null	
+@@ -1,152 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.model.json.main.MainFileJsonModel;
+-import com.wsunitstats.exporter.model.json.main.submodel.GlobalContentJsonModel;
+-import com.wsunitstats.exporter.model.json.main.submodel.ImageJsonModel;
+-import com.wsunitstats.exporter.model.json.main.submodel.TextureJsonModel;
+-import com.wsunitstats.exporter.model.json.main.submodel.VisualSessionContentJsonModel;
+-import com.wsunitstats.exporter.service.ImageService;
+-import com.wsunitstats.exporter.utils.Constants;
+-import com.wsunitstats.exporter.utils.Constants.ResourceIcon;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Service;
+-
+-import javax.imageio.ImageIO;
+-import java.awt.image.BufferedImage;
+-import java.awt.image.RasterFormatException;
+-import java.io.File;
+-import java.io.IOException;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.stream.Collectors;
+-import java.util.stream.IntStream;
+-
+-@Service
+-public class ImageServiceImpl implements ImageService {
+-    private static final Logger LOG = LoggerFactory.getLogger(ImageServiceImpl.class);
+-    private static final String PATH_DELIMITER = "/";
+-
+-    @Value("${image.file.extension}")
+-    private String imageExtension;
+-
+-    @Override
+-    public Map<String, BufferedImage> resolveImages(MainFileJsonModel mainFileJsonModel, String rootFolderPath) {
+-        Map<String, BufferedImage> result = new HashMap<>();
+-        readVisualSessionContentImages(result, mainFileJsonModel, rootFolderPath);
+-        readGlobalContentImages(result, mainFileJsonModel, rootFolderPath);
+-        return result;
+-    }
+-
+-    @Override
+-    public String getImageName(String type, int id) {
+-        return type + id + "." + imageExtension;
+-    }
+-
+-    private void readVisualSessionContentImages(Map<String, BufferedImage> result,
+-                                                MainFileJsonModel mainFileJsonModel,
+-                                                String rootFolderPath) {
+-        VisualSessionContentJsonModel visualSessionContentJsonModel = mainFileJsonModel.getVisualSessionContent();
+-        Map<Integer, ImageJsonModel> imageJsonModels = visualSessionContentJsonModel.getImages();
+-        Map<Integer, TextureJsonModel> textureJsonModels = visualSessionContentJsonModel.getTextures();
+-
+-        // Resource images
+-        Map<Integer, String> imageNames = IntStream.range(0, ResourceIcon.values().length).boxed()
+-                .collect(Collectors.toMap(imageGameId -> ResourceIcon.getByGameId(imageGameId).getImageId(),
+-                        imageGameId -> getImageName(Constants.EntityType.RESOURCE.getName(), imageGameId)));
+-
+-        Map<Integer, BufferedImage> textures = readTextures(rootFolderPath, textureJsonModels);
+-        readImages(result, imageJsonModels, textures, imageNames, true);
+-    }
+-
+-    private void readGlobalContentImages(Map<String, BufferedImage> result,
+-                                         MainFileJsonModel mainFileJsonModel,
+-                                         String rootFolderPath) {
+-        GlobalContentJsonModel globalContentJsonModel = mainFileJsonModel.getGlobalContent();
+-        Map<Integer, ImageJsonModel> imageJsonModels = globalContentJsonModel.getImages();
+-        Map<Integer, TextureJsonModel> textureJsonModels = globalContentJsonModel.getTextures();
+-        Map<Integer, String> imageNames = globalContentJsonModel.getImagesNames();
+-        Map<Integer, BufferedImage> textures = readTextures(rootFolderPath, textureJsonModels);
+-        readImages(result, imageJsonModels, textures, imageNames, false);
+-    }
+-
+-    /**
+-     * @param result            map to store results, where key - image name, value - image that was read
+-     * @param imageJsonModels   map, where key - IMAGE ID, value - image json data
+-     * @param textures          map, where key - TEXTURE ID, value - texture image
+-     * @param imagesNames       map, where key - IMAGE ID, value - image name (should be unique)
+-     * @param isPositiveYOffset true if images with positive y-offset,
+-     *                          false if images with negative y-offset
+-     */
+-    private void readImages(Map<String, BufferedImage> result,
+-                            Map<Integer, ImageJsonModel> imageJsonModels,
+-                            Map<Integer, BufferedImage> textures,
+-                            Map<Integer, String> imagesNames,
+-                            boolean isPositiveYOffset) {
+-        imagesNames.entrySet().stream()
+-                .filter(entry -> entry.getValue() != null)
+-                .forEach(entry -> {
+-                    ImageJsonModel imageJsonModel = imageJsonModels.get(entry.getKey());
+-                    int textureId = imageJsonModel.getTexture();
+-                    BufferedImage texture = textures.get(textureId);
+-                    List<Double> pos = imageJsonModel.getPos();
+-                    List<Double> size = imageJsonModel.getSize();
+-                    double xOffset = 0.0;
+-                    double yOffset = 0.0;
+-                    if (pos != null) {
+-                        xOffset = pos.get(0);
+-                        yOffset = pos.get(1);
+-                    }
+-                    double xSize = size.get(0);
+-                    double ySize = size.get(1);
+-                    BufferedImage icon = getIcon(texture, xOffset, yOffset, xSize, ySize, isPositiveYOffset);
+-                    result.put(entry.getValue(), icon);
+-                });
+-    }
+-
+-    private Map<Integer, BufferedImage> readTextures(String rootFolderPath, Map<Integer, TextureJsonModel> textureJsonModels) {
+-        Map<Integer, BufferedImage> textures = new HashMap<>();
+-        textureJsonModels.forEach((id, texture) -> {
+-            List<Object> urls = texture.getUrls();
+-            if (urls == null || urls.isEmpty() || !(urls.get(0) instanceof List<?>)) {
+-                // skip non-gui item
+-                return;
+-            }
+-            String texturePath = (String) ((List<?>) urls.get(0)).get(0);
+-            try {
+-                File textureFile = new File(rootFolderPath + PATH_DELIMITER + texturePath);
+-                if (!textureFile.exists()) {
+-                    return;
+-                }
+-                BufferedImage textureImg = ImageIO.read(textureFile);
+-                textures.put(id, textureImg);
+-            } catch (IOException ex) {
+-                LOG.error("Cannot load the image: {}", texturePath);
+-                throw new IllegalStateException(ex);
+-            }
+-        });
+-        return textures;
+-    }
+-
+-    private BufferedImage getIcon(BufferedImage icon, double xOffset, double yOffset, double xSize, double ySize, boolean isPositiveYOffset) {
+-        int width = icon.getWidth();
+-        int height = icon.getHeight();
+-        int x = (int) Math.round(xOffset * width);
+-        int y;
+-        if (isPositiveYOffset) {
+-            y = (int) Math.round(yOffset * height);
+-        } else {
+-            y = (int) Math.round((1 - yOffset) * height);
+-        }
+-        int w = (int) Math.round(xSize * width);
+-        int h = (int) Math.round(Math.abs(ySize) * height);
+-        try {
+-            return icon.getSubimage(x, y, w, h);
+-        } catch (RasterFormatException ex) {
+-            LOG.error("Image bounds exceeded. height = {}, width = {}, x = {}, y = {}, w = {}, h = {}", height, width, x, y, w, h);
+-            throw new IllegalArgumentException(ex);
+-        }
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/NationResolverImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/NationResolverImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/NationResolverImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/NationResolverImpl.java	
++++ /dev/null	
+@@ -1,55 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.model.exported.submodel.NationModel;
+-import com.wsunitstats.exporter.model.LocalizationKeyModel;
+-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+-import com.wsunitstats.exporter.service.FileContentService;
+-import com.wsunitstats.exporter.service.NationResolver;
+-import jakarta.annotation.PostConstruct;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.stereotype.Service;
+-
+-import java.util.ArrayList;
+-import java.util.List;
+-
+-import static com.wsunitstats.exporter.utils.Constants.NIL;
+-
+-@Service
+-public class NationResolverImpl implements NationResolver {
+-    @Autowired
+-    private FileContentService fileContentService;
+-
+-    private List<NationModel> nations;
+-    private List<String> unitNations;
+-
+-    @PostConstruct
+-    protected void postConstruct() {
+-        LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
+-        MainStartupFileModel mainModel = fileContentService.getMainStartupFileModel();
+-        List<String> nationNames = localizationKeyModel.getNationNames();
+-
+-        unitNations = mainModel.getUnitGroups();
+-        nations = new ArrayList<>();
+-
+-        for (int i = 0; i < nationNames.size(); i++) {
+-            String nationName = nationNames.get(i);
+-            NationModel nation = new NationModel();
+-            nation.setName(nationName);
+-            nation.setNationId(i);
+-            nations.add(nation);
+-        }
+-
+-        // add "absent" nation in the end
+-        NationModel nation = new NationModel();
+-        nation.setName("Unknown");
+-        nations.add(nation);
+-    }
+-
+-    @Override
+-    public NationModel getUnitNation(int unitId) {
+-        String unitNation = unitNations.get(unitId);
+-        Integer nationId = NIL.equals(unitNation) ? null : Integer.parseInt(unitNation);
+-        // if unit has no nation - get 'Unknown' nation from the end
+-        return nationId == null ? nations.get(nations.size() - 1) : nations.get(nationId);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/OptionsBuilderImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/OptionsBuilderImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/OptionsBuilderImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/OptionsBuilderImpl.java	
++++ /dev/null	
+@@ -1,91 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.model.exported.LocalizationModel;
+-import com.wsunitstats.exporter.model.exported.ResearchModel;
+-import com.wsunitstats.exporter.model.exported.UnitModel;
+-import com.wsunitstats.exporter.model.exported.option.NationOption;
+-import com.wsunitstats.exporter.model.exported.option.ResearchOption;
+-import com.wsunitstats.exporter.model.exported.option.TagOption;
+-import com.wsunitstats.exporter.model.exported.option.UnitOption;
+-import com.wsunitstats.exporter.model.exported.submodel.NationModel;
+-import com.wsunitstats.exporter.model.exported.submodel.TagModel;
+-import com.wsunitstats.exporter.service.OptionsBuilder;
+-import org.springframework.stereotype.Service;
+-
+-import java.util.Collection;
+-import java.util.HashMap;
+-import java.util.HashSet;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-import java.util.TreeSet;
+-
+-@Service
+-public class OptionsBuilderImpl implements OptionsBuilder {
+-    public Collection<UnitOption> buildUnitOptions(List<UnitModel> unitModels) {
+-        return unitModels.stream().map(unit -> {
+-            UnitOption unitOption = new UnitOption();
+-            unitOption.setName(unit.getName());
+-            unitOption.setNation(unit.getNation().getName());
+-            unitOption.setGameId(unit.getGameId());
+-            unitOption.setImage(unit.getImage());
+-            unitOption.setNationId(unit.getNation().getNationId());
+-            unitOption.setSearchTags(unit.getSearchTags().stream().map(TagModel::getGameId).toList());
+-            unitOption.setUnitTags(unit.getTags().stream().map(TagModel::getGameId).toList());
+-            return unitOption;
+-        }).toList();
+-    }
+-
+-    public Collection<ResearchOption> buildResearchOptions(List<ResearchModel> researchModels) {
+-        return researchModels.stream().map(research -> {
+-            ResearchOption researchOption = new ResearchOption();
+-            researchOption.setName(research.getName());
+-            researchOption.setDescription(research.getDescription());
+-            researchOption.setGameId(research.getGameId());
+-            researchOption.setImage(research.getImage());
+-            return researchOption;
+-        }).toList();
+-    }
+-
+-    public Collection<String> buildLocaleOptions(List<LocalizationModel> localizationModels) {
+-        return localizationModels.stream().map(LocalizationModel::getLocale).toList();
+-    }
+-
+-    public Collection<TagOption> buildUnitTagOptions(List<UnitModel> unitModels) {
+-        Set<TagOption> result = new TreeSet<>();
+-        unitModels.stream()
+-                .flatMap(unitModel -> unitModel.getTags().stream())
+-                .forEach(tag -> {
+-                    TagOption tagOption = new TagOption();
+-                    tagOption.setName(tag.getName());
+-                    tagOption.setGameId(tag.getGameId());
+-                    result.add(tagOption);
+-                });
+-        return result;
+-    }
+-
+-    public Collection<TagOption> buildSearchTagOptions(List<UnitModel> unitModels) {
+-        Set<TagOption> result = new TreeSet<>();
+-        unitModels.stream()
+-                .flatMap(unitModel -> unitModel.getSearchTags().stream())
+-                .forEach(tag -> {
+-                    TagOption tagOption = new TagOption();
+-                    tagOption.setName(tag.getName());
+-                    tagOption.setGameId(tag.getGameId());
+-                    result.add(tagOption);
+-                });
+-        return result;
+-    }
+-
+-    public Collection<NationOption> buildNationsOptions(List<UnitModel> unitModels) {
+-        Set<NationOption> result = new TreeSet<>();
+-        unitModels.forEach(unit -> {
+-            NationModel nationModel = unit.getNation();
+-            NationOption nationOption = new NationOption();
+-            nationOption.setName(nationModel.getName());
+-            nationOption.setGameId(nationModel.getNationId());
+-            result.add(nationOption);
+-        });
+-        return result;
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FilePathResolverImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FilePathResolverImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FilePathResolverImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FilePathResolverImpl.java	
++++ /dev/null	
+@@ -1,167 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.exception.GameFilesResolvingException;
+-import com.wsunitstats.exporter.jvdf.VDFNode;
+-import com.wsunitstats.exporter.jvdf.VDFParser;
+-import com.wsunitstats.exporter.model.FilePathWrapper;
+-import com.wsunitstats.exporter.service.FilePathResolver;
+-import org.apache.commons.lang3.StringUtils;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.context.annotation.PropertySource;
+-import org.springframework.stereotype.Service;
+-
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.nio.file.Files;
+-import java.util.Map;
+-
+-@Service
+-@PropertySource(value = "classpath:exporter.properties")
+-@PropertySource(value = "file:config/exporter.properties", ignoreResourceNotFound = true)
+-public class FilePathResolverImpl implements FilePathResolver {
+-    private static final Logger LOG = LogManager.getLogger(FilePathResolverImpl.class);
+-
+-    private static final String REG_QUERY = "reg query";
+-    private static final String REG_VALUE = "/v";
+-    private static final String REG_SZ = "REG_SZ";
+-    private static final String AUTODETECT = "autodetect";
+-    private static final String PATH = "path";
+-    private static final String APPS = "apps";
+-    private static final String LIBRARY_FOLDERS = "libraryfolders";
+-
+-    @Value("${warselection.dir}")
+-    private String gameDirGiven;
+-    @Value("${reg.steam.key.64}")
+-    private String steam64RegKey;
+-    @Value("${reg.steam.key.32}")
+-    private String steam32RegKey;
+-    @Value("${reg.steam.install.path}")
+-    private String steamInstallPath;
+-    @Value("${steam.libraryfolders.file}")
+-    private String steamLibraryFoldersFile;
+-    @Value("${warselection.path}")
+-    private String steamWSPath;
+-    @Value("${warselection.app.id}")
+-    private String steamWSAppId;
+-    @Value("${warselection.root.folder}")
+-    private String wsRootFolderPath;
+-    @Value("${warselection.gameplay.file}")
+-    private String wsGameplayFilePath;
+-    @Value("${warselection.main.file}")
+-    private String wsMainFilePath;
+-    @Value("${warselection.visual.file}")
+-    private String wsVisualFilePath;
+-    @Value("${warselection.localization.folder}")
+-    private String wsLocalizationFolderPath;
+-    @Value("${warselection.interfaces.session.init.file}")
+-    private String wsInterfacesSessionInitFilePath;
+-    @Value("${warselection.main.startup.file}")
+-    private String wsMainStartupFilePath;
+-
+-    @Override
+-    public FilePathWrapper resolve() throws GameFilesResolvingException {
+-        LOG.debug("Resolving paths of game files");
+-        LOG.debug("Given WS root directory: {}", gameDirGiven);
+-
+-        String gameDirPath;
+-        if (gameDirGiven == null || AUTODETECT.equals(gameDirGiven)) {
+-            String steamDir = resolveSteamDir();
+-            LOG.debug("Resolved steam root directory: {}", steamDir);
+-            gameDirPath = resolveGamePath(steamDir);
+-        } else {
+-            gameDirPath = gameDirGiven;
+-        }
+-        LOG.debug("Resolved WS root directory: {}", gameDirPath);
+-
+-        FilePathWrapper result = new FilePathWrapper();
+-        String wsRootAbsFolderPath = gameDirPath + wsRootFolderPath;
+-        validateFile(wsRootAbsFolderPath);
+-        result.setRootFolderPath(wsRootAbsFolderPath);
+-
+-        String wsGameplayAbsFilePath = wsRootAbsFolderPath + wsGameplayFilePath;
+-        validateFile(wsGameplayAbsFilePath);
+-        result.setGameplayFilePath(wsGameplayAbsFilePath);
+-
+-        String wsMainAbsFilePath = wsRootAbsFolderPath + wsMainFilePath;
+-        validateFile(wsMainAbsFilePath);
+-        result.setMainFilePath(wsMainAbsFilePath);
+-
+-        String wsVisualAbsFilePath = wsRootAbsFolderPath + wsVisualFilePath;
+-        validateFile(wsVisualAbsFilePath);
+-        result.setVisualFilePath(wsVisualAbsFilePath);
+-
+-        String wsLocalizationAbsFolderPath = wsRootAbsFolderPath + wsLocalizationFolderPath;
+-        validateFile(wsLocalizationAbsFolderPath);
+-        result.setLocalizationFolderPath(wsLocalizationAbsFolderPath);
+-
+-        String wsInterfacesSessionInitAbsFilePath = wsRootAbsFolderPath + wsInterfacesSessionInitFilePath;
+-        validateFile(wsInterfacesSessionInitAbsFilePath);
+-        result.setSessionInitFilePath(wsInterfacesSessionInitAbsFilePath);
+-
+-        String wsMainStartupAbsFilePath = wsRootAbsFolderPath + wsMainStartupFilePath;
+-        validateFile(wsMainStartupAbsFilePath);
+-        result.setMainStartupFilePath(wsMainStartupAbsFilePath);
+-        return result;
+-    }
+-
+-    private String resolveSteamDir() throws GameFilesResolvingException {
+-        LOG.debug("Resolving Steam root path");
+-        StringBuilder command = new StringBuilder();
+-        String[] regKeyValues = {steam64RegKey, steam32RegKey};
+-        for (String regKey : regKeyValues) {
+-            try {
+-                command.append(REG_QUERY)
+-                        .append(StringUtils.SPACE)
+-                        .append(regKey)
+-                        .append(StringUtils.SPACE)
+-                        .append(REG_VALUE)
+-                        .append(StringUtils.SPACE)
+-                        .append(steamInstallPath);
+-                Process process = Runtime.getRuntime().exec(command.toString());
+-                InputStream stream = process.getInputStream();
+-                process.waitFor();
+-                String commandResult = new String(stream.readAllBytes());
+-                LOG.debug("reg query execution result: {}", commandResult);
+-                if (commandResult.contains(REG_SZ)) {
+-                    return commandResult.substring(commandResult.lastIndexOf(REG_SZ) + REG_SZ.length()).trim();
+-                }
+-            } catch (InterruptedException ex) {
+-                Thread.currentThread().interrupt();
+-            } catch (IOException ex) {
+-                throw new GameFilesResolvingException(ex);
+-            }
+-        }
+-        throw new GameFilesResolvingException("Can't find steam installation path in Windows registry");
+-    }
+-
+-    private String resolveGamePath(String steamDir) throws GameFilesResolvingException {
+-        LOG.debug("Resolving Steam root path");
+-        try {
+-            File libFoldersFile = new File(steamDir + steamLibraryFoldersFile);
+-            String libFoldersFileContent =  Files.readString(libFoldersFile.toPath());
+-            VDFNode root = new VDFParser().parse(libFoldersFileContent);
+-            VDFNode libFoldersRoot = root.getSubNode(LIBRARY_FOLDERS);
+-            for (Map.Entry<String, Object[]> entry : libFoldersRoot.entrySet()) {
+-                VDFNode folderNode = (VDFNode) entry.getValue()[0];
+-                String folderPath = folderNode.getString(PATH);
+-                VDFNode appsNode = folderNode.getSubNode(APPS);
+-                if (appsNode.containsKey(steamWSAppId)) {
+-                    return folderPath + steamWSPath;
+-                }
+-            }
+-        } catch (IOException ex) {
+-            throw new GameFilesResolvingException(ex);
+-        }
+-        throw new GameFilesResolvingException("War Selection installation directory not found");
+-    }
+-
+-    private void validateFile(String absPath) throws GameFilesResolvingException {
+-        File file = new File(absPath);
+-        if (!file.exists()) {
+-            throw new GameFilesResolvingException("File not found: " + absPath);
+-        }
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationKeyFilter.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationKeyFilter.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationKeyFilter.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationKeyFilter.java	
++++ /dev/null	
+@@ -1,17 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import lombok.AllArgsConstructor;
+-import lombok.Getter;
+-
+-/**
+- * Used to filter out localization keys that are not required
+- */
+-@AllArgsConstructor
+-@Getter
+-public class LocalizationKeyFilter {
+-    private String keyName;
+-
+-    public boolean matches(String key) {
+-        return key.startsWith("<*" + keyName);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FileContentServiceImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FileContentServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FileContentServiceImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FileContentServiceImpl.java	
++++ /dev/null	
+@@ -1,148 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.exception.GameFilesResolvingException;
+-import com.wsunitstats.exporter.model.FilePathWrapper;
+-import com.wsunitstats.exporter.model.LocalizationKeyModel;
+-import com.wsunitstats.exporter.model.json.gameplay.GameplayFileJsonModel;
+-import com.wsunitstats.exporter.model.json.main.MainFileJsonModel;
+-import com.wsunitstats.exporter.model.json.visual.VisualFileJsonModel;
+-import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
+-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+-import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
+-import com.wsunitstats.exporter.service.FileContentService;
+-import com.wsunitstats.exporter.service.FilePathResolver;
+-import com.wsunitstats.exporter.service.FileReaderService;
+-import com.wsunitstats.exporter.service.ImageService;
+-import jakarta.annotation.PostConstruct;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.context.annotation.PropertySource;
+-import org.springframework.stereotype.Service;
+-
+-import java.awt.image.BufferedImage;
+-import java.io.IOException;
+-import java.util.ArrayList;
+-import java.util.List;
+-import java.util.Map;
+-
+-import static com.wsunitstats.exporter.utils.Utils.convertToLocalizationTagMap;
+-import static com.wsunitstats.exporter.utils.Utils.convertToLocalizationTags;
+-import static com.wsunitstats.exporter.utils.Utils.convertToNationNames;
+-
+-@Service
+-@PropertySource(value = "classpath:exporter.properties")
+-@PropertySource(value = "file:config/exporter.properties", ignoreResourceNotFound = true)
+-public class FileContentServiceImpl implements FileContentService {
+-    private static final Logger LOG = LogManager.getLogger(FileContentServiceImpl.class);
+-    private static final String UNIT_NAME_LOCALIZATION_PREFIX = "<*unitName";
+-    private static final String UNIT_NAME_LOCALIZATION_POSTFIX = ">";
+-    private static final String UNIT_TEXT_LOCALIZATION_PREFIX = "<*unitText";
+-    private static final String UNIT_TEXT_LOCALIZATION_POSTFIX = ">";
+-    private static final String RESEARCH_NAME_LOCALIZATION_PREFIX = "<*upgrade";
+-    private static final String RESEARCH_NAME_LOCALIZATION_POSTFIX = "/0>";
+-    private static final String RESEARCH_TEXT_LOCALIZATION_PREFIX = "<*upgrade";
+-    private static final String RESEARCH_TEXT_LOCALIZATION_POSTFIX = "/1>";
+-
+-    private GameplayFileJsonModel gameplayFileModel;
+-    private MainFileJsonModel mainFileModel;
+-    private VisualFileJsonModel visualFileModel;
+-    private SessionInitFileModel sessionInitFileModel;
+-    private MainStartupFileModel mainStartupFileModel;
+-    private List<LocalizationFileModel> localizationFileModels;
+-    private Map<String, BufferedImage> images;
+-    private LocalizationKeyModel localizationKeyModel;
+-
+-    @Autowired
+-    private FileReaderService fileReaderService;
+-    @Autowired
+-    private FilePathResolver filePathResolver;
+-    @Autowired
+-    private ImageService imageService;
+-
+-    @Value("${warselection.unit.types.number}")
+-    private int unitTypesNumber;
+-
+-    @Override
+-    public GameplayFileJsonModel getGameplayFileModel() {
+-        return gameplayFileModel;
+-    }
+-
+-    @Override
+-    public MainFileJsonModel getMainFileModel() {
+-        return mainFileModel;
+-    }
+-
+-    @Override
+-    public VisualFileJsonModel getVisualFileModel() {
+-        return visualFileModel;
+-    }
+-
+-    @Override
+-    public SessionInitFileModel getSessionInitFileModel() {
+-        return sessionInitFileModel;
+-    }
+-
+-    @Override
+-    public MainStartupFileModel getMainStartupFileModel() {
+-        return mainStartupFileModel;
+-    }
+-
+-    @Override
+-    public List<LocalizationFileModel> getLocalizationFileModels() {
+-        return localizationFileModels;
+-    }
+-
+-    @Override
+-    public Map<String, BufferedImage> getImages() {
+-        return images;
+-    }
+-
+-    @Override
+-    public LocalizationKeyModel getLocalizationKeyModel() {
+-        return localizationKeyModel;
+-    }
+-
+-    @PostConstruct
+-    protected void postConstruct() throws IOException, GameFilesResolvingException {
+-        LOG.info("Resolving game files...");
+-        FilePathWrapper filePathWrapper = filePathResolver.resolve();
+-        LOG.info("Game files resolved at the next folder: [{}] ", filePathWrapper.getRootFolderPath());
+-
+-        LOG.info("Reading game files...");
+-        gameplayFileModel = fileReaderService.readJson(filePathWrapper.getGameplayFilePath(), GameplayFileJsonModel.class);
+-        mainFileModel = fileReaderService.readJson(filePathWrapper.getMainFilePath(), MainFileJsonModel.class);
+-        visualFileModel= fileReaderService.readJson(filePathWrapper.getVisualFilePath(), VisualFileJsonModel.class);
+-        sessionInitFileModel = fileReaderService.readSessionInitLua(filePathWrapper.getSessionInitFilePath());
+-        mainStartupFileModel = fileReaderService.readMainStartupLua(filePathWrapper.getMainStartupFilePath());
+-        localizationFileModels = fileReaderService.readLocalizations(filePathWrapper.getLocalizationFolderPath());
+-        images = imageService.resolveImages(mainFileModel, filePathWrapper.getRootFolderPath());
+-        localizationKeyModel = getLocalizationKeyModel(sessionInitFileModel, mainStartupFileModel);
+-    }
+-
+-    private LocalizationKeyModel getLocalizationKeyModel(SessionInitFileModel sessionInitSource, MainStartupFileModel mainStartupSource) {
+-        LocalizationKeyModel localizationModel = new LocalizationKeyModel();
+-        localizationModel.setNationNames(convertToNationNames(mainStartupSource.getUnitGroupsNames()));
+-        localizationModel.setResearchNames(generateByIds(RESEARCH_NAME_LOCALIZATION_PREFIX, RESEARCH_NAME_LOCALIZATION_POSTFIX));
+-        localizationModel.setResearchTexts(generateByIds(RESEARCH_TEXT_LOCALIZATION_PREFIX, RESEARCH_TEXT_LOCALIZATION_POSTFIX));
+-        localizationModel.setUnitNames(generateByIds(UNIT_NAME_LOCALIZATION_PREFIX, UNIT_NAME_LOCALIZATION_POSTFIX));
+-        localizationModel.setUnitTexts(generateByIds(UNIT_TEXT_LOCALIZATION_PREFIX, UNIT_TEXT_LOCALIZATION_POSTFIX));
+-        localizationModel.setUnitTagNames(convertToLocalizationTags(mainStartupSource.getUnitTagNames()));
+-        localizationModel.setUnitSearchTagNames(convertToLocalizationTags(mainStartupSource.getUnitSearchTagNames()));
+-        localizationModel.setEnvNames(convertToLocalizationTagMap(mainStartupSource.getEnvNames()));
+-        localizationModel.setEnvTagNames(convertToLocalizationTags(mainStartupSource.getEnvTagNames()));
+-        localizationModel.setEnvSearchTagNames(convertToLocalizationTags(mainStartupSource.getEnvSearchTagNames()));
+-        localizationModel.setAgeNames(convertToLocalizationTags(sessionInitSource.getAgeNames()));
+-        localizationModel.setResourceNames(convertToLocalizationTags(mainStartupSource.getResourceNames()));
+-        return localizationModel;
+-    }
+-
+-    private List<String> generateByIds(String prefix, String postfix) {
+-        List<String> result = new ArrayList<>(unitTypesNumber);
+-        for (int i = 0; i < unitTypesNumber; i++) {
+-            result.add(prefix + i + postfix);
+-        }
+-        return result;
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelExporterServiceImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelExporterServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelExporterServiceImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelExporterServiceImpl.java	
++++ /dev/null	
+@@ -1,55 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.fasterxml.jackson.annotation.JsonInclude;
+-import com.fasterxml.jackson.core.JsonProcessingException;
+-import com.fasterxml.jackson.core.util.DefaultIndenter;
+-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+-import com.fasterxml.jackson.databind.ObjectMapper;
+-import com.fasterxml.jackson.databind.module.SimpleModule;
+-import com.fasterxml.jackson.databind.module.SimpleSerializers;
+-import com.wsunitstats.exporter.service.ModelExporterService;
+-import com.wsunitstats.exporter.service.serializer.DoubleSerializer;
+-import org.springframework.stereotype.Service;
+-
+-import java.io.Serial;
+-
+-@Service
+-public class ModelExporterServiceImpl implements ModelExporterService {
+-    @Override
+-    public String exportToJson(Object object) throws JsonProcessingException {
+-        return getExportMapper().writeValueAsString(object);
+-    }
+-
+-    @Override
+-    public String exportToPrettyJson(Object object) throws JsonProcessingException {
+-        DefaultPrettyPrinter prettyWriter = new DefaultPrettyPrinter();
+-        DefaultPrettyPrinter.Indenter indenter = new DefaultIndenter("\t", DefaultIndenter.SYS_LF);
+-        prettyWriter.indentObjectsWith(indenter);
+-        prettyWriter.indentArraysWith(indenter);
+-        return getExportMapper().writer(prettyWriter).writeValueAsString(object);
+-    }
+-
+-    public ObjectMapper getExportMapper() {
+-        ObjectMapper mapper = new ObjectMapper();
+-        mapper.registerModule(new ExporterModule());
+-        // add @JsonInclude to change this to Include.ALWAYS where it is required
+-        mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+-        return mapper;
+-    }
+-
+-    public static class ExporterModule extends SimpleModule {
+-        @Serial
+-        private static final long serialVersionUID = -9105685985325373621L;
+-
+-        public ExporterModule() {
+-            super("StandardExporterModule");
+-        }
+-
+-        @Override
+-        public void setupModule(SetupContext context) {
+-            SimpleSerializers serializers = new SimpleSerializers();
+-            serializers.addSerializer(Double.class, new DoubleSerializer());
+-            context.addSerializers(serializers);
+-        }
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/AbilityMappingServiceImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/AbilityMappingServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/AbilityMappingServiceImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/AbilityMappingServiceImpl.java	
++++ /dev/null	
+@@ -1,315 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.model.exported.EntityInfoModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ResourceModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.ActionAbilityModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.CreateEnvAbilityModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.CreateUnitAbilityModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.DamageAbilityModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.GenericAbility;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.ResearchAbilityModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.TransformAbilityModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.WorkModel;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.container.DeathAbilityContainer;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.container.OnActionAbilityContainer;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.container.WorkAbilityContainer;
+-import com.wsunitstats.exporter.model.exported.submodel.ability.container.ZoneEventAbilityContainer;
+-import com.wsunitstats.exporter.model.LocalizationKeyModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.CreateEnvJsonModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.EnvJsonModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.ZoneEventJsonModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityJsonModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityOnActionJsonModel;
+-import com.wsunitstats.exporter.model.json.gameplay.submodel.work.WorkJsonModel;
+-import com.wsunitstats.exporter.service.AbilityMappingService;
+-import com.wsunitstats.exporter.service.FileContentService;
+-import com.wsunitstats.exporter.service.ImageService;
+-import com.wsunitstats.exporter.service.ModelTransformingService;
+-import com.wsunitstats.exporter.service.NationResolver;
+-import com.wsunitstats.exporter.service.TagResolver;
+-import com.wsunitstats.exporter.utils.Constants;
+-import com.wsunitstats.exporter.utils.Utils;
+-import jakarta.annotation.PostConstruct;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.stereotype.Service;
+-
+-import java.util.ArrayList;
+-import java.util.Arrays;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Objects;
+-import java.util.stream.Collectors;
+-import java.util.stream.IntStream;
+-
+-@Service
+-public class AbilityMappingServiceImpl implements AbilityMappingService {
+-    @Autowired
+-    private ImageService imageService;
+-    @Autowired
+-    private FileContentService fileContentService;
+-    @Autowired
+-    private ModelTransformingService modelMappingService;
+-    @Autowired
+-    private NationResolver nationResolver;
+-    @Autowired
+-    private TagResolver tagResolver;
+-
+-    private LocalizationKeyModel localization;
+-    private Map<Integer, EnvJsonModel> envMap;
+-
+-    @PostConstruct
+-    protected void postConstruct() {
+-        localization = fileContentService.getLocalizationKeyModel();
+-        envMap = fileContentService.getGameplayFileModel().getScenes().getEnvs();
+-    }
+-
+-    @Override
+-    public List<GenericAbilityContainer> mapAbilities(UnitJsonModel unitJsonModel) {
+-        List<GenericAbilityContainer> result = new ArrayList<>();
+-        List<Integer> specialIdList = new ArrayList<>();
+-        List<Integer> defaultIdList = new ArrayList<>(IntStream.range(0, unitJsonModel.getAbility().getAbilities().size())
+-                .boxed()
+-                .toList());
+-
+-        AbilityOnActionJsonModel abilityOnActionJsonModel = unitJsonModel.getAbility().getAbilityOnAction();
+-        if (abilityOnActionJsonModel != null) {
+-            specialIdList.add(abilityOnActionJsonModel.getAbility());
+-            GenericAbilityContainer onActionAbility = mapOnActionAbility(unitJsonModel);
+-            onActionAbility.setContainerName(Constants.AbilityContainerType.SELF.getName());
+-            onActionAbility.setContainerType(Constants.AbilityContainerType.SELF.getType());
+-            result.add(onActionAbility);
+-        }
+-        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getZoneEvent();
+-        if (zoneEventJsonModel != null) {
+-            specialIdList.addAll(zoneEventJsonModel.getAbilities());
+-            GenericAbilityContainer zoneEventAbility = mapZoneEventAbility(unitJsonModel);
+-            zoneEventAbility.setContainerName(Constants.AbilityContainerType.ZONE_EVENT.getName());
+-            zoneEventAbility.setContainerType(Constants.AbilityContainerType.ZONE_EVENT.getType());
+-            result.add(zoneEventAbility);
+-        }
+-        Integer abilityOnDeath = unitJsonModel.getAbility().getAbilityOnDeath();
+-        if (abilityOnDeath != null) {
+-            specialIdList.add(abilityOnDeath);
+-            GenericAbilityContainer deathAbilities = mapDeathAbility(unitJsonModel, abilityOnDeath);
+-            deathAbilities.setContainerName(Constants.AbilityContainerType.DEATH.getName());
+-            deathAbilities.setContainerType(Constants.AbilityContainerType.DEATH.getType());
+-            result.add(deathAbilities);
+-        }
+-
+-        defaultIdList.removeAll(specialIdList);
+-        result.addAll(defaultIdList.stream()
+-                .map(abilityId -> mapContainer(unitJsonModel, abilityId))
+-                .filter(Objects::nonNull)
+-                .toList());
+-        return result;
+-    }
+-
+-    private GenericAbilityContainer mapContainer(UnitJsonModel unitJsonModel, Integer abilityId) {
+-        Constants.AbilityType abilityType = getAbilityType(unitJsonModel.getAbility().getAbilities().get(abilityId));
+-        switch (abilityType) {
+-            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV -> {
+-                GenericAbilityContainer workAbility = mapWorkAbility(unitJsonModel, abilityId);
+-                workAbility.setContainerName(Constants.AbilityContainerType.WORK.getName());
+-                workAbility.setContainerType(Constants.AbilityContainerType.WORK.getType());
+-                return workAbility;
+-            }
+-            default -> {
+-                return null;
+-            }
+-        }
+-    }
+-
+-    private WorkAbilityContainer mapWorkAbility(UnitJsonModel unitJsonModel, int abilityId) {
+-        WorkAbilityContainer workAbilityContainer = new WorkAbilityContainer();
+-        AbilityJsonModel abilityJsonModel = unitJsonModel.getAbility().getAbilities().get(abilityId);
+-        workAbilityContainer.setAbility(mapAbility(unitJsonModel, abilityJsonModel, abilityId));
+-
+-        int workId = getWorkId(unitJsonModel, abilityId);
+-        WorkJsonModel workJsonModel = null;
+-        if (workId != -1) {
+-            workJsonModel = unitJsonModel.getAbility().getWork().get(workId);
+-        }
+-
+-        workAbilityContainer.setWork(mapWork(workJsonModel, workId));
+-        return workAbilityContainer;
+-    }
+-
+-    private OnActionAbilityContainer mapOnActionAbility(UnitJsonModel unitJsonModel) {
+-        OnActionAbilityContainer onActionAbilityContainer = new OnActionAbilityContainer();
+-        AbilityOnActionJsonModel abilityOnActionJsonModel = unitJsonModel.getAbility().getAbilityOnAction();
+-        Integer abilityId = abilityOnActionJsonModel.getAbility();
+-        AbilityJsonModel abilityJsonModel = unitJsonModel.getAbility().getAbilities().get(abilityId);
+-        onActionAbilityContainer.setAbility(mapAbility(unitJsonModel, abilityJsonModel, abilityId));
+-        onActionAbilityContainer.setDistance(modelMappingService.transformDistance(abilityOnActionJsonModel.getDistance()));
+-        onActionAbilityContainer.setOnAgro(abilityOnActionJsonModel.getOnAgro());
+-        onActionAbilityContainer.setEnabled(abilityOnActionJsonModel.getEnabled() != null ? abilityOnActionJsonModel.getEnabled() : true );
+-        onActionAbilityContainer.setRechargeTime(Utils.intToDoubleShift(abilityOnActionJsonModel.getRestore()));
+-        return onActionAbilityContainer;
+-    }
+-
+-    private ZoneEventAbilityContainer mapZoneEventAbility(UnitJsonModel unitJsonModel) {
+-        ZoneEventAbilityContainer zoneEventAbilityContainer = new ZoneEventAbilityContainer();
+-        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getZoneEvent();
+-        List<Integer> abilityIds = zoneEventJsonModel.getAbilities();
+-        zoneEventAbilityContainer.setAbilities(abilityIds.stream()
+-                .map(abilityId -> mapAbility(unitJsonModel, unitJsonModel.getAbility().getAbilities().get(abilityId), abilityId))
+-                .collect(Collectors.toList()));
+-        zoneEventAbilityContainer.setSize(zoneEventJsonModel.getSize());
+-        zoneEventAbilityContainer.setEnvSearchDistance(zoneEventJsonModel.getEnvSearchDistance());
+-        zoneEventAbilityContainer.setEnvTags(tagResolver.getEnvSearchTags(zoneEventJsonModel.getEnvTags()));
+-        return zoneEventAbilityContainer;
+-    }
+-
+-    private DeathAbilityContainer mapDeathAbility(UnitJsonModel unitJsonModel, int abilityId) {
+-        DeathAbilityContainer deathAbilityContainer = new DeathAbilityContainer();
+-        deathAbilityContainer.setAbility(mapAbility(unitJsonModel, unitJsonModel.getAbility().getAbilities().get(abilityId), abilityId));
+-        return deathAbilityContainer;
+-    }
+-
+-    private GenericAbility mapAbility(UnitJsonModel unitJsonModel, AbilityJsonModel abilityJsonModel, int abilityId) {
+-        GenericAbility genericAbility;
+-        Constants.AbilityType abilityType = getAbilityType(abilityJsonModel);
+-        switch (abilityType) {
+-            case SELF_BUFF -> genericAbility = mapActionAbility(abilityJsonModel);
+-            case DAMAGE -> genericAbility = mapDamageAbility(abilityJsonModel);
+-            case RESEARCH -> genericAbility = mapResearchAbility(abilityJsonModel);
+-            case TRANSFORM -> genericAbility = mapTransformAbility(abilityJsonModel);
+-            case CREATE_ENV -> genericAbility = mapCreateEnvAbility(abilityJsonModel, unitJsonModel);
+-            case CREATE_UNIT -> genericAbility = mapCreateUnitAbility(abilityJsonModel);
+-            default -> {
+-                return null;
+-            }
+-        }
+-        genericAbility.setRequirements(modelMappingService.transformRequirements(abilityJsonModel.getRequirements()));
+-        genericAbility.setAbilityId(abilityId);
+-        genericAbility.setAbilityType(abilityType.getType());
+-        return genericAbility;
+-    }
+-
+-    private GenericAbility mapActionAbility(AbilityJsonModel abilityJsonModel) {
+-        ActionAbilityModel abilityModel = new ActionAbilityModel();
+-        EntityInfoModel entityInfoModel = new EntityInfoModel();
+-        Integer entityId = abilityJsonModel.getData().getResearch();
+-        String entityType = Constants.EntityType.UPGRADE.getName();
+-        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
+-        entityInfoModel.setEntityName(localization.getResearchNames().get(entityId));
+-        entityInfoModel.setEntityId(entityId);
+-        abilityModel.setEntityInfo(entityInfoModel);
+-        abilityModel.setDuration(Utils.intToDoubleShift(abilityJsonModel.getData().getDuration()));
+-        return abilityModel;
+-    }
+-
+-    private GenericAbility mapDamageAbility(AbilityJsonModel abilityJsonModel) {
+-        DamageAbilityModel abilityModel = new DamageAbilityModel();
+-        abilityModel.setDamage(modelMappingService.transformDamage(abilityJsonModel.getData()));
+-        return abilityModel;
+-    }
+-
+-    private GenericAbility mapResearchAbility(AbilityJsonModel abilityJsonModel) {
+-        ResearchAbilityModel abilityModel = new ResearchAbilityModel();
+-        EntityInfoModel entityInfoModel = new EntityInfoModel();
+-        Integer entityId = abilityJsonModel.getData().getResearch();
+-        String entityType = Constants.EntityType.UPGRADE.getName();
+-        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
+-        entityInfoModel.setEntityName(localization.getResearchNames().get(entityId));
+-        entityInfoModel.setEntityId(entityId);
+-        abilityModel.setEntityInfo(entityInfoModel);
+-        return abilityModel;
+-    }
+-
+-    private GenericAbility mapTransformAbility(AbilityJsonModel abilityJsonModel) {
+-        TransformAbilityModel abilityModel = new TransformAbilityModel();
+-        EntityInfoModel entityInfoModel = new EntityInfoModel();
+-        Integer entityId = abilityJsonModel.getData().getUnit();
+-        String entityType = Constants.EntityType.UNIT.getName();
+-        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
+-        entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
+-        entityInfoModel.setEntityNation(nationResolver.getUnitNation(entityId));
+-        entityInfoModel.setEntityId(entityId);
+-        abilityModel.setEntityInfo(entityInfoModel);
+-        return abilityModel;
+-    }
+-
+-    private GenericAbility mapCreateEnvAbility(AbilityJsonModel abilityJsonModel, UnitJsonModel unitJsonModel) {
+-        CreateEnvAbilityModel abilityModel = new CreateEnvAbilityModel();
+-        EntityInfoModel entityInfoModel = new EntityInfoModel();
+-
+-        Integer createEnvId = abilityJsonModel.getData().getId();
+-        CreateEnvJsonModel createEnvSource = unitJsonModel.getCreateEnvs().get(createEnvId);
+-        String createEnvTag = createEnvSource.getTag();
+-        int entityId = envMap.entrySet().stream()
+-                .filter(env -> createEnvTag.equals(env.getValue().getCreateTag()))
+-                .findAny()
+-                .orElseThrow()
+-                .getKey();
+-
+-        String entityType = Constants.EntityType.ENV.getName();
+-        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
+-        entityInfoModel.setEntityName(localization.getEnvNames().get(entityId));
+-        entityInfoModel.setEntityId(entityId);
+-        abilityModel.setEntityInfo(entityInfoModel);
+-        abilityModel.setCount(createEnvSource.getCount());
+-        return abilityModel;
+-    }
+-
+-    private GenericAbility mapCreateUnitAbility(AbilityJsonModel abilityJsonModel) {
+-        CreateUnitAbilityModel abilityModel = new CreateUnitAbilityModel();
+-        EntityInfoModel entityInfoModel = new EntityInfoModel();
+-        Integer entityId = abilityJsonModel.getData().getUnit();
+-        String entityType = Constants.EntityType.UNIT.getName();
+-        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
+-        entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
+-        entityInfoModel.setEntityNation(nationResolver.getUnitNation(entityId));
+-        entityInfoModel.setEntityId(entityId);
+-        abilityModel.setEntityInfo(entityInfoModel);
+-        abilityModel.setCount(abilityJsonModel.getData().getCount());
+-        abilityModel.setLifeTime(Utils.intToDoubleShift(abilityJsonModel.getData().getLifeTime()));
+-        return abilityModel;
+-    }
+-
+-    private int getWorkId(UnitJsonModel unitJsonModel, int abilityId) {
+-        List<WorkJsonModel> work = unitJsonModel.getAbility().getWork();
+-        return IntStream.range(0, work.size())
+-                .filter(i -> abilityId == work.get(i).getAbility())
+-                .findFirst()
+-                .orElse(-1);
+-    }
+-
+-    private WorkModel mapWork(WorkJsonModel workJsonModel, int workId) {
+-        WorkModel workModel = new WorkModel();
+-        workModel.setWorkId(workId);
+-        workModel.setCost(getWorkCost(workJsonModel));
+-        if (workJsonModel != null) {
+-            workModel.setMakeTime(Utils.intToDoubleShift(workJsonModel.getMaketime()));
+-            workModel.setReserve(modelMappingService.transformReserve(workJsonModel.getReserve()));
+-            workModel.setEnabled(workJsonModel.getEnabled() != null ? workJsonModel.getEnabled() : true);
+-        }
+-        return workModel;
+-    }
+-
+-    private List<ResourceModel> getWorkCost(WorkJsonModel workSource) {
+-        if (workSource == null) {
+-            return modelMappingService.transformResources(Arrays.asList(0, 0, 0));
+-        }
+-        List<Integer> costOrder = workSource.getCostOrder();
+-        List<Integer> costProcess = workSource.getCostProcess();
+-        List<Integer> costStart = workSource.getCostStart();
+-
+-        if (costOrder != null && costProcess == null && costStart == null) {
+-            return modelMappingService.transformResources(costOrder);
+-        } else if (costOrder == null && costProcess != null && costStart == null) {
+-            return modelMappingService.transformResources(costProcess);
+-        } else if (costOrder == null && costProcess == null && costStart != null) {
+-            return modelMappingService.transformResources(costStart);
+-        } else {
+-            return modelMappingService.transformResources(Arrays.asList(0, 0, 0));
+-        }
+-    }
+-
+-    private Constants.AbilityType getAbilityType(AbilityJsonModel abilitySource) {
+-        Integer typeId = abilitySource.getType();
+-        return Constants.AbilityType.get(typeId != null ? typeId : 0);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationModelBuilderImpl.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationModelBuilderImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationModelBuilderImpl.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationModelBuilderImpl.java	
++++ /dev/null	
+@@ -1,63 +0,0 @@
+-package com.wsunitstats.exporter.service.impl;
+-
+-import com.wsunitstats.exporter.model.exported.LocalizationModel;
+-import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
+-import com.wsunitstats.exporter.service.LocalizationModelBuilder;
+-import com.wsunitstats.exporter.utils.Utils;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.stereotype.Service;
+-
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.regex.Matcher;
+-import java.util.regex.Pattern;
+-
+-import static com.wsunitstats.exporter.utils.Constants.CLOSING_ANGLE_BRACKET;
+-import static com.wsunitstats.exporter.utils.Constants.LOCALIZATION_INDEX_DELIMITER;
+-
+-@Service
+-public class LocalizationModelBuilderImpl implements LocalizationModelBuilder {
+-    private static final Pattern LOC_FILENAME_PATTERN = Pattern.compile("(.+)\\.loc");
+-
+-    @Value("${localization.key.names}")
+-    private List<String> keyNames;
+-
+-    @Override
+-    public LocalizationModel buildFromFileModel(LocalizationFileModel localizationFileModel) {
+-        LocalizationModel localizationModel = new LocalizationModel();
+-        localizationModel.setLocale(getLocaleFromFilename(localizationFileModel.getFilename()));
+-        Map<String, String> entryMap = new HashMap<>();
+-        for (Map.Entry<String, List<String>> mapEntry : localizationFileModel.getValues().entrySet()) {
+-            List<String> list = mapEntry.getValue();
+-            String key = mapEntry.getKey();
+-            if (filter(key)) {
+-                int listSize = list.size();
+-                for (int i = 0; i < listSize; ++i) {
+-                    StringBuilder keyBuilder = new StringBuilder(key);
+-                    if (listSize > 1) {
+-                        keyBuilder.insert(keyBuilder.indexOf(CLOSING_ANGLE_BRACKET), LOCALIZATION_INDEX_DELIMITER + i);
+-                    }
+-                    entryMap.put(keyBuilder.toString(), Utils.clearCurlyBraces(list.get(i)));
+-                }
+-            }
+-        }
+-        localizationModel.setEntries(entryMap);
+-        return localizationModel;
+-    }
+-
+-    private String getLocaleFromFilename(String filename) {
+-        Matcher matcher = LOC_FILENAME_PATTERN.matcher(filename);
+-        if (matcher.find()) {
+-            return matcher.group(1);
+-        } else {
+-            throw new IllegalArgumentException("Localization filename is not valid: " + filename);
+-        }
+-    }
+-
+-    private boolean filter(String key) {
+-        return keyNames.stream()
+-                .map(LocalizationKeyFilter::new)
+-                .anyMatch(filter -> filter.matches(key));
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/FileReadingException.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/FileReadingException.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/FileReadingException.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/FileReadingException.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.exception;
+-
+-public class FileReadingException extends RuntimeException {
+-    public FileReadingException(Throwable cause) {
+-        super(cause);
+-    }
+-
+-    public FileReadingException(String reason) {
+-        super(reason);
+-    }
+-
+-    public FileReadingException(String reason, Throwable cause) {
+-        super(reason, cause);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/TaskExecutionException.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/TaskExecutionException.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/TaskExecutionException.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/TaskExecutionException.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.exception;
+-
+-public class TaskExecutionException extends Exception {
+-    public TaskExecutionException(Throwable cause) {
+-        super(cause);
+-    }
+-
+-    public TaskExecutionException(String reason) {
+-        super(reason);
+-    }
+-
+-    public TaskExecutionException(String reason, Throwable cause) {
+-        super(reason, cause);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/GameFilesResolvingException.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/GameFilesResolvingException.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/GameFilesResolvingException.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/exception/GameFilesResolvingException.java	
++++ /dev/null	
+@@ -1,15 +0,0 @@
+-package com.wsunitstats.exporter.exception;
+-
+-public class GameFilesResolvingException extends Exception {
+-    public GameFilesResolvingException(Throwable cause) {
+-        super(cause);
+-    }
+-
+-    public GameFilesResolvingException(String reason) {
+-        super(reason);
+-    }
+-
+-    public GameFilesResolvingException(String reason, Throwable cause) {
+-        super(reason, cause);
+-    }
+-}
+Index: com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/UnitStatsExporterApplication.java
+===================================================================
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/UnitStatsExporterApplication.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/UnitStatsExporterApplication.java
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/UnitStatsExporterApplication.java	
++++ /dev/null	
+@@ -1,106 +0,0 @@
+-package com.wsunitstats.exporter;
+-
+-import com.wsunitstats.exporter.model.exported.LocalizationModel;
+-import com.wsunitstats.exporter.model.exported.ResearchModel;
+-import com.wsunitstats.exporter.model.exported.ContextModel;
+-import com.wsunitstats.exporter.model.exported.UnitModel;
+-import com.wsunitstats.exporter.model.exported.UnitSelectorModel;
+-import com.wsunitstats.exporter.model.exported.option.NationOption;
+-import com.wsunitstats.exporter.model.exported.option.ResearchOption;
+-import com.wsunitstats.exporter.model.exported.option.TagOption;
+-import com.wsunitstats.exporter.model.exported.option.UnitOption;
+-import com.wsunitstats.exporter.service.FileContentService;
+-import com.wsunitstats.exporter.service.LocalizationModelBuilder;
+-import com.wsunitstats.exporter.service.ModelBuilder;
+-import com.wsunitstats.exporter.service.OptionsBuilder;
+-import com.wsunitstats.exporter.task.ExecutionPayload;
+-import com.wsunitstats.exporter.task.FileExportPayloadEntry;
+-import com.wsunitstats.exporter.task.TaskExecutionPool;
+-import org.apache.logging.log4j.LogManager;
+-import org.apache.logging.log4j.Logger;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.beans.factory.annotation.Value;
+-import org.springframework.boot.CommandLineRunner;
+-import org.springframework.boot.SpringApplication;
+-import org.springframework.boot.autoconfigure.SpringBootApplication;
+-import org.springframework.context.annotation.ComponentScan;
+-import org.springframework.stereotype.Component;
+-
+-import java.util.Collection;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.stream.Collectors;
+-
+-@SpringBootApplication
+-@ComponentScan({"com.wsunitstats.*"})
+-public class UnitStatsExporterApplication {
+-    public static void main(String[] args) {
+-        SpringApplication.run(UnitStatsExporterApplication.class, args);
+-    }
+-
+-    @Component
+-    public static class ExporterRunner implements CommandLineRunner {
+-        private static final Logger LOG = LogManager.getLogger(ExporterRunner.class);
+-
+-        @Autowired
+-        private ModelBuilder modelBuilder;
+-        @Autowired
+-        private LocalizationModelBuilder localizationModelBuilder;
+-        @Autowired
+-        private OptionsBuilder optionsBuilder;
+-        @Autowired
+-        private TaskExecutionPool taskExecutionPool;
+-        @Autowired
+-        private FileContentService fileContentService;
+-
+-        @Value("${tasks}")
+-        private List<String> tasks;
+-
+-        @Override
+-        public void run(String... args) {
+-            if (tasks.isEmpty()) {
+-                LOG.error("No tasks configured");
+-                return;
+-            }
+-
+-            LOG.info("Transforming files to data model...");
+-            List<UnitModel> unitModels = modelBuilder.buildUnits();
+-            List<ResearchModel> researchModels = modelBuilder.buildResearches();
+-            List<LocalizationModel> localizationModels = fileContentService.getLocalizationFileModels().stream()
+-                    .map(locFile -> localizationModelBuilder.buildFromFileModel(locFile))
+-                    .toList();
+-            Map<String, Map<String, String>> localizationMap = localizationModels.stream()
+-                    .collect(Collectors.toMap(LocalizationModel::getLocale, LocalizationModel::getEntries));
+-
+-            Collection<UnitOption> unitOptions = optionsBuilder.buildUnitOptions(unitModels);
+-            Collection<ResearchOption> researchOptions = optionsBuilder.buildResearchOptions(researchModels);
+-            Collection<String> localeOptions = optionsBuilder.buildLocaleOptions(localizationModels);
+-            Collection<TagOption> unitTagOptions = optionsBuilder.buildUnitTagOptions(unitModels);
+-            Collection<TagOption> searchTagOptions = optionsBuilder.buildSearchTagOptions(unitModels);
+-            Collection<NationOption> nationOptions = optionsBuilder.buildNationsOptions(unitModels);
+-
+-            UnitSelectorModel unitSelector = new UnitSelectorModel();
+-            unitSelector.setUnitTags(unitTagOptions);
+-            unitSelector.setSearchTags(searchTagOptions);
+-            unitSelector.setNations(nationOptions);
+-
+-            ContextModel context = new ContextModel();
+-            context.setResearches(researchOptions);
+-            context.setUnits(unitOptions);
+-            context.setLocalization(localizationMap);
+-            context.setLocaleOptions(localeOptions);
+-
+-            LOG.info("Executing configured tasks...");
+-            ExecutionPayload payload = new ExecutionPayload();
+-            payload.setUnits(unitModels);
+-            payload.setResearches(researchModels);
+-            payload.setLocalization(localizationModels);
+-            payload.setImages(fileContentService.getImages());
+-            payload.setUnitSelector(new FileExportPayloadEntry<>("unitSelector", unitSelector));
+-            payload.setContext(new FileExportPayloadEntry<>("context", context));
+-            taskExecutionPool.executeTasks(tasks, payload);
+-            LOG.info("Exiting...");
+-        }
+-    }
+-}
+\ No newline at end of file
+Index: com.wsunitstats.exporter/pom.xml
+===================================================================
+diff --git a/com.wsunitstats.exporter/pom.xml b/com.wsunitstats.exporter/pom.xml
+deleted file mode 100644
+--- a/com.wsunitstats.exporter/pom.xml	
++++ /dev/null	
+@@ -1,44 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<project xmlns="http://maven.apache.org/POM/4.0.0"
+-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-    <modelVersion>4.0.0</modelVersion>
+-    <parent>
+-        <groupId>com.wsunitstats</groupId>
+-        <artifactId>wsunitstats-static</artifactId>
+-        <version>1.0-SNAPSHOT</version>
+-    </parent>
+-
+-    <artifactId>com.wsunitstats.exporter</artifactId>
+-
+-    <dependencies>
+-        <dependency>
+-            <groupId>com.wsunitstats</groupId>
+-            <artifactId>com.wsunitstats.utils</artifactId>
+-            <version>${project.version}</version>
+-        </dependency>
+-    </dependencies>
+-
+-    <build>
+-        <plugins>
+-            <plugin>
+-                <groupId>org.springframework.boot</groupId>
+-                <artifactId>spring-boot-maven-plugin</artifactId>
+-                <executions>
+-                    <execution>
+-                        <configuration>
+-                            <mainClass>com.wsunitstats.com.wsunitstats.exporter.UnitStatsExporterApplication</mainClass>
+-                        </configuration>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-        </plugins>
+-    </build>
+-
+-    <properties>
+-        <maven.compiler.source>17</maven.compiler.source>
+-        <maven.compiler.target>17</maven.compiler.target>
+-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+-    </properties>
+-
+-</project>
+\ No newline at end of file
+Index: com.wsunitstats.exporter/com.wsunitstats.exporter.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/com.wsunitstats.exporter/com.wsunitstats.exporter.iml b/com.wsunitstats.exporter/com.wsunitstats.exporter.iml
+--- a/com.wsunitstats.exporter/com.wsunitstats.exporter.iml	
++++ b/com.wsunitstats.exporter/com.wsunitstats.exporter.iml	(date 1724361576713)
+@@ -1,0 +1,42 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
++  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_17">
++    <output url="file://$MODULE_DIR$/target/classes" />
++    <output-test url="file://$MODULE_DIR$/target/test-classes" />
++    <content url="file://$MODULE_DIR$">
++      <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
++      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
++      <excludeFolder url="file://$MODULE_DIR$/target" />
++    </content>
++    <orderEntry type="inheritedJdk" />
++    <orderEntry type="sourceFolder" forTests="false" />
++    <orderEntry type="library" name="Maven: com.wsunitstats:com.wsunitstats.utils:1.0-SNAPSHOT" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-starter:3.0.2" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot:3.0.2" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-autoconfigure:3.0.2" level="project" />
++    <orderEntry type="library" name="Maven: jakarta.annotation:jakarta.annotation-api:2.1.1" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-core:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-jcl:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: org.yaml:snakeyaml:1.33" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-starter-log4j2:3.0.2" level="project" />
++    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-slf4j2-impl:2.19.0" level="project" />
++    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:2.0.6" level="project" />
++    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.19.0" level="project" />
++    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-core:2.19.0" level="project" />
++    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-jul:2.19.0" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-webmvc:6.0.5" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-aop:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-beans:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-context:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-expression:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: org.springframework:spring-web:6.0.4" level="project" />
++    <orderEntry type="library" name="Maven: io.micrometer:micrometer-observation:1.10.3" level="project" />
++    <orderEntry type="library" name="Maven: io.micrometer:micrometer-commons:1.10.3" level="project" />
++    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.14.2" level="project" />
++    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.14.1" level="project" />
++    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.14.1" level="project" />
++    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.12.0" level="project" />
++    <orderEntry type="library" name="Maven: org.apache.commons:commons-collections4:4.4" level="project" />
++    <orderEntry type="library" scope="PROVIDED" name="Maven: org.projectlombok:lombok:1.18.26" level="project" />
++  </component>
++</module>
+\ No newline at end of file
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/credits.txt b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/credits.txt
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParser.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParser.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParserState.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFParserState.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFPreprocessor.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/jvdf/VDFPreprocessor.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExecutionTask.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/ExecutionTask.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/TaskExecutionPool.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/task/TaskExecutionPool.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/lua/MainStartupFileModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/lua/MainStartupFileModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/lua/SessionInitFileModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/lua/SessionInitFileModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/ImageJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/ImageJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/GlobalContentJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/GlobalContentJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/VisualSessionContentJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/submodel/VisualSessionContentJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/MainFileJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/main/MainFileJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/visual/VisualFileJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/visual/VisualFileJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirplaneJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AirplaneJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AerodromeJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/air/AerodromeJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/work/WorkJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/work/WorkJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/work/WorkReserveJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/work/WorkReserveJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/BuffJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/BuffJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DamageJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DamageJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/WeaponJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/WeaponJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DistanceJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DistanceJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DirectionAttacksJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DirectionAttacksJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DirectionAttacksPointJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DirectionAttacksPointJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DirectionAttacksDefaultValueJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/weapon/DirectionAttacksDefaultValueJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ability/AbilityJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ability/AbilityJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ability/AbilityDataJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ability/AbilityDataJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ability/AbilityOnActionJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ability/AbilityOnActionJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/UpgradeJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/UpgradeJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/ResearchJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/researches/ResearchJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/requirement/RequirementsJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/requirement/RequirementsJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/requirement/UnitRequirementJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/requirement/UnitRequirementJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/EnvJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/EnvJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/HealJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/HealJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ArmorJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ArmorJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/BuildJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/BuildJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/AttackJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/AttackJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/GatherJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/GatherJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/IncomeJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/IncomeJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ScenesJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ScenesJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/SupplyJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/SupplyJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/TurretJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/TurretJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/BuildingJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/BuildingJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/MovementJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/MovementJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/CreateEnvJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/CreateEnvJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/TransportJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/TransportJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ZoneEventJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ZoneEventJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ProjectileJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/ProjectileJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/DeathabilityJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/DeathabilityJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/TransportingJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/TransportingJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UpgradeScriptJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/UpgradeScriptJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/AbilityWrapperJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/submodel/AbilityWrapperJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/GameplayFileJsonModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/json/gameplay/GameplayFileJsonModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/BuffModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/BuffModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/DamageModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/DamageModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/WeaponModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/WeaponModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/ProjectileModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/ProjectileModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/DamageWrapperModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/weapon/DamageWrapperModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/WorkAbilityContainer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/WorkAbilityContainer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/OnActionAbilityContainer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/OnActionAbilityContainer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/ZoneEventAbilityContainer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/container/ZoneEventAbilityContainer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/WorkModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/WorkModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/GenericAbility.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/GenericAbility.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/Type5AbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/Type5AbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/ActionAbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/ActionAbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/DamageAbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/DamageAbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/ResearchAbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/ResearchAbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/CreateEnvAbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/CreateEnvAbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/TransformAbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/TransformAbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/CreateUnitAbilityModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ability/CreateUnitAbilityModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UpgradeModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/research/UpgradeModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/requirement/RequirementsModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/requirement/RequirementsModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/requirement/UnitRequirementModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/requirement/UnitRequirementModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/requirement/ResearchRequirementModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/requirement/ResearchRequirementModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/TagModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/TagModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/HealModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/HealModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ArmorModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ArmorModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/EnvTagModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/EnvTagModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/GatherModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/GatherModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/IncomeModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/IncomeModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/SupplyModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/SupplyModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/TurretModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/TurretModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ReserveModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ReserveModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/AirplaneModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/AirplaneModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/BuildingModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/BuildingModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/DistanceModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/DistanceModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/MovementModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/MovementModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ResourceModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ResourceModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ConstructionModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/ConstructionModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/TransportingModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/TransportingModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/SubmarineDepthModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/submodel/SubmarineDepthModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/EntityInfoModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/exported/EntityInfoModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/localization/LocalizationFileModel.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/model/localization/LocalizationFileModel.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/utils/Utils.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/utils/Utils.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/utils/Constants.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/utils/Constants.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/TagResolverImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/TagResolverImpl.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelBuilderImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelBuilderImpl.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FileReaderServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/FileReaderServiceImpl.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/LocalizationServiceImpl.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelTransformingServiceImpl.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/impl/ModelTransformingServiceImpl.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/FloatPrecision.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/FloatPrecision.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/DoubleSerializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/DoubleSerializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/EnvJsonModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/EnvJsonModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/UnitJsonModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/UnitJsonModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/ImageJsonModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/ImageJsonModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/TextureJsonModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/TextureJsonModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/UnitTypeJsonModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/UnitTypeJsonModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/IndexedArrayDataModelSerializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/IndexedArrayDataModelSerializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/ProjectileJsonModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/ProjectileJsonModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/IndexedArrayDataModelDeserializer.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/serializer/IndexedArrayDataModelDeserializer.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/TagResolver.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/TagResolver.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ImageService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ImageService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ModelBuilder.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ModelBuilder.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/NationResolver.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/NationResolver.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/OptionsBuilder.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/OptionsBuilder.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/FilePathResolver.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/FilePathResolver.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/FileReaderService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/FileReaderService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/FileContentService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/FileContentService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/LocalizationService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/LocalizationService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ModelExporterService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ModelExporterService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/AbilityMappingService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/AbilityMappingService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/LocalizationModelBuilder.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/LocalizationModelBuilder.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ModelTransformingService.java b/com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/service/ModelTransformingService.java
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/resources/log4j2.xml b/com.wsunitstats.exporter/src/main/resources/log4j2.xml
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/resources/exporter.properties b/com.wsunitstats.exporter/src/main/resources/exporter.properties
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/src/main/resources/application.properties b/com.wsunitstats.exporter/src/main/resources/application.properties
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/target/classes/log4j2.xml b/com.wsunitstats.exporter/target/classes/log4j2.xml
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/target/classes/exporter.properties b/com.wsunitstats.exporter/target/classes/exporter.properties
+deleted file mode 100644
+diff --git a/com.wsunitstats.exporter/target/classes/application.properties b/com.wsunitstats.exporter/target/classes/application.properties
+deleted file mode 100644

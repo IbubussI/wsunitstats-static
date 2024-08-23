@@ -31,15 +31,17 @@ public class NationResolverImpl implements NationResolver {
         unitNations = mainModel.getUnitGroups();
         nations = new ArrayList<>();
 
-        for (String nationName : nationNames) {
+        for (int i = 0; i < nationNames.size(); i++) {
+            String nationName = nationNames.get(i);
             NationModel nation = new NationModel();
             nation.setName(nationName);
+            nation.setNationId(i);
             nations.add(nation);
         }
 
         // add "absent" nation in the end
         NationModel nation = new NationModel();
-        nation.setName("null");
+        nation.setName("Unknown");
         nations.add(nation);
     }
 
@@ -47,7 +49,7 @@ public class NationResolverImpl implements NationResolver {
     public NationModel getUnitNation(int unitId) {
         String unitNation = unitNations.get(unitId);
         Integer nationId = NIL.equals(unitNation) ? null : Integer.parseInt(unitNation);
-        // if unit has no nation - get 'null' nation from the end
+        // if unit has no nation - get 'Unknown' nation from the end
         return nationId == null ? nations.get(nations.size() - 1) : nations.get(nationId);
     }
 }

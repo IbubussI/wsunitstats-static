@@ -11,14 +11,6 @@
 
     <artifactId>com.wsunitstats.exporter</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.wsunitstats</groupId>
-            <artifactId>com.wsunitstats.utils</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>

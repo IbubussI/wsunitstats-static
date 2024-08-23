@@ -37,6 +37,7 @@ export function useValuesToQueryStringSync(valueToQueryString =
 
     // avoid navigation when nothing changes
     if (isUpdatePending) {
+      console.log("setSearchParams")
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams, valueToQueryString]);

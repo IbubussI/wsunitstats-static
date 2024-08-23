@@ -1,4 +1,4 @@
-export const HOST = process.env.NODE_ENV === 'development' ? `http://localhost:8080` : `${window.location.protocol}//${window.location.host}`;
+export const HOST = process.env.NODE_ENV === 'development' ? `http://localhost:3000` : `${window.location.protocol}//${window.location.host}`;
 export const UNIT_OPTIONS_API = '/api/units/options';
 export const RESEARCH_OPTIONS_API = '/api/researches/options';
 export const RESEARCH_UNIT_OPTIONS_API = '/api/researches/unit-options';
@@ -6,8 +6,11 @@ export const LOCALE_OPTIONS_API = '/api/locales/options';
 export const NATION_OPTIONS_API = '/api/units/nations';
 export const SEARCH_TAGS_OPTIONS_API = '/api/units/search-tags';
 export const UNIT_TAGS_OPTIONS_API = '/api/units/unit-tags';
-export const UNIT_DATA_API = '/api/units/game-id';
-export const RESEARCH_DATA_API = '/api/researches/game-id';
+
+export const UNIT_DATA_PATH = '/files/units';
+export const RESEARCH_DATA_PATH = '/files/researches';
+export const CONTEXT_DATA_PATH = '/files/context.json';
+export const UNIT_SELECTOR_DATA_PATH = '/files/units/unitSelector.json';
 
 export const UNIT_SELECTOR_PAGE_PATH = 'units';
 export const RESEARCH_SELECTOR_PAGE_PATH = 'researches';
@@ -52,3 +55,5 @@ export const FILTER_PANEL_HEIGHT = 120;
 export const ABILITY_TYPE_DAMAGE = 6;
 export const ENTITY_PICKER_OPTIONS_SIZE = 40;
 export const SELECTOR_OPTIONS_SIZE = 20;
+
+export const TICK_RATE = 50;

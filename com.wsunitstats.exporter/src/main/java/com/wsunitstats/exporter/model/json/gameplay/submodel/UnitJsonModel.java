@@ -15,7 +15,7 @@ import java.util.Map;
 public class UnitJsonModel {
     private AbilityWrapperJsonModel ability;
     private Integer adjustToGround;
-    private List<AirfieldJsonModel> airfields;
+    private AirfieldJsonModel airfields;
     private AttackJsonModel attack;
     private Boolean controllable;
     private List<CreateEnvJsonModel> createEnvs;

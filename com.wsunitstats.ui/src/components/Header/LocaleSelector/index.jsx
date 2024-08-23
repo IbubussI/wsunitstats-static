@@ -29,21 +29,13 @@ const StyledDynamicSelect = styled(DynamicSelect)({
   },
 });
 
-export const LocaleSelector = ({ currentLocale }) => {
+export const LocaleSelector = ({ currentLocale, options }) => {
   const navigate = useNavigate();
-  const [options, setOptions] = React.useState([]);
   const [value, setValue] = React.useState(null);
 
   const onLocaleChange = React.useCallback((newLocale, replace) => {
     navigate(Utils.getUrlWithPathParams([{ param: newLocale, pos: 1 }]), { replace: replace });
   }, [navigate]);
-
-  React.useEffect(() => {
-    fetch(Constants.HOST + Constants.LOCALE_OPTIONS_API)
-      .then((response) => response.json())
-      .then((options) => setOptions(options))
-      .catch(console.log);
-  }, []);
 
   React.useEffect(() => {
     if (options.length > 0) {
