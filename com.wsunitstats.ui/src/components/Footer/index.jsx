@@ -11,7 +11,7 @@ export const Footer = () => {
       </p>
       <ul className="social-icons">
         <li><a className="discord" href="https://discord.com/users/536561066407362571"><i className="fa-brands fa-discord"></i></a></li>
-        <li><a className="github" href="https://github.com/IbubussI/com.wsunitstats"><i className="fa fa-github"></i></a></li>
+        <li><a className="github" href="https://github.com/IbubussI/wsunitstats-static"><i className="fa fa-github"></i></a></li>
       </ul>
     </footer>
   )
