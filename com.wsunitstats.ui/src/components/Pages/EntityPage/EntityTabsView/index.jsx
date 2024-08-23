@@ -31,7 +31,7 @@ export const EntityTabsView = ({
     if (tabsData.length) {
       if (currentTab) {
         if (!isTabValid(currentTab)) {
-          Utils.navigateTo404(navigate);
+          Utils.navigateTo404(navigate, true);
         }
       } else {
         setTab(tabsData[0].id);
@@ -39,12 +39,10 @@ export const EntityTabsView = ({
     }
   }, [currentTab, tabsData, setTab, isTabValid, navigate]);
 
-  console.log("EntityTabsView render")
   return <TabsViewComponent tabsData={tabsData} currentTab={currentTab} setTab={setTab} entity={entity} />;
 }
 
 export const TabsView = ({ tabsData, currentTab, setTab, entity }) => {
-  console.log("TabsView render")
   return (
     <>
       <Box display="flex" justifyContent="center" width="100%">

@@ -64,15 +64,6 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
     }
   };
 
-  console.log("EntitySelectorView render")
-  console.log("loadedOptions:")
-  console.log(loadedOptions)
-  console.log("hasMore:")
-  console.log(hasMore)
-  console.log("page:")
-  console.log(page)
-  console.log("options:")
-  console.log(options)
   return (
     <Container maxWidth='xl'>
       {Filters && <FlexFilterDrawer

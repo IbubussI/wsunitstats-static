@@ -55,15 +55,6 @@ export function useOptionsController(paramName, options,
   // eslint-disable-next-line
   }, [options, queryStringValues]);
 
-  console.log("useStaticOptionsController call")
-  console.log("options")
-  console.log(options)
-  console.log("paramName")
-  console.log(paramName)
-  console.log("queryStringValues")
-  console.log(queryStringValues)
-  console.log("values")
-  console.log(values)
   return {
     values: values,
     options: options,

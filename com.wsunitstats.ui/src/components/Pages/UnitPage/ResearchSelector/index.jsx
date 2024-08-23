@@ -12,7 +12,6 @@ export const ResearchSelector = ({ researches }) => {
   const { sync } = useValuesToQueryStringSync();
   const optionsController = useOptionsController(Constants.PARAM_RESEARCH_IDS, researches);
   
-  console.log("ResearchSelector render")
   return researches.length ? (
     <Stack direction='row' sx={{ gap: 0.5, width: '100%', margin: '2px', maxWidth: 'sm', paddingTop: '5px' }}>
       <CheckmarksSelect

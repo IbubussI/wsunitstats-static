@@ -15,8 +15,7 @@ import { EntityTabsView } from 'components/Pages/EntityPage/EntityTabsView';
 import { useOutletContext } from 'react-router-dom';
 
 export const UnitPage = () => {
-  const entity = useOutletContext();
-  const unit = entity;
+  const unit = useOutletContext();
   const tabsData = [
     {
       id: Constants.INITIAL_TAB,
@@ -74,7 +73,6 @@ export const UnitPage = () => {
     },
   ].filter(element => element.isShow);
 
-  console.log("UnitPage render")
   return (
     <EntityTabsView entity={unit} tabsData={tabsData} tabsView={TabsUnitWrapper} />
   );
