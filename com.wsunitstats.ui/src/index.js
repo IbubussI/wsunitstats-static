@@ -55,11 +55,7 @@ const Root = () => {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 const entityLoader = async (route, path) => {
-  const entity = await fetch(new URL(Constants.HOST + path + "/" + route.params.gameId + ".json"));
-  if (!entity) {
-    return redirect(`/${route.params.locale}`);
-  }
-  return entity;
+  return fetch(new URL(Constants.HOST + path + "/" + route.params.gameId + ".json"));
 };
 
 const unitLoader = (route) => entityLoader(route, Constants.UNIT_DATA_PATH);
@@ -140,7 +136,6 @@ const router = createBrowserRouter([
         path: `${Constants.UNIT_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,
         loader: unitLoader,
-        shouldRevalidate: () => false,
         children: [
           {
             index: true,
@@ -160,7 +155,6 @@ const router = createBrowserRouter([
         path: `${Constants.RESEARCH_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,
         loader: researchLoader,
-        shouldRevalidate: () => false,
         children: [
           {
             index: true,
