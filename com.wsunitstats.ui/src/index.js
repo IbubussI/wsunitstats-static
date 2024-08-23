@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Footer } from 'components/Footer';
-import { Navigate, Outlet, createBrowserRouter, RouterProvider, useLoaderData, useParams, redirect } from 'react-router-dom';
+import { Navigate, Outlet, createBrowserRouter, RouterProvider, useLoaderData, useParams } from 'react-router-dom';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import * as React from 'react';
