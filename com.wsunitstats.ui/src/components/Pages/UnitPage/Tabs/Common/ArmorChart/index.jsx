@@ -7,14 +7,14 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 export const ArmorChart = ({content, valuePrefix, colors}) => {
   const [labels, probabilities, values, avg, legendEntries] = React.useMemo(() => {
-    let labels_ = [];
-    let probabilities_ = [];
-    let values_ = [];
-    let legendEntries_ = [];
+    const labels_ = [];
+    const probabilities_ = [];
+    const values_ = [];
+    const legendEntries_ = [];
     for (let i = 0; i < content.length; ++i) {
-      let probability = content[i].probability;
+      const probability = content[i].probability;
       if (probability > 0) {
-        let value = content[i].value;
+        const value = content[i].value;
         labels_.push(`${probability}% : ${value}`);
         probabilities_.push(probability);
         values_.push(value);
@@ -25,7 +25,7 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
         });
       }
     }
-    let avg_ = findAverage(values_, probabilities_).toFixed(1);
+    const avg_ = findAverage(values_, probabilities_).toFixed(1);
     return [labels_, probabilities_, values_, avg_, legendEntries_];
   }, [content, colors]);
 
@@ -47,7 +47,8 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
   };
 
   const avgText = {
-    beforeDraw(chart) {
+    id: "avgText",
+    beforeDraw(chart, _, opts) {
       const { ctx, data } = chart;
       let x = chart.getDatasetMeta(0).data[0].x;
       let y = chart.getDatasetMeta(0).data[0].y;
@@ -61,7 +62,7 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
       ctx.font = 'bolder 20px sans-relief';
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(avg, x, y + 10);
+      ctx.fillText(opts.avg, x, y + 10);
     }
   }
 
@@ -83,6 +84,9 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
     maintainAspectRatio: false,
     devicePixelRatio: 1.5,
     plugins: {
+      avgText: {
+        avg: avg
+      },
       legend: {
         display: false,
         position: 'bottom',
