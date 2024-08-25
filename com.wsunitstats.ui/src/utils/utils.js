@@ -48,10 +48,11 @@ export const getEntityRoute = (entityType) => {
  * Sets given path params to current url
  * 
  * @param {*} params array of objects { param: ..., pos: ...} where param is new param value to set, pos is index in the url where to set this param
+ * @param {*} keepSearch true to keep current search params in the returned URL (default - true)
  * @param {*} removeFrom if specified and positive - this function removes all param from (include) given in removeFrom position up to the end of the url
  * @returns current url with given path params
  */
-export const getUrlWithPathParams = (params, removeFrom = 0) => {
+export const getUrlWithPathParams = (params, keepSearch = true, removeFrom = 0) => {
   const pathname = window.location.pathname;
   const search = window.location.search;
   let pathItems = pathname.split('/');
@@ -65,7 +66,7 @@ export const getUrlWithPathParams = (params, removeFrom = 0) => {
   if (removeFrom > 0) {
     pathItems.length = removeFrom;
   }
-  return pathItems.join('/') + search;
+  return keepSearch ? pathItems.join('/') + search : pathItems.join('/');
 };
 
 export const navigateToError = (navHook, msg, code, keepLocale) => {

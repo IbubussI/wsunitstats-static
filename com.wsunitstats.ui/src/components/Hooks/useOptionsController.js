@@ -25,6 +25,7 @@ export function useOptionsController(paramName, options,
 
   const [searchParams] = useSearchParams();
   const [values, setValues] = React.useState([]);
+  const [controlledOptions, setControlledOptions] = React.useState(options);
 
   const queryStringValues = React.useMemo(() => {
     const currentQuerySearchParams = searchParams.get(paramName)?.split(',');
@@ -33,12 +34,12 @@ export function useOptionsController(paramName, options,
 
   // Sync query string params with options
   React.useEffect(() => {
-    if (options.length > 0 && queryStringValues.length > 0) {
+    if (controlledOptions.length > 0 && queryStringValues.length > 0) {
       const newValues = queryStringValues
         .filter((value, index, array) => array.indexOf(value) === index) // set only unique
         .map((value) => {
           // set only available in options
-          for (const option of options) {
+          for (const option of controlledOptions) {
             if (valueToQueryString(option) === value) {
               return option;
             }
@@ -50,10 +51,17 @@ export function useOptionsController(paramName, options,
       // set only if values are changed to not trigger re-render
       setValues((prevValues) => isEqual(newValues, prevValues) ? prevValues : newValues);
     }
-  // valueToQueryString should be always the same
-  // Adding it to dependecy array will result to unnecessary sync after selecting but not applying a value
-  // eslint-disable-next-line
-  }, [options, queryStringValues]);
+    // valueToQueryString should be always the same
+    // Adding it to dependecy array will result to unnecessary sync after selecting but not applying a value
+    // eslint-disable-next-line
+  }, [controlledOptions, queryStringValues]);
+
+  // Deep compare options to not trigger sync if only reference changes
+  React.useEffect(() => {
+    if (!isEqual(controlledOptions, options)) {
+      setControlledOptions(options);
+    }
+  }, [options, controlledOptions]);
 
   return {
     values: values,

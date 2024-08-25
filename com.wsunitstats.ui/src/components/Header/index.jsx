@@ -43,7 +43,8 @@ export const Header = ({ context }) => {
 
   const onEntityChange = (newRoute, newGameId) => {
     if (newGameId !== null) {
-      navigate(Utils.getUrlWithPathParams([{ param: newRoute, pos: 2 }, { param: newGameId, pos: 3 }, { param: Constants.INITIAL_TAB, pos: 4 }]));
+      // don't keep search params here as we are navigating to another unit page
+      navigate(Utils.getUrlWithPathParams([{ param: newRoute, pos: 2 }, { param: newGameId, pos: 3 }, { param: Constants.INITIAL_TAB, pos: 4 }], false));
     }
   };
 

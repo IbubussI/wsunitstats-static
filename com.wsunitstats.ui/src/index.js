@@ -70,7 +70,7 @@ const unitSelectorOptions = {
     { param: Constants.UNIT_PAGE_PATH, pos: 2 },
     { param: id, pos: 3 },
     { param: Constants.INITIAL_TAB, pos: 4 }
-  ]),
+  ], false),
   Filters: UnitFilters,
   viewSize: Constants.SELECTOR_OPTIONS_SIZE
 };
@@ -92,7 +92,7 @@ const researchSelectorOptions = {
     { param: Constants.RESEARCH_PAGE_PATH, pos: 2 },
     { param: id, pos: 3 },
     { param: Constants.INITIAL_TAB, pos: 4 }
-  ]),
+  ], false),
   viewSize: Constants.SELECTOR_OPTIONS_SIZE
 };
 
