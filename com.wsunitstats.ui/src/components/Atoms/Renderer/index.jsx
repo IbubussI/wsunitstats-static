@@ -232,8 +232,8 @@ export const HeaderChip = ({ data }) => {
           variant='body2'
           sx={{
             fontWeight: 'inherit',
-            fontSize: 14,
-            lineHeight: 'initial',
+            fontSize: data.disabled ? 12 : 14,
+            lineHeight: 1.1,
             color: textColor,
             paddingBottom: data.disabled ? '1px' : '',
             marginTop: data.disabled ? '-3px' : ''
@@ -248,7 +248,7 @@ export const HeaderChip = ({ data }) => {
             sx={{
               textTransform: 'uppercase',
               fontSize: '11px',
-              height: '14px',
+              height: '13px',
               minwidth: 'fit-content',
               '& > .MuiChip-label': {
                 padding: '4px'

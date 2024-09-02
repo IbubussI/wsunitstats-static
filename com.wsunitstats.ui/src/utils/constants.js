@@ -57,3 +57,5 @@ export const ENTITY_PICKER_OPTIONS_SIZE = 40;
 export const SELECTOR_OPTIONS_SIZE = 20;
 
 export const TICK_RATE = 50;
+export const ENGINE_FLOAT_SHIFT = 1000;
+export const ENGINE_STORAGE_MULTIPLIER = 100 / 65536;

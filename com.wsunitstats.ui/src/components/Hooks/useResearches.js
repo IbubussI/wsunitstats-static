@@ -21,7 +21,6 @@ const UPGRADE_SCRIPTS = {
   "32": enable, // 1815469020
   "33": abilityOnActionEnable, // 1911934956
   "34": damageAdd, // 440889882
-  "35": turretDamageAdd // 187789004 - not exists anymore
 };
 
 const DAMAGE_AREA_TYPE = {
@@ -38,15 +37,27 @@ export function useResearches() {
   const researchesParam = searchParams.get(Constants.PARAM_RESEARCH_IDS);
 
   return (unit) => {
+    if (!unit.applicableResearches) {
+      return unit;
+    }
+
     // deep copy the unit to not modify loaded and cached original one
     const unitCopy = JSON.parse(JSON.stringify(unit));
     if (researchesParam) {
       const researchesIds = researchesParam.split(',');
       for (let researchId of researchesIds) {
         const research = unitCopy.applicableResearches.filter(v => v.gameId === Number(researchId))[0];
-        for (let upgrade of research.upgrades) {
-          const applyScript = UPGRADE_SCRIPTS[upgrade.programId];
-          applyScript(unitCopy, upgrade.parameters);
+        if (research) {
+          for (let upgrade of research.upgrades) {
+            const applyScript = UPGRADE_SCRIPTS[upgrade.programId];
+            try {
+              const parameters = upgrade.parameters ? upgrade.parameters : {};
+              applyScript(unitCopy, parameters);
+            } catch (error) {
+              console.log(`Can't apply research script ${applyScript.name}`);
+              console.error(error);
+            }
+          }
         }
       }
     }
@@ -59,9 +70,23 @@ function tonumber(value, defaultValue) {
   return isNaN(num) ? defaultValue : num;
 }
 
+function tobool(value, defaultValue) {
+  const num = Number(value);
+  if (!isNaN(num)) {
+    return num !== 0;
+  }
+  if (value === "true") {
+    return true;
+  }
+  if (value === "false") {
+    return false;
+  }
+  return defaultValue;
+}
+
 function processTurretsAndWeapons(unit, turretId, weaponId, weaponConsumer) {
   function processWeapons(weapons) {
-    if (weaponId === -1) {
+    if (weaponId === null) {
       for (const weapon of weapons) {
         weaponConsumer(weapon);
       }
@@ -70,15 +95,27 @@ function processTurretsAndWeapons(unit, turretId, weaponId, weaponConsumer) {
     }
   }
 
-  if (turretId === -1) {
+  if (turretId === null) {
     processWeapons(unit.weapons);
   } else if (turretId < 0) {
     for (const turret of unit.turrets) {
-      processWeapons(turret.weapon);
+      processWeapons(turret.weapons);
     }
   } else {
-    processWeapons(unit.turrets[turretId].weapon);
+    processWeapons(unit.turrets[turretId].weapons);
   }
+}
+
+function collectWorks(unit) {
+  const works = {};
+  for (const ability of unit.abilities) {
+    // 1 - work ability
+    if (ability.containerType === 1) {
+      const work = ability.work;
+      works[work.workId] = work;
+    }
+  }
+  return works;
 }
 
 // -------------------------------- SCRIPTS --------------------------------
@@ -97,14 +134,14 @@ function moveSpeed(unit, params) {
 }
 
 function gatherSpeedAdd(unit, params) {
-  const gatherId = tonumber(params.gather, -1);
+  const gatherId = tonumber(params.gather, null);
   const add = tonumber(params.add, 0);
   unit.gather[gatherId].perSecond = unit.gather[gatherId].perSecond + add / Constants.TICK_RATE;
 }
 
 function setDamageArea(unit, params) {
-  const weaponId = tonumber(params.weapon, -1);
-  const turretId = tonumber(params.turret, -1);
+  const weaponId = tonumber(params.weapon, null);
+  const turretId = tonumber(params.turret, null);
   const area = params.area;
 
   function processWeapon(weapon) {
@@ -115,14 +152,12 @@ function setDamageArea(unit, params) {
     }
   }
 
-  if (area) {
-    processTurretsAndWeapons(unit, turretId, weaponId, processWeapon);
-  }
+  processTurretsAndWeapons(unit, turretId, weaponId, processWeapon);
 }
 
 function spreadMult(unit, params) {
-  const weaponId = tonumber(params.weapon, -1);
-  const turretId = tonumber(params.turret, -1);
+  const weaponId = tonumber(params.weapon, null);
+  const turretId = tonumber(params.turret, null);
   const mult = tonumber(params.mult, 100);
 
   function processWeapon(weapon) {
@@ -134,9 +169,9 @@ function spreadMult(unit, params) {
 
 function armorAddSize(unit, params) {
   const addVal = tonumber(params.add, 0);
-  const armor = tonumber(params.armor, -1);
-  const armor2 = tonumber(params.armor2, -1);
-  const armor3 = tonumber(params.armor3, -1);
+  const armor = tonumber(params.armor, null);
+  const armor2 = tonumber(params.armor2, null);
+  const armor3 = tonumber(params.armor3, null);
 
   function add(armorId) {
     const a = unit.armor[armorId];
@@ -149,11 +184,11 @@ function armorAddSize(unit, params) {
     }
   }
 
-  if (armor > 0) {
+  if (armor !== null) {
     add(armor);
-    if (armor2 > 0) {
+    if (armor2 !== null) {
       add(armor2);
-      if (armor3 > 0) {
+      if (armor3 !== null) {
         add(armor3);
       }
     }
@@ -161,46 +196,231 @@ function armorAddSize(unit, params) {
 }
 
 function armorAddThickness(unit, params) {
+  const armor = tonumber(params.armor, null);
+  const add = tonumber(params.add, 0);
+  const mult = tonumber(params.mult, 100);
+
+  const armor2 = tonumber(params.armor2, null);
+  const add2 = tonumber(params.add2, 0);
+  const mult2 = tonumber(params.mult2, 100);
+
+  const armor3 = tonumber(params.armor3, null);
+  const add3 = tonumber(params.add3, 0);
+  const mult3 = tonumber(params.mult3, 100);
+
+  const armor4 = tonumber(params.armor4, null);
+  const add4 = tonumber(params.add4, 0);
+  const mult4 = tonumber(params.mult4, 100);
+
+  const size = unit.armor.length;
+
+  function mod(armorId, add, mult) {
+    const a = unit.armor[armorId];
+    a.value = Math.floor(a.value * mult / 100) + add / Constants.ENGINE_FLOAT_SHIFT;
+  }
+
+  if (size > 0) {
+    mod(armor, add, mult);
+    if (size > 1 && armor2 !== null) {
+      mod(armor2, add2, mult2);
+      if (size > 2 && armor3 !== null) {
+        mod(armor3, add3, mult3);
+        if (size > 3 && armor4 !== null) {
+          mod(armor4, add4, mult4);
+        }
+      }
+    }
+  }
 }
 
 function rechargePeriodDec(unit, params) {
+  const weaponId = tonumber(params.weapon, null);
+  const turretId = tonumber(params.turret, null);
+  const dec = tonumber(params.dec, 0);
+
+  function processWeapon(weapon) {
+    weapon.rechargePeriod = weapon.rechargePeriod - dec / Constants.ENGINE_FLOAT_SHIFT;
+  }
+
+  processTurretsAndWeapons(unit, turretId, weaponId, processWeapon);
 }
 
 function maxDistanceAdd(unit, params) {
+  const weaponId = tonumber(params.weapon, null);
+  const turretId = tonumber(params.turret, null);
+  const add = tonumber(params.add, 0);
+
+  function processWeapon(weapon) {
+    weapon.distance.max = weapon.distance.max + add / Constants.ENGINE_FLOAT_SHIFT;
+    weapon.distance.stop = weapon.distance.stop + add / Constants.ENGINE_FLOAT_SHIFT;
+  }
+
+  processTurretsAndWeapons(unit, turretId, weaponId, processWeapon);
 }
 
 function workEnable(unit, params) {
+  const id = tonumber(params.id, null);
+  const enabled = tobool(params.enable, true);
+  const works = collectWorks(unit);
+
+  works[id].enabled = enabled;
 }
 
 function regeneration(unit, params) {
+  const add = tonumber(params.add, 0);
+  unit.regenerationSpeed = unit.regenerationSpeed + add / Constants.ENGINE_FLOAT_SHIFT;
 }
 
 function buildingSpeedMult(unit, params) {
+  const mult = tonumber(params.mult, 100);
+  const buildingId = tonumber(params.building, null);
+
+  function processBuilding(construction) {
+    construction.constructionSpeed = Math.floor(construction.constructionSpeed * mult / 100);
+  }
+
+  if (buildingId === null) {
+    for (const construction of unit.construction) {
+      processBuilding(construction);
+    }
+  } else {
+    processBuilding(unit.construction[buildingId]);
+  }
 }
 
 function gatherBagSizeAdd(unit, params) {
+  const add = tonumber(params.add, 0);
+  const gatherId = tonumber(params.gather, null);
+
+  function processGather(gather) {
+    gather.bagSize = gather.bagSize + add / Constants.ENGINE_FLOAT_SHIFT;
+  }
+
+  if (gatherId === null) {
+    for (const gather of unit.gather) {
+      processGather(gather);
+    }
+  } else {
+    processGather(unit.gather[gatherId]);
+  }
 }
 
 function workReserveTimeMult(unit, params) {
+  const mult = tonumber(params.mult, 100);
+  const workId = tonumber(params.work, null);
+  const workId2 = tonumber(params.work2, null);
+  const workId3 = tonumber(params.work3, null);
+  const works = collectWorks(unit);
+
+  function processWork(work) {
+    work.reserve.reserveTime = Math.floor(work.reserve.reserveTime * mult / 100);
+  }
+
+  if (workId === null) {
+    for (const workId_ in works) {
+      processWork(works[workId_]);
+    }
+  } else {
+    processWork(works[workId]);
+    if (workId2 !== null) {
+      processWork(works[workId2]);
+      if (workId3 !== null) {
+        processWork(works[workId3]);
+      }
+    }
+  }
 }
 
 function workReserveLimitAdd(unit, params) {
+  const add = tonumber(params.add, 0);
+  const workId = tonumber(params.work, null);
+  const workId2 = tonumber(params.work2, null);
+  const workId3 = tonumber(params.work3, null);
+  const works = collectWorks(unit);
+
+  function processWork(work) {
+    work.reserve.reserveLimit = work.reserve.reserveLimit + add;
+  }
+
+  if (workId === null) {
+    for (const workId_ in works) {
+      processWork(works[workId_]);
+    }
+  } else {
+    processWork(works[workId]);
+    if (workId2 !== null) {
+      processWork(works[workId2]);
+      if (workId3 !== null) {
+        processWork(works[workId3]);
+      }
+    }
+  }
 }
 
 function storageMultiplierAdd(unit, params) {
+  const add = tonumber(params.add, 0);
+  unit.storageMultiplier = unit.storageMultiplier + Math.floor(Constants.ENGINE_STORAGE_MULTIPLIER * add);
 }
 
 function workPriceChange(unit, params) {
+  const mult = tonumber(params.mult, 100);
+  const add = tonumber(params.add, 0);
+  const resourceId = tonumber(params.resource, null);
+  const workId = tonumber(params.work, null);
+
+  const work = collectWorks(unit)[workId];
+
+  function processResource(resource) {
+    resource.value = Math.floor(resource.value * mult / 100) + add / Constants.ENGINE_FLOAT_SHIFT;
+  }
+
+  if (resourceId === null) {
+    processResource(work.cost[0]);
+    processResource(work.cost[1]);
+    processResource(work.cost[2]);
+  } else {
+    processResource(work.cost[resourceId]);
+  }
 }
 
 function enable(unit, params) {
+  const weaponId = tonumber(params.weapon, null);
+  const turretId = tonumber(params.turret, null);
+  const enabled = tobool(params.enable, true);
+
+  function processWeapon(weapon) {
+    weapon.enabled = enabled;
+  }
+
+  if (turretId === null) {
+    const weapon = unit.weapons[weaponId];
+    processWeapon(weapon);
+  } else {
+    const weapon = unit.turrets[turretId].weapons[weaponId];
+    processWeapon(weapon);
+  }
 }
 
 function abilityOnActionEnable(unit, params) {
+  const enabled = tobool(params.enable, true);
+  for (const ability of unit.abilities) {
+    // 0 - self ability
+    if (ability.containerType === 0) {
+      ability.enabled = enabled;
+    }
+  }
 }
 
 function damageAdd(unit, params) {
-}
+  const weaponId = tonumber(params.weapon, null);
+  const turretId = tonumber(params.turret, null);
+  const add = tonumber(params.add, 0);
+  const mult = tonumber(params.mult, 100);
 
-function turretDamageAdd(unit, params) {
+  function processWeapon(weapon) {
+    const damage = weapon.damage.damages[0];
+    damage.value = Math.floor(damage.value * mult / 100) + add / Constants.ENGINE_FLOAT_SHIFT;
+  }
+
+  processTurretsAndWeapons(unit, turretId, weaponId, processWeapon);
 }
