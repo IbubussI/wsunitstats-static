@@ -239,7 +239,7 @@ function rechargePeriodDec(unit, params) {
   const dec = tonumber(params.dec, 0);
 
   function processWeapon(weapon) {
-    weapon.rechargePeriod = weapon.rechargePeriod - dec / Constants.ENGINE_FLOAT_SHIFT;
+    weapon.rechargePeriod = Number(weapon.rechargePeriod - dec / Constants.ENGINE_FLOAT_SHIFT).toFixed(1);
   }
 
   processTurretsAndWeapons(unit, turretId, weaponId, processWeapon);
