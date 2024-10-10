@@ -108,6 +108,7 @@ public class ModelBuilderImpl implements ModelBuilder {
             unit.setParentMustIdle(unitJsonModel.getParentMustIdle());
             unit.setHeal(transformingService.transformHeal(unitJsonModel.getHeal()));
             unit.setSize(Utils.intToDoubleShift(unitJsonModel.getSize()));
+            unit.setSupply(transformingService.transformSupply(unitJsonModel.getSupply()));
             Integer storageMultiplier = unitJsonModel.getStorageMultiplier();
             if (storageMultiplier == null) {
                 unit.setStorageMultiplier((int) (STORAGE_MULTIPLIER_MODIFIER * STORAGE_MULTIPLIER_DEFAULT));
@@ -136,7 +137,6 @@ public class ModelBuilderImpl implements ModelBuilder {
                 Integer onDeathId = attack.getWeaponUseOnDeath();
                 unit.setWeapons(getWeaponsList(attack.getWeapons(), externalData, false, onDeathId));
                 unit.setTurrets(getTurretList(attack.getTurrets(), externalData));
-                unit.setSupply(transformingService.transformSupply(unitJsonModel.getSupply()));
                 unit.setWeaponOnDeath(onDeathId);
             }
 

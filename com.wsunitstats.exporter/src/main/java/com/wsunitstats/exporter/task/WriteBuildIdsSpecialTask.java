@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
  * Task to get any file with any content (for informational and test purposes)
  */
 @Component
-public class WriteFileSpecialTask implements ExecutionTask {
-    private static final Logger LOG = LogManager.getLogger(WriteFileSpecialTask.class);
-    private static final String TASK_NAME = "writeFileSpecial";
+public class WriteBuildIdsSpecialTask implements ExecutionTask {
+    private static final Logger LOG = LogManager.getLogger(WriteBuildIdsSpecialTask.class);
+    private static final String TASK_NAME = "writeBuildIdsSpecial";
     private static final String FILENAME = "specialTaskResults.txt";
     private static final String LOCALE = "en";
 
