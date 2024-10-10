@@ -1,145 +1,8 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
-import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
-import { ExplorerTreeItem } from 'components/Pages/DocsPage/ExplorerTreeItem';
-import { ExplorerTreeVirtualized } from './ExplorerTreeVirtualized';
+import { ExplorerTree } from 'components/Pages/DocsPage/ExplorerTree';
+import { Box } from '@mui/material';
 
-const MUI_X_PRODUCTS = [
-  {
-    id: 'root',
-    label: 'root',
-    depth: 0,
-    isLast: true,
-    children: [
-      {
-        id: '1',
-        label: '1',
-        depth: 1,
-        parent: 'root',
-        children: [
-          {
-            id: '1-1',
-            label: '1-1',
-            depth: 2,
-            parent: '1',
-          },
-          {
-            id: '1-2',
-            label: '1-2',
-            depth: 2,
-            parent: '1',
-            children: [
-              {
-                id: '1-2-1',
-                label: '1-2-1',
-                depth: 3,
-                parent: '1-2',
-              },
-              {
-                id: '1-2-2',
-                label: '1-2-2',
-                depth: 3,
-                parent: '1-2',
-              },
-              {
-                id: '1-2-3',
-                label: '1-2-3',
-                depth: 3,
-                parent: '1-2',
-                isLast: true
-              },
-            ]
-          },
-          {
-            id: '1-3',
-            label: '1-3',
-            depth: 2,
-            parent: '1',
-            isLast: true,
-            children: [
-              {
-                id: '1-3-1',
-                label: '1-3-1',
-                depth: 3,
-                parent: '1-3',
-              },
-              {
-                id: '1-3-2',
-                label: '1-3-2',
-                depth: 3,
-                parent: '1-3',
-              },
-              {
-                id: '1-3-3',
-                label: '1-3-3',
-                depth: 3,
-                parent: '1-3',
-                isLast: true,
-                children: [
-                  {
-                    id: '1-3-3-1',
-                    label: '1-3-3-1',
-                    depth: 4,
-                    parent: '1-3-3',
-                  },
-                  {
-                    id: '1-3-3-2',
-                    label: '1-3-3-2',
-                    depth: 4,
-                    parent: '1-3-3',
-                  },
-                  {
-                    id: '1-3-3-3',
-                    label: '1-3-3-3',
-                    depth: 4,
-                    parent: '1-3-3',
-                    isLast: true
-                  },
-                ]
-              },
-            ]
-          },
-        ]
-      },
-      {
-        id: '2',
-        label: '2',
-        depth: 1,
-        parent: 'root',
-      },
-      {
-        id: '3',
-        label: '3',
-        depth: 1,
-        parent: 'root',
-        isLast: true,
-        children: [
-          {
-            id: '3-1',
-            label: '3-1',
-            depth: 2,
-            parent: '3',
-          },
-          {
-            id: '3-2',
-            label: '3-2',
-            depth: 2,
-            parent: '3',
-          },
-          {
-            id: '3-3',
-            label: '3-3',
-            depth: 2,
-            parent: '3',
-            isLast: true
-          },
-        ]
-      },
-    ],
-  }
-];
-
-function generate(size, depth) {
+function generateTreeData(size, depth) {
   const root = {
     id: 'root',
     label: '/',
@@ -178,35 +41,11 @@ function generate(size, depth) {
 }
 
 export default function DocsPage() {
-  const generated = React.useMemo(() => generate(10, 4), []);
+  const testTree = React.useMemo(() => generateTreeData(10, 4), []);
 
-  /* Mui solution (not virtualized):
-    <Box sx={{ minHeight: 352, minWidth: 250 }}>
-      <RichTreeView
-        defaultExpandedItems={['root']}
-        slots={{
-          item: ExplorerTreeItem,
-        }}
-        items={generated}
-      />
-    </Box>
-   */
   return (
-    <Box sx = {{ display: 'flex', flexDirection: 'row'}}>
-      
-    <Box sx={{ minHeight: 352, minWidth: 250 }}>
-      <RichTreeView
-        defaultExpandedItems={['root']}
-        slots={{
-          item: ExplorerTreeItem,
-        }}
-        items={generated}
-      />
-    </Box>
-
-      <Box sx={{ minHeight: 352, minWidth: 250 }}>
-        <ExplorerTreeVirtualized treeData={generated}/>
-      </Box>
+    <Box width='100%' height={300}>
+      <ExplorerTree treeData={testTree}/>
     </Box>
   );
 };

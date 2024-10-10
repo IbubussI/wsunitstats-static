@@ -11,7 +11,7 @@ import {
 } from 'components/Pages/DocsPage/Svg';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeTree } from 'react-vtree';
-import { Box, Stack } from '@mui/material';
+import { Box } from '@mui/material';
 import styled from '@emotion/styled';
 import { alpha } from '@mui/material/styles';
 
@@ -113,7 +113,7 @@ const TreeItem = styled('div')(({ theme }) => ({
 // Node component receives all the data we created in the `treeWalker` +
 // internal openness state (`isOpen`), function to change internal openness
 // state (`setOpen`) and `style` parameter that should be added to the root div.
-const ExplorerTreeItemVirtualized = ({ data: { isLeaf, isLast, label, rowIcons }, isOpen, style, setOpen }) => {
+const ExplorerTreeItem = ({ data: { isLeaf, isLast, label, rowIcons }, isOpen, style, setOpen }) => {
   let nodeSlotIcon;
   if (isLeaf) {
     nodeSlotIcon = (<LeafIcon isLast={isLast} />);
@@ -155,7 +155,7 @@ const ExplorerTreeItemVirtualized = ({ data: { isLeaf, isLast, label, rowIcons }
   );
 };
 
-export const ExplorerTreeVirtualized = ({ treeData }) => {
+export const ExplorerTree = ({ treeData }) => {
   // This helper function constructs the object that will be sent back 
   // at the step [2] during the treeWalker function work. 
   // Except for the mandatory `data` field you can put any additional data here.
@@ -220,7 +220,7 @@ export const ExplorerTreeVirtualized = ({ treeData }) => {
           itemSize={24}
           height={height}
           width="100%">
-          {ExplorerTreeItemVirtualized}
+          {ExplorerTreeItem}
         </FixedSizeTree>
       )}
     </AutoSizer>
