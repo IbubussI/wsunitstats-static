@@ -16,6 +16,7 @@ import { ResearchCard } from 'components/Pages/ResearchPage/ResearchCard';
 import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
+import DocsPage from 'components/Pages/DocsPage';
 
 const theme = createTheme({
   palette: {
@@ -125,6 +126,10 @@ const router = createBrowserRouter([
       {
         path: Constants.HOME_PAGE_PATH,
         element: <HomePage />
+      },
+      {
+        path: "modding",
+        element: <DocsPage />
       },
       {
         path: Constants.UNIT_SELECTOR_PAGE_PATH,
