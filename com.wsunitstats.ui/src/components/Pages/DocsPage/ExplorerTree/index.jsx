@@ -22,7 +22,7 @@ const RowIcon = (props) => {
   } = props;
   
   if (isEmpty) {
-    return <div style={{ width: '24px', height: '24px' }}></div>;
+    return <div style={{ width: '24px', minWidth: '24px', height: '24px', minHeight: '24px', }}></div>;
   } else {
     return <IntermediateLineIcon {...other} />;
   }
@@ -120,34 +120,22 @@ const ExplorerTreeItem = ({ data: { isLeaf, isLast, label, rowIcons }, isOpen, s
   } else {
     if (isOpen) {
       nodeSlotIcon = (
-        <CollapseIcon
-          style={{
-            pointerEvents: 'auto',
-            cursor: 'pointer'
-          }}
-          isLast={isLast}
-          onClick={() => setOpen(false)} />
+        <CollapseIcon isLast={isLast} />
       );
     } else {
       nodeSlotIcon = (
-        <ExpandIcon
-          style={{
-            pointerEvents: 'auto',
-            cursor: 'pointer'
-          }}
-          isLast={isLast}
-          onClick={() => setOpen(true)} />
+        <ExpandIcon isLast={isLast} />
       );
     }
   }
 
   return (
-    <TreeItem tabIndex='-1' style={{ ...style }} >
+    <TreeItem tabIndex='-1' style={{ ...style, cursor: 'pointer' }} onClick={() => setOpen(!isOpen)} >
       {rowIcons}
       {nodeSlotIcon}
       <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5, alignItems: 'center' }}>
         <NodeIcon sx={{ width: '24px', height: '24px' }}/>
-        <Label style={{ pointerEvents: 'auto' }}>
+        <Label>
           {label}
         </Label>
       </Box>
