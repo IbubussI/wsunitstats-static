@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom';
  * Does nothing if the query string already equal to given values
  */
 export function useValuesToQueryStringSync(valueToQueryString =
-  (value) => value.id?.toString() || value.gameId?.toString() || value.name?.toString()) {
+  (value) => value.id?.toString() || value.gameId?.toString() || value.name?.toString() || value.toString()) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const syncValues = React.useCallback((map) => {

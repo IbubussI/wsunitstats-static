@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as Constants from 'utils/constants';
 import {
   EndInternalCollapsedIcon,
   EndInternalExpandedIcon,
@@ -13,14 +14,14 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeTree } from 'react-vtree';
 import { Box } from '@mui/material';
 import styled from '@emotion/styled';
-import { alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 const RowIcon = (props) => {
   const {
     isEmpty,
     ...other
   } = props;
-  
+
   if (isEmpty) {
     return <div style={{ width: '24px', minWidth: '24px', height: '24px', minHeight: '24px', }}></div>;
   } else {
@@ -80,61 +81,67 @@ const Label = styled('div')(({ theme }) => ({
 const TreeItem = styled('div')(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row',
+  cursor: 'pointer',
 
-  // styles from original mui x tree view item
-  ':focus': {
-    backgroundColor: theme.vars
-      ? `rgba(${theme.vars.palette.primary.mainChannel} / ${theme.vars.palette.action.selectedOpacity})`
-      : alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
-    '&:hover': {
-      backgroundColor: theme.vars
-        ? `rgba(${theme.vars.palette.primary.mainChannel} / calc(${theme.vars.palette.action.selectedOpacity} + ${theme.vars.palette.action.hoverOpacity}))`
-        : alpha(
-          theme.palette.primary.main,
-          theme.palette.action.selectedOpacity + theme.palette.action.hoverOpacity,
-        ),
-      // Reset on touch devices, it doesn't add specificity
-      '@media (hover: none)': {
-        backgroundColor: theme.vars
-          ? `rgba(${theme.vars.palette.primary.mainChannel} / ${theme.vars.palette.action.selectedOpacity})`
-          : alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
-      },
-    },
-  },
   '&:hover': {
-    backgroundColor: (theme.vars || theme).palette.action.hover,
-    // Reset on touch devices, it doesn't add specificity
-    '@media (hover: none)': {
-      backgroundColor: 'transparent',
-    },
+    backgroundColor: theme.palette.action.hover
   },
 }));
 
 // Node component receives all the data we created in the `treeWalker` +
 // internal openness state (`isOpen`), function to change internal openness
 // state (`setOpen`) and `style` parameter that should be added to the root div.
-const ExplorerTreeItem = ({ data: { isLeaf, isLast, label, rowIcons }, isOpen, style, setOpen }) => {
+const ExplorerTreeItem = (props) => {
+  const theme = useTheme();
+  const {
+    data: {
+      id,
+      isLeaf,
+      isLast,
+      label,
+      rowIcons
+    },
+    treeData: {
+      onPathChange,
+      currentPath
+    },
+    isOpen,
+    style,
+    setOpen
+  } = props;
+
   let nodeSlotIcon;
   if (isLeaf) {
     nodeSlotIcon = (<LeafIcon isLast={isLast} />);
   } else {
     if (isOpen) {
       nodeSlotIcon = (
-        <CollapseIcon isLast={isLast} />
+        <CollapseIcon isLast={isLast} onClick={() => setOpen(!isOpen)} />
       );
     } else {
       nodeSlotIcon = (
-        <ExpandIcon isLast={isLast} />
+        <ExpandIcon isLast={isLast} onClick={() => setOpen(!isOpen)}/>
       );
     }
   }
 
   return (
-    <TreeItem tabIndex='-1' style={{ ...style, cursor: 'pointer' }} onClick={() => setOpen(!isOpen)} >
+    <TreeItem tabIndex='-1' style={{
+      ...style,
+      // make element max width to fill all possible overflow
+      // to have background color work for all width (more than 100%)
+      // in case of horizontal scroll
+      width: '100vw',
+      backgroundColor: currentPath === id
+        ? theme.palette.action.selected
+        : undefined
+    }} onClick={() => {
+      onPathChange(id);
+    }} >
       {rowIcons}
       {nodeSlotIcon}
       <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5, alignItems: 'center' }}>
-        <NodeIcon sx={{ width: '24px', height: '24px' }}/>
+        <NodeIcon sx={{ width: '24px', height: '24px' }} />
         <Label>
           {label}
         </Label>
@@ -143,22 +150,47 @@ const ExplorerTreeItem = ({ data: { isLeaf, isLast, label, rowIcons }, isOpen, s
   );
 };
 
-export const ExplorerTree = ({ treeData }) => {
-  // This helper function constructs the object that will be sent back 
-  // at the step [2] during the treeWalker function work. 
-  // Except for the mandatory `data` field you can put any additional data here.
-  const getNodeData = (node, parent, depth, isLast) => {
+export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath, onMounted = () => {} }, ref) => {
+  const treeRef = React.useRef();
+
+  const navigateToPath = (path) => {
+    console.log('open path: ' + path)
+    const itemsToOpen = {};
+    const pathItems = path.split(Constants.EXPLORER_PATH_SEPARATOR);
+    for (let i = 0; i < pathItems.length; ++i) {
+      let pathToOpenItems = [];
+      for (let j = 0; j < i + 1; ++j) {
+        pathToOpenItems.push(pathItems[j]);
+      }
+      itemsToOpen[pathToOpenItems.join(Constants.EXPLORER_PATH_SEPARATOR)] = true;
+    }
+    return treeRef.current.recomputeTree(itemsToOpen)
+      .then(() => treeRef.current.scrollToItem(path));
+  }
+
+  React.useImperativeHandle(ref, () => ({
+    navigateToPath
+  }));
+
+  React.useEffect(() => {
+    console.log('tree ref change ' + treeRef.current)
+    if (treeRef.current) {
+      onMounted();
+    }
+    // onMounted function must be executed only once
+    // eslint-disable-next-line
+  }, [treeRef.current]);
+
+  // Constructs the object that will be sent back during the treeWalker function work
+  const getNodeData = React.useCallback((node, parent, depth, isLast) => {
     const rowIcons = [];
 
-    for (let i = depth; i > 0; --i) {
-      // find if parent of of current depth level is last to not add unnecessary lines
-      let levelParent = parent;
-      let isParentLast = false;
-      for (let j = 0; j < i - 1; ++j) {
-        levelParent = levelParent.parent;
-      }
-      isParentLast = levelParent.data.isLast ? levelParent.data.isLast : false;
-      rowIcons.push(<RowIcon isEmpty={isParentLast} key={i} />);
+    let levelParent = parent;
+    for (let i = 0; i < depth; ++i) {
+      // not add unnecessary line if parent of current depth level
+      // is the last withing its parent children
+      rowIcons.push(<RowIcon isEmpty={levelParent.data.isLast} key={i} />);
+      levelParent = levelParent.parent;
     }
 
     return {
@@ -166,29 +198,27 @@ export const ExplorerTree = ({ treeData }) => {
         id: node.id.toString(), // mandatory
         isLeaf: node.children.length === 0,
         isOpenByDefault: node.isExpanded, // mandatory
-        label: node.label,
-        rowIcons: rowIcons,
         isLast,
+        label: node.label,
+        rowIcons: rowIcons.reverse()
       },
       parent,
       depth,
       node,
     };
-  };
+  }, []);
 
   // The `treeWalker` function runs only on tree re-build which is performed
   // whenever the `treeWalker` prop is changed.
-  function* treeWalker() {
-    // Step [1]: Define the root node of our tree. There can be one or
-    // multiple nodes.
-    for (let i = 0; i < treeData.length; i++) {
-      const isLast = i + 1 === treeData.length;
-      yield getNodeData(treeData[i], undefined, 0, isLast);
+  const treeWalker = React.useCallback(function* () {
+    // Step [1]: Define the root node of our tree. There can be one or multiple nodes
+    for (let i = 0; i < tree.length; i++) {
+      const isLast = i + 1 === tree.length;
+      yield getNodeData(tree[i], undefined, 0, isLast);
     }
 
     while (true) {
-      // Step [2]: Get the parent component back. It will be the object
-      // the `getNodeData` function constructed, so you can read any data from it.
+      // Step [2]: Get the parent component back (constructed by prev getNodeData call)
       const parent = yield;
 
       for (let i = 0; i < parent.node.children.length; i++) {
@@ -198,14 +228,17 @@ export const ExplorerTree = ({ treeData }) => {
         yield getNodeData(parent.node.children[i], parent, parent.depth + 1, isLast);
       }
     }
-  }
+  }, [tree, getNodeData]);
 
+  console.log('render tree')
   return (
     <AutoSizer disableWidth>
       {({ height }) => (
         <FixedSizeTree
+          ref={treeRef}
           treeWalker={treeWalker}
           itemSize={24}
+          itemData={{ onPathChange, currentPath }}
           height={height}
           width="100%">
           {ExplorerTreeItem}
@@ -213,4 +246,4 @@ export const ExplorerTree = ({ treeData }) => {
       )}
     </AutoSizer>
   );
-}
+});

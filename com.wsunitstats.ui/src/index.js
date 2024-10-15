@@ -16,12 +16,16 @@ import { ResearchCard } from 'components/Pages/ResearchPage/ResearchCard';
 import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
-import DocsPage from 'components/Pages/DocsPage';
+import { DocsPage } from 'components/Pages/DocsPage';
 
 const theme = createTheme({
   palette: {
     secondary: {
       main: "#f3e5f5"
+    },
+    action: {
+      selected: 'rgba(23, 118, 212, 0.3)',
+      hover: 'rgba(0, 0, 0, 0.1)'
     }
   },
 });
@@ -128,7 +132,7 @@ const router = createBrowserRouter([
         element: <HomePage />
       },
       {
-        path: "modding",
+        path: Constants.MODS_PAGE_PATH,
         element: <DocsPage />
       },
       {

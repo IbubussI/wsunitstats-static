@@ -20,6 +20,7 @@ export const ENV_PAGE_PATH = 'env';
 export const RESOURCE_PAGE_PATH = 'resource';
 export const HOME_PAGE_PATH = 'home';
 export const ERROR_PAGE_PATH = 'error';
+export const MODS_PAGE_PATH = 'modding';
 
 export const INITIAL_TAB = 'index';
 
@@ -41,11 +42,13 @@ export const PARAM_RESEARCH_IDS = 'researchIds';
 export const PARAM_NATIONS = 'nations';
 export const PARAM_UNIT_TAGS = 'unitTags';
 export const PARAM_SEARCH_TAGS = 'searchTags';
+export const PARAM_PATH = 'path';
 export const NO_LINK_INDICATOR = 'no-link';
 
 export const DEFAULT_LOCALE_OPTION = 'en';
 export const LOCAL_RESIZABLE_WIDTH = 'resizable-width';
 export const LOCAL_MODS_COLUMN_1_RESIZABLE_ID = 'mods-page-resizable-col-1-width';
+export const EXPLORER_PATH_SEPARATOR = '.';
 
 export const JS_NBSP = '\u00A0';
 export const SECONDS_END_MARKER = `${JS_NBSP}sec`;
