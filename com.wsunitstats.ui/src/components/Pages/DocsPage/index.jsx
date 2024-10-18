@@ -6,65 +6,55 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import styled from '@emotion/styled';
 import { useSearchParams } from 'react-router-dom';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
-import { useReducer } from 'react';
 
-function generateTreeData(size, depth) {
+function rndString(length) {
+  let result = '';
+  const characters = 'abcdef0123456789';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; ++i) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+function generateTreeData(size) {
   console.log('generating data tree')
-  const treeArray = [
-    {
-      id: 'root',
-      label: 'root',
-      depth: 0,
-      isLast: true,
-      isExpanded: true,
-      children: []
-    }
-  ];
-
-  const contextMap = {
-    'root': {
-      Name: 'root',
-      Description: 'Root object'
-    }
+  const tree = {
+    id: 'root',
+    label: 'root',
+    depth: 0,
+    isLast: true,
+    isExpanded: true,
+    isAsync: false,
+    children: generateFlatSubtree(size, 'root', 1)
   };
 
-  //let idCounter = 0;
-  let currentItems;
-  let nextItems = treeArray;
-  for (let i = 1; i < depth + 1; ++i) {
-    currentItems = nextItems;
-    nextItems = [];
-    for (let j = 0; j < currentItems.length; ++j) {
-      const currentItem = currentItems[j];
-      const currentItemChildren = currentItem.children;
-      for (let k = 0; k < size; ++k) {
-        //const subId = (idCounter++).toString() + '-' + i.toString();
-        const subId = k.toString();
-        const id = currentItem.id + Constants.EXPLORER_PATH_SEPARATOR + subId;
-        const child = {
-          id: id,
-          label: subId,
-          depth: i,
-          parent: currentItem.id,
-          isLast: k + 1 >= size,
-          children: [],
-        };
-        nextItems.push(child);
-        currentItemChildren.push(child);
-        contextMap[id] = {
-          textContent: {
-            Name: subId,
-            //Description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-          }
-        };
-      }
-    }
-  }
-
   console.log('generating data tree done')
-  return { tree: treeArray, context: contextMap };
-  
+  return { tree: tree };
 }
+
+const generateFlatSubtree = (size, parentId) => {
+  const items = [];
+
+  if ((parentId.match(/\./g) || []).length === 3) {
+    return items;
+  }
+  
+  for (let k = 0; k < size; ++k) {
+    const subId = k.toString();
+    const id = parentId + Constants.EXPLORER_PATH_SEPARATOR + subId;
+    const child = {
+      id: id,
+      label: subId,
+      //label: rndString(6),
+      isLast: k + 1 >= size,
+      isAsync: true,
+      children: [],
+    };
+    items.push(child);
+  }
+  return items;
+};
 
 const PANEL_DISTANCE = 8;
 
@@ -101,13 +91,13 @@ const reducer = (pageState, action) => {
       return {
         nodeContext: pageState.nodeContext,
         input: action.input
-      }
+      };
     }
     case 'path_changed': {
       return {
         nodeContext: action.nodeContext,
         input: action.input
-      }
+      };
     }
     default: {
       throw Error('Unknown action: ' + action.type);
@@ -116,11 +106,12 @@ const reducer = (pageState, action) => {
 };
 
 export const DocsPage = () => {
-  const testTreeData = React.useMemo(() => generateTreeData(30, 3), []);
+  const testTreeData = React.useMemo(() => generateTreeData(3000), []);
+
   const explorerTreeRef = React.useRef();
   const [searchParams] = useSearchParams();
   const { sync } = useValuesToQueryStringSync();
-  const [pageState, dispatch] = useReducer(reducer, { input: '' });
+  const [pageState, dispatch] = React.useReducer(reducer, { input: '' });
 
   const getCurrentPath = React.useCallback(() => {
     return searchParams.get(Constants.PARAM_PATH) || '';
@@ -128,16 +119,32 @@ export const DocsPage = () => {
 
   const setCurrentPath = React.useCallback((path) => {
     const map = new Map();
-    map.set(Constants.PARAM_PATH, [path]);
+    map.set(Constants.PARAM_PATH, path && path.length > 0 ? [path] : []);
     sync(map);
   }, [sync]);
+
+  const fetchNodeChildren = React.useCallback((id) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(generateFlatSubtree(3000, id));
+      }, 1000)
+    });
+  }, []);
+
+  const fetchNodeContext = React.useCallback((id) => {
+    return new Promise((resolve) => {
+      resolve(generateFlatSubtree(3000, id));
+    });
+  }, []);
 
   React.useEffect(() => {
     console.log('Docs page use effect');
     const path = getCurrentPath();
     dispatch({
       type: 'path_changed',
-      nodeContext: testTreeData.context[path],
+
+      // temporarily
+      nodeContext: { textContent: { Name: 'test name' } },
       input: path
     });
   }, [getCurrentPath, testTreeData.context]);
@@ -156,7 +163,7 @@ export const DocsPage = () => {
           setCurrentPath(path);
           explorerTreeRef.current.navigateToPath(path);
         }}>
-          <Input text='text' value={pageState.input} onChange={(event) => dispatch({ type: 'input_changed', input: event.target.value})} />
+          <Input text='text' value={pageState.input} onChange={(event) => dispatch({ type: 'input_changed', input: event.target.value })} />
         </form>
       </PanelContent>
       <StyledPanelGroup autoSaveId={Constants.LOCAL_MODS_COLUMN_1_RESIZABLE_ID} direction="horizontal">
@@ -171,6 +178,7 @@ export const DocsPage = () => {
                 tree={testTreeData.tree}
                 onPathChange={setCurrentPath}
                 currentPath={currentPath}
+                fetchNodeChildren={fetchNodeChildren}
                 onMounted={() => explorerTreeRef.current.navigateToPath(currentPath)} />
             </Box>
           </PanelContent>
