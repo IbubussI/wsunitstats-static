@@ -1,11 +1,13 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
 import { ExplorerTree } from 'components/Pages/DocsPage/ExplorerTree';
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import styled from '@emotion/styled';
 import { useSearchParams } from 'react-router-dom';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
+import SearchIcon from '@mui/icons-material/Search';
+import { PropsTable } from 'components/Pages/DocsPage/PropsTable';
 
 function rndString(length) {
   let result = '';
@@ -18,28 +20,54 @@ function rndString(length) {
 }
 
 function generateTreeData(size) {
-  console.log('generating data tree')
-  const tree = {
+  return {
     id: 'root',
     label: 'root',
-    depth: 0,
     isLast: true,
     isExpanded: true,
     isAsync: false,
     children: generateFlatSubtree(size, 'root', 1)
   };
+}
 
-  console.log('generating data tree done')
-  return { tree: tree };
+function generateNodeContext(id) {
+  return id && {
+    textContent: {
+      Path: id,
+      Description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+    },
+    properties: {
+      id: {
+        type: 'String',
+        value: id
+      },
+      property1: {
+        type: 'String',
+        value: rndString(id.length)
+      },
+      property5: {
+        type: 'Boolean',
+        value: true
+      },
+      property6: {
+        type: 'Boolean',
+        value: false
+      },
+      property7: {
+        type: 'Number',
+        value: Math.random() * (id.length**10)
+      },
+    }
+  };
 }
 
 const generateFlatSubtree = (size, parentId) => {
   const items = [];
 
-  if ((parentId.match(/\./g) || []).length === 3) {
+  if ((parentId.match(/\./g) || []).length === 10) {
     return items;
   }
-  
+
   for (let k = 0; k < size; ++k) {
     const subId = k.toString();
     const id = parentId + Constants.EXPLORER_PATH_SEPARATOR + subId;
@@ -58,7 +86,8 @@ const generateFlatSubtree = (size, parentId) => {
 
 const PANEL_DISTANCE = 8;
 
-const PanelContent = styled(Box)(() => ({
+const PanelContent = styled('div')(() => ({
+  overflow: 'auto',
   border: '1px solid #8ac8f4',
   height: '100%',
   backgroundColor: 'white'
@@ -82,7 +111,34 @@ const PageRoot = styled(Box)(() => ({
 const Input = styled('input')(() => ({
   border: 'none',
   width: '100%',
-  outline: 'none'
+  outline: 'none',
+  lineHeight: 1.5,
+  paddingTop: 0,
+  paddingBottom: 0,
+  background: 'linear-gradient(#daf1f7, #fff 50%)',
+}));
+
+const PathForm = styled('form')(() => ({
+  lineHeight: 'initial',
+  display: 'flex'
+}));
+
+const PathButton = styled(Button)(() => ({
+  padding: 0,
+  border: 'none',
+  borderLeft: '1px solid #8ac8f4',
+  borderRadius: 'initial',
+  background: 'linear-gradient(#f7f7f9 20%, #dfe5e6)',
+  '&:hover': {
+    background: '#cee3ea',
+    transition: 'none'
+  },
+  minWidth: '20px'
+}));
+
+const PathButtonIcon = styled(SearchIcon)(() => ({
+  width: '18px',
+  height: '18px',
 }));
 
 const reducer = (pageState, action) => {
@@ -133,40 +189,48 @@ export const DocsPage = () => {
 
   const fetchNodeContext = React.useCallback((id) => {
     return new Promise((resolve) => {
-      resolve(generateFlatSubtree(3000, id));
+      resolve(generateNodeContext(id));
     });
   }, []);
 
   React.useEffect(() => {
-    console.log('Docs page use effect');
-    const path = getCurrentPath();
-    dispatch({
-      type: 'path_changed',
+    (async () => {
+      const path = getCurrentPath();
+      dispatch({
+        type: 'path_changed',
 
-      // temporarily
-      nodeContext: { textContent: { Name: 'test name' } },
-      input: path
-    });
-  }, [getCurrentPath, testTreeData.context]);
+        // temporarily
+        nodeContext: await fetchNodeContext(path),
+        input: path
+      });
+    })();
+  }, [getCurrentPath, fetchNodeContext]);
 
   const currentPath = getCurrentPath();
   const textContent = pageState.nodeContext?.textContent;
-  console.log('render')
+  const properties = pageState.nodeContext?.properties;
   return (
     <PageRoot>
       <PanelContent>
-        <form onSubmit={(event) => {
-          console.log('change path')
+        <PathForm onSubmit={(event) => {
           // prevent page reload
           event.preventDefault();
-          const path = event.target[0].value;
-          setCurrentPath(path);
-          explorerTreeRef.current.navigateToPath(path);
+          if (!explorerTreeRef.current.isNavigationInProgress()) {
+            const path = event.target[0].value;
+            setCurrentPath(path);
+            explorerTreeRef.current.navigateToPath(path);
+          }
         }}>
-          <Input text='text' value={pageState.input} onChange={(event) => dispatch({ type: 'input_changed', input: event.target.value })} />
-        </form>
+          <Input text='text' value={pageState.input} onChange={(event) => 
+            dispatch({ type: 'input_changed', input: event.target.value })} />
+          <PathButton type='submit' variant='text'>
+            <PathButtonIcon />
+          </PathButton>
+        </PathForm>
       </PanelContent>
-      <StyledPanelGroup autoSaveId={Constants.LOCAL_MODS_COLUMN_1_RESIZABLE_ID} direction="horizontal">
+      <StyledPanelGroup
+        autoSaveId={Constants.LOCAL_MODS_TREE_CONENT_RESIZABLE_ID}
+        direction='horizontal'>
         <Panel
           collapsible={true}
           defaultSize={20}
@@ -175,7 +239,7 @@ export const DocsPage = () => {
             <Box height='inherit' padding='1px'>
               <ExplorerTree
                 ref={explorerTreeRef}
-                tree={testTreeData.tree}
+                tree={testTreeData}
                 onPathChange={setCurrentPath}
                 currentPath={currentPath}
                 fetchNodeChildren={fetchNodeChildren}
@@ -190,18 +254,47 @@ export const DocsPage = () => {
           collapsible={true}
           defaultSize={40}
           order={2}>
-          <PanelContent style={{ padding: '8px' }}>
-            {textContent && Object.keys(textContent).map((propName, i) => (
-              <React.Fragment key={i}>
-                <Typography variant='h6' gutterBottom>
-                  {propName}
-                </Typography>
-                <Typography variant='body2' color='textSecondary' gutterBottom>
-                  {textContent[propName]}
-                </Typography>
-              </React.Fragment>
-            ))}
-          </PanelContent>
+          <StyledPanelGroup autoSaveId={Constants.LOCAL_MODS_CONENT_PROPS_RESIZABLE_ID} direction='vertical'>
+            <Panel>
+              <PanelContent style={{ padding: '8px' }}>
+                {textContent && Object.entries(textContent).map((entry, i) => {
+                  const name = entry[0];
+                  const value = entry[1];
+                  return (
+                    <React.Fragment key={i}>
+                      <Typography variant='h6' gutterBottom>
+                        {name}
+                      </Typography>
+                      <Typography variant='body2' color='textSecondary' gutterBottom>
+                        {value}
+                      </Typography>
+                    </React.Fragment>
+                  );
+                })}
+              </PanelContent>
+            </Panel>
+            <PanelResizeHandle>
+              <Box height={PANEL_DISTANCE} />
+            </PanelResizeHandle>
+            <Panel>
+              <PanelContent>
+                <PropsTable
+                  autoSaveId={Constants.LOCAL_MODS_PROPS_TABLE_COLUMNS_RESIZABLE_ID}
+                  dataRows={properties && Object.entries(properties).map((entry) => {
+                    const propName = entry[0];
+                    const prop = entry[1];
+                    const type = prop.type.toString();
+                    const value = prop.value.toString();
+                    return { name: propName, type, value }
+                  })}
+                  headCells={[
+                    { id: 'name', label: 'Name', width: 120 },
+                    { id: 'type', label: 'Type', width: 90 },
+                    { id: 'value', label: 'Value' }
+                  ]} />
+              </PanelContent>
+            </Panel>
+          </StyledPanelGroup>
         </Panel>
       </StyledPanelGroup>
     </PageRoot>

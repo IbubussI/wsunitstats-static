@@ -102,7 +102,7 @@ const TreeItem = styled('div')(({ theme }) => ({
 // state (`setOpen`) and `style` parameter that should be added to the root div.
 const ExplorerTreeItem = (props) => {
   const theme = useTheme();
-  const [_, triggerUpdate] = React.useReducer((v) => v + 1, 0);
+  const [, triggerUpdate] = React.useReducer((v) => v + 1, 0);
 
   const {
     data: {
@@ -176,6 +176,7 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
   const treeRef = React.useRef();
   // save loaded ids to not display expand icon and fetch children if prev fetch loaded nothing
   const downloadedIdsRef = React.useRef([]);
+  const navigationInProgress = React.useRef(false);
   const [navigationPath, setNavigationPath] = React.useState();
   const [updateTrigger, triggerUpdate] = React.useReducer((v) => v + 1, 0);
 
@@ -189,7 +190,6 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
   }, [fetchNodeChildren]);
 
   const openPath = (path) => {
-    console.log('navigating to path: ' + path)
     const itemsToOpen = {};
     const pathItems = path.split(Constants.EXPLORER_PATH_SEPARATOR);
     for (let i = 0; i < pathItems.length - 1; ++i) {
@@ -209,10 +209,9 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
   };
 
   const navigateToPath = async (path) => {
-    console.log('preloading path: ' + path)
+    navigationInProgress.current = true;
     const pathItems = path.split(Constants.EXPLORER_PATH_SEPARATOR);
     let currentItem = tree;
-    let isFirst = true;
     for (let i = 1; i < pathItems.length; ++i) {
       const pathToOpenItems = [];
       for (let j = 0; j <= i; ++j) {
@@ -239,14 +238,19 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
         break;
       }
     }
+    navigationInProgress.current = false;
+  };
+
+  const isNavigationInProgress = () => {
+    return navigationInProgress.current;
   };
 
   React.useImperativeHandle(ref, () => ({
-    navigateToPath
+    navigateToPath,
+    isNavigationInProgress
   }));
 
   React.useEffect(() => {
-    console.log('tree ref change ' + treeRef.current)
     if (treeRef.current) {
       onMounted();
     }
