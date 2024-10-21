@@ -105,7 +105,9 @@ const PageRoot = styled(Box)(() => ({
   flexDirection: 'column',
   gap: 8,
   padding: 8,
-  backgroundColor: '#a6daff80'
+  backgroundColor: '#a6daff80',
+  // possible variant for more compact font
+  //font: 'normal 11px arial, tahoma, helvetica, sans-serif'
 }));
 
 const Input = styled('input')(() => ({
@@ -279,6 +281,7 @@ export const DocsPage = () => {
             <Panel>
               <PanelContent>
                 <PropsTable
+                  resizeAllToRight={true}
                   autoSaveId={Constants.LOCAL_MODS_PROPS_TABLE_COLUMNS_RESIZABLE_ID}
                   dataRows={properties && Object.entries(properties).map((entry) => {
                     const propName = entry[0];
@@ -288,9 +291,9 @@ export const DocsPage = () => {
                     return { name: propName, type, value }
                   })}
                   headCells={[
-                    { id: 'name', label: 'Name', width: 120 },
-                    { id: 'type', label: 'Type', width: 90 },
-                    { id: 'value', label: 'Value' }
+                    { id: 'name', label: 'Name', width: 200 },
+                    { id: 'type', label: 'Type', width: 150 },
+                    { id: 'value', label: 'Value', width: 600 }
                   ]} />
               </PanelContent>
             </Panel>

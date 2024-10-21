@@ -31,19 +31,14 @@ function getComparator(order, orderBy) {
 const ContentTableCell = styled(React.forwardRef(
   (props, ref) => <TableCell ref={ref} {...props} />
 ))(({ theme }) => ({
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    lineHeight: 1.3,
-  },
   padding: '6px',
-  letterSpacing: 0,
-
+  letterSpacing: 0
 }));
 
 const TableCellText = styled('div')(({ theme }) => ({
   textOverflow: 'ellipsis',
   overflow: 'hidden',
-  whiteSpace: 'nowrap'
+  whiteSpace: 'nowrap',
 }));
 
 const TableCellBox = styled('div')(({ theme }) => ({
@@ -145,7 +140,7 @@ const ExpandableContentCell = (props) => {
   ); 
 };
 
-export const PropsTable = ({ headCells, dataRows, autoSaveId }) => {
+export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }) => {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('name');
   const columnRefs = React.useRef(headCells.map(() => React.createRef()));
@@ -189,31 +184,51 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId }) => {
       const index = isResizing.current;
       const handleRect = columnRefs.current[index].current.getBoundingClientRect();
       const diff = e.clientX - handleRect.right + handleRect.width / 2;
+      if (resizeAllToRight) {
+        adjustWidthAllToRightShift(index, diff);
+      } else {
+        adjustWidthBetween2Columns(index, diff);
+      }
+    }
+  };
 
-      const minWidth = headCells[index]?.minWidth ?? MIN_WIDTH_CELL;
+  // not used for now
+  const adjustWidthBetween2Columns = (index, diff) => {
+    const minLeftWidth = headCells[index]?.minWidth ?? MIN_WIDTH_CELL;
+    const minRightWidth = headCells[index + 1]?.minWidth ?? MIN_WIDTH_CELL;
 
-      const leftCell = columnRefs.current[index].current.parentElement;
+    const isLast = index + 1 === headCells.length;
+
+    const leftCell = columnRefs.current[index].current.parentElement;
+    const leftWidth = leftCell.getBoundingClientRect().width;
+    let newLeftWidth = leftWidth + diff >= minLeftWidth ? leftWidth + diff : minLeftWidth;
+    const leftDiff = newLeftWidth - leftWidth;
+
+    let minDiff = leftDiff;
+    if (!isLast) {
       const rightCell = columnRefs.current[index + 1].current.parentElement;
-
-      const leftWidth = leftCell.getBoundingClientRect().width;
       const rightWidth = rightCell.getBoundingClientRect().width;
-
-      let newLeftWidth = leftWidth + diff >= minWidth ? leftWidth + diff : minWidth;
-      let newRightWidth = rightWidth - diff >= minWidth ? rightWidth - diff : minWidth;
-
-      // find actual diffs and recalculate new width to min available diff
-      // to prevent different resize for columns
-      const leftDiff = newLeftWidth - leftWidth;
+      let newRightWidth = rightWidth - diff >= minRightWidth ? rightWidth - diff : minRightWidth;
       const rightDiff = rightWidth - newRightWidth;
 
-      const minDiff = Math.abs(leftDiff) < Math.abs(rightDiff) ? leftDiff : rightDiff;
-      newLeftWidth = leftWidth + minDiff >= minWidth ? leftWidth + minDiff : minWidth;
-      newRightWidth = rightWidth - minDiff < minWidth ? minWidth : rightWidth - minDiff;
+      // recalculate new width to min available diff
+      // to prevent different resize for columns
+      minDiff = Math.abs(leftDiff) < Math.abs(rightDiff) ? leftDiff : rightDiff;
 
-      leftCell.style.width = newLeftWidth + "px";
-      const isLast = index + 2 === headCells.length;
-      rightCell.style.width = isLast ? 'auto' : newRightWidth + "px";
+      newRightWidth = rightWidth - minDiff < minRightWidth ? minRightWidth : rightWidth - minDiff;
+      rightCell.style.width = newRightWidth + "px";
     }
+
+    newLeftWidth = leftWidth + minDiff >= minLeftWidth ? leftWidth + minDiff : minLeftWidth;
+    leftCell.style.width = newLeftWidth + "px";
+  };
+
+  const adjustWidthAllToRightShift = (index, diff) => {
+    const minWidth = headCells[index]?.minWidth ?? MIN_WIDTH_CELL;
+    const cell = columnRefs.current[index].current.parentElement;
+    const width = cell.getBoundingClientRect().width;
+    const newWidth = width + diff < minWidth ? minWidth : width + diff;
+    cell.style.width = newWidth + "px";
   };
 
   const handleOnMouseUp = () => {
@@ -240,8 +255,8 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId }) => {
   };
 
   return (
-    <TableContainer>
-      <Table size='small' sx={{ tableLayout: 'fixed' }}>
+    <TableContainer sx={{ height: '100%' }}>
+      <Table size='small' sx={{ tableLayout: 'fixed', width: 0 }}>
         <TableHead sx={{ userSelect: 'none' }}>
           <HeadingTableRow>
             <IdTableCell />
@@ -257,15 +272,13 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId }) => {
                     onClick={createSortHandler(headCell.id)}>
                     {headCell.label}
                   </TableSortLabel>
-                  {i < headCells.length - 1
-                    ? <div ref={columnRefs.current[i]}
-                      onMouseDown={() => onClickResizeColumn(i)}
-                      className='resizeLine' >
-                      <svg viewBox="0 0 24 24">
-                        <rect width="1" height="24" x="11.5" rx="0.5" />
-                      </svg>
-                    </div>
-                    : <div ref={columnRefs.current[i]} />}
+                  <div ref={columnRefs.current[i]}
+                    onMouseDown={() => onClickResizeColumn(i)}
+                    className='resizeLine' >
+                    <svg viewBox="0 0 24 24">
+                      <rect width="1" height="24" x="11.5" rx="0.5" />
+                    </svg>
+                  </div>
                 </ContentTableCell>
               );
             })}
