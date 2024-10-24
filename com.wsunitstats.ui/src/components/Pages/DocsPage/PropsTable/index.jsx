@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
+import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
@@ -13,13 +13,20 @@ import { alpha, IconButton, iconButtonClasses } from '@mui/material';
 import './index.css';
 
 function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
+  const s1 = a[orderBy];
+  const s2 = b[orderBy];
+  const regex = /^\d+$/;
+  const b1 = regex.test(s1);
+  const b2 = regex.test(s2);
+  if (b1 && b2) {
+      return parseInt(s1) - parseInt(s2);
+  } else if (b1) {
+      return 1;
+  } else if (b2) {
+      return -1;
+  } else {
+      return s1.localeCompare(s2);
   }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
 }
 
 function getComparator(order, orderBy) {
@@ -141,7 +148,7 @@ const ExpandableContentCell = (props) => {
 };
 
 export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }) => {
-  const [order, setOrder] = React.useState('asc');
+  const [order, setOrder] = React.useState('desc');
   const [orderBy, setOrderBy] = React.useState('name');
   const columnRefs = React.useRef(headCells.map(() => React.createRef()));
   const isResizing = React.useRef(-1);
@@ -285,9 +292,9 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }
           </HeadingTableRow>
         </TableHead>
         <TableBody>
-          {dataRows && dataRows.sort(getComparator(order, orderBy)).map((row, i) => {
+          {dataRows && dataRows.sort(getComparator(order, orderBy)).map((row, i, a) => {
             return (
-              <ContentTableRow hover key={row.name + i.toString()}>
+              <ContentTableRow hover key={i}>
                 <IdTableCell>{i + 1}</IdTableCell>
                 <ExpandableContentCell>{row.name}</ExpandableContentCell>
                 <ExpandableContentCell>{row.type}</ExpandableContentCell>

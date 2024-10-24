@@ -11,6 +11,10 @@ export const UNIT_DATA_PATH = '/files/units';
 export const RESEARCH_DATA_PATH = '/files/researches';
 export const CONTEXT_DATA_PATH = '/files/context.json';
 export const UNIT_SELECTOR_DATA_PATH = '/files/units/unitSelector.json';
+export const DOCS_DATA_TREE_PATH = '/files/docs/tree';
+export const DOCS_DATA_TREE_ROOT_FILE_PATH = DOCS_DATA_TREE_PATH + "/root.json";
+export const DOCS_DATA_CONTEXT_PATH = '/files/docs/context';
+export const DOCS_DATA_CONTEXT_ROOT_FILE_PATH = DOCS_DATA_CONTEXT_PATH + "/root.json";
 
 export const UNIT_SELECTOR_PAGE_PATH = 'units';
 export const RESEARCH_SELECTOR_PAGE_PATH = 'researches';
@@ -51,6 +55,9 @@ export const LOCAL_MODS_TREE_CONENT_RESIZABLE_ID = 'mods-page-resizable-tree-con
 export const LOCAL_MODS_CONENT_PROPS_RESIZABLE_ID = 'mods-page-resizable-content-props-vertical';
 export const LOCAL_MODS_PROPS_TABLE_COLUMNS_RESIZABLE_ID = 'mods-page-resizable-props-table-columns';
 export const EXPLORER_PATH_SEPARATOR = '.';
+export const EXPLORER_PATH_SEPARATOR_REGEX = /\.|\[/;
+export const EXPLORER_PATH_SEPARATOR_END_SQUARE = ']';
+export const EXPLORER_PATH_SQUARE_TARGET_REGEX = /^\d/;
 
 export const JS_NBSP = '\u00A0';
 export const SECONDS_END_MARKER = `${JS_NBSP}sec`;

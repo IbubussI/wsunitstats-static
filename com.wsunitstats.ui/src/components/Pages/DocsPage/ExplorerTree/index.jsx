@@ -97,6 +97,25 @@ const TreeItem = styled('div')(({ theme }) => ({
   },
 }));
 
+function splitPath(path) {
+  const pathItems = path.split(Constants.EXPLORER_PATH_SEPARATOR_REGEX);
+  pathItems.forEach((pathItem, index, array) => {
+    if (pathItem.endsWith(Constants.EXPLORER_PATH_SEPARATOR_END_SQUARE)) {
+      array[index] = pathItem.substring(0, pathItem.length - 1);
+    }
+  });
+  return pathItems;
+}
+
+function joinPath(pathItems) {
+  pathItems.forEach((pathItem, index, array) => {
+    if (Constants.EXPLORER_PATH_SQUARE_TARGET_REGEX.test(pathItem)) {
+      array[index] = `[${pathItem}]`;
+    }
+  });
+  return pathItems.join(Constants.EXPLORER_PATH_SEPARATOR).replaceAll('.[', '[');
+}
+
 // Node component receives all the data we created in the `treeWalker` +
 // internal openness state (`isOpen`), function to change internal openness
 // state (`setOpen`) and `style` parameter that should be added to the root div.
@@ -110,12 +129,14 @@ const ExplorerTreeItem = (props) => {
       isLeaf,
       isLast,
       label,
+      contextBatch,
       rowIcons,
       updateChildren,
       loadingState
     },
     treeData: {
       onPathChange,
+      onContextChange,
       currentPath
     },
     isOpen,
@@ -159,11 +180,12 @@ const ExplorerTreeItem = (props) => {
         : undefined
     }} onClick={() => {
       onPathChange(id);
+      onContextChange(contextBatch, id);
     }} >
       {rowIcons}
       {nodeSlotIcon}
       <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5, alignItems: 'center' }}>
-        {loadingState.isLoading ? <LoadingIcon/> : <NodeIcon sx={{ width: '24px', height: '24px' }} />}
+        {loadingState.isLoading ? <LoadingIcon /> : <NodeIcon sx={{ width: '24px', height: '24px' }} />}
         <Label>
           {label}
         </Label>
@@ -172,7 +194,14 @@ const ExplorerTreeItem = (props) => {
   );
 };
 
-export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath, fetchNodeChildren, onMounted = () => {} }, ref) => {
+export const ExplorerTree = React.forwardRef(({
+  tree,
+  onPathChange,
+  onContextChange,
+  currentPath,
+  fetchNodeChildren,
+  onMounted = () => { }
+}, ref) => {
   const treeRef = React.useRef();
   // save loaded ids to not display expand icon and fetch children if prev fetch loaded nothing
   const downloadedIdsRef = React.useRef([]);
@@ -184,59 +213,63 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
     return fetchNodeChildren(id).then((children) => {
       return new Promise((resolve) => {
         downloadedIdsRef.current.push(id);
-        return resolve(children);
+        resolve(children);
       });
     });
   }, [fetchNodeChildren]);
 
   const openPath = (path) => {
     const itemsToOpen = {};
-    const pathItems = path.split(Constants.EXPLORER_PATH_SEPARATOR);
+    const pathItems = splitPath(path);
     for (let i = 0; i < pathItems.length - 1; ++i) {
       const pathToOpenItems = [];
       for (let j = 0; j <= i; ++j) {
         pathToOpenItems.push(pathItems[j]);
       }
-      itemsToOpen[pathToOpenItems.join(Constants.EXPLORER_PATH_SEPARATOR)] = true;
+      itemsToOpen[joinPath(pathToOpenItems)] = true;
     }
 
     return treeRef.current.recomputeTree(itemsToOpen).then(() => {
       // wait because in some cases react-window list might not be loaded immediately after recomputeTree
       setTimeout(() => {
         treeRef.current.scrollToItem(path);
-      }, 1)
+      }, 1);
     });
   };
 
   const navigateToPath = async (path) => {
     navigationInProgress.current = true;
-    const pathItems = path.split(Constants.EXPLORER_PATH_SEPARATOR);
+    const pathItems = splitPath(path);
     let currentItem = tree;
     for (let i = 1; i < pathItems.length; ++i) {
       const pathToOpenItems = [];
       for (let j = 0; j <= i; ++j) {
         pathToOpenItems.push(pathItems[j]);
       }
-      const openItemId = pathToOpenItems.join(Constants.EXPLORER_PATH_SEPARATOR);
+      const openItemId = joinPath(pathToOpenItems);
 
       // if item not async it is expected to have children already
-      if (currentItem.isAsync) {
-        if (currentItem.children.length === 0) {
+      if (currentItem.as) {
+        if (currentItem.ch === undefined) {
           currentItem.isLoading = true;
           triggerUpdate();
-          currentItem.children = await fetchChildren(currentItem.id);
+          currentItem.ch = await fetchChildren(currentItem.id);
           currentItem.isLoading = false;
           triggerUpdate();
         }
       }
       // find next item to load
-      currentItem = currentItem.children.find((item) => item.id === openItemId);
+      currentItem = currentItem?.ch.find((item) => item.id === openItemId);
 
       // trigger navigation to the recently loaded item 
       setNavigationPath(openItemId);
       if (!currentItem) {
         break;
       }
+    }
+    // trigger context change if desired path is reached
+    if (currentItem) {
+      onContextChange(currentItem.cb, path);
     }
     navigationInProgress.current = false;
   };
@@ -280,15 +313,16 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
     return {
       data: {
         id: node.id.toString(), // mandatory
-        isLeaf: () => node.children.length === 0 && (!node.isAsync || downloadedIdsRef.current.includes(node.id)),
-        isOpenByDefault: node.isExpanded, // mandatory
+        isLeaf: () => node.ch === undefined && (!node.as || downloadedIdsRef.current.includes(node.id)),
+        isOpenByDefault: node.ex, // mandatory
         isLast,
-        label: node.label,
+        label: node.lb,
+        contextBatch: node.cb,
         rowIcons: rowIcons.reverse(),
         updateChildren: () => {
-          if (node.children.length === 0) {
+          if (node.ch === undefined) {
             return fetchChildren(node.id, true).then((children) => {
-              node.children = children;
+              node.ch = children;
               triggerUpdate();
             });
           } else {
@@ -319,11 +353,13 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
       // Step [2]: Get the parent component back (constructed by prev getNodeData call)
       const parent = yield;
 
-      for (let i = 0; i < parent.node.children.length; i++) {
-        // Step [3]: Yielding all the children of the provided component. Then we
-        // will return for the step [2] with the first children.
-        const isLast = i + 1 === parent.node.children.length;
-        yield getNodeData(parent.node.children[i], parent, parent.depth + 1, isLast);
+      if (parent.node.ch) {
+        for (let i = 0; i < parent.node.ch.length; i++) {
+          // Step [3]: Yielding all the children of the provided component. Then we
+          // will return for the step [2] with the first children.
+          const isLast = i + 1 === parent.node.ch.length;
+          yield getNodeData(parent.node.ch[i], parent, parent.depth + 1, isLast);
+        }
       }
     }
     // trigger required to rebuild internal tree after async data received
@@ -338,7 +374,7 @@ export const ExplorerTree = React.forwardRef(({ tree, onPathChange, currentPath,
           ref={treeRef}
           treeWalker={treeWalker}
           itemSize={24}
-          itemData={{ onPathChange, currentPath }}
+          itemData={{ onPathChange, onContextChange, currentPath }}
           height={height}
           async={true}
           width="100%">

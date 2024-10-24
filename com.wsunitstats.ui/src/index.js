@@ -67,6 +67,7 @@ const unitLoader = (route) => entityLoader(route, Constants.UNIT_DATA_PATH);
 const researchLoader = (route) => entityLoader(route, Constants.RESEARCH_DATA_PATH);
 const contextLoader = () => fetch(new URL(Constants.HOST + Constants.CONTEXT_DATA_PATH));
 const unitSelectorLoader = () => fetch(new URL(Constants.HOST + Constants.UNIT_SELECTOR_DATA_PATH));
+const docsLoader = () => fetch(new URL(Constants.HOST + Constants.DOCS_DATA_TREE_ROOT_FILE_PATH));
 
 const unitSelectorOptions = {
   title: 'WS Units',
@@ -133,14 +134,16 @@ const router = createBrowserRouter([
       },
       {
         path: Constants.MODS_PAGE_PATH,
-        element: <DocsPage />
+        element: <DocsPage />,
+        loader: docsLoader,
+        shouldRevalidate: () => false,
       },
       {
         path: Constants.UNIT_SELECTOR_PAGE_PATH,
         element: <EntitySelectorPage selectorOptions={unitSelectorOptions} getSelectorOptions={filterUnitSelectorOptions} />,
         loader: unitSelectorLoader,
         shouldRevalidate: () => false,
-      },
+      },  
       {
         path: `${Constants.UNIT_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,
