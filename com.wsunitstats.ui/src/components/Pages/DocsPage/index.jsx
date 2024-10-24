@@ -161,7 +161,7 @@ export const DocsPage = () => {
                   const value = entry.tx;
                   return (
                     <React.Fragment key={i}>
-                      <Typography variant='h6' gutterBottom>
+                      <Typography variant='h6' gutterBottom sx={{ fontSize: '1rem' }}>
                         {name}
                       </Typography>
                       <Typography variant='body2' color='textSecondary' gutterBottom>
