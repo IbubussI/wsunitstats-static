@@ -115,7 +115,7 @@ const ExpandableContentCell = (props) => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [ref.current]);
+  }, []);
 
   React.useEffect(() => {
     const cell = ref.current;
@@ -161,6 +161,8 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }
       document.onmousemove = null;
       document.onmouseup = null;
     };
+    // only initial call
+    // eslint-disable-next-line
   }, []);
 
   const loadFromLocalStorage = () => {
@@ -199,7 +201,7 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }
     }
   };
 
-  // not used for now
+  // not used because of not UI friendly
   const adjustWidthBetween2Columns = (index, diff) => {
     const minLeftWidth = headCells[index]?.minWidth ?? MIN_WIDTH_CELL;
     const minRightWidth = headCells[index + 1]?.minWidth ?? MIN_WIDTH_CELL;

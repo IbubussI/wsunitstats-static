@@ -101,15 +101,12 @@ export const DocsPage = () => {
   }, []);
 
   React.useEffect(() => {
-    console.log("path change effect")
     setInput(getCurrentPath());
   }, [getCurrentPath]);
 
   const currentPath = getCurrentPath();
   const textContent = nodeContext?.tc;
   const properties = nodeContext?.pr;
-  console.log("node context")
-  console.log(nodeContext);
   return (
     <PageRoot>
       <PanelContent>

@@ -345,7 +345,6 @@ export const ExplorerTree = React.forwardRef(({
   // The `treeWalker` function runs only on tree re-build which is performed
   // whenever the `treeWalker` prop is changed.
   const treeWalker = React.useCallback(function* () {
-    console.log('tree walker invoked')
     // Step [1]: Define the root node of our tree
     yield getNodeData(tree, undefined, 0, true);
 
@@ -366,7 +365,6 @@ export const ExplorerTree = React.forwardRef(({
     // eslint-disable-next-line
   }, [updateTrigger, getNodeData]);
 
-  console.log('render tree')
   return (
     <AutoSizer disableWidth>
       {({ height }) => (
