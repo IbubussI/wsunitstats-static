@@ -40,10 +40,12 @@ const Input = styled('input')(() => ({
   border: 'none',
   width: '100%',
   outline: 'none',
-  lineHeight: 1.5,
   paddingTop: 0,
   paddingBottom: 0,
   background: 'linear-gradient(#daf1f7, #fff 50%)',
+  font: '14px arial, tahoma, helvetica, sans-serif',
+  lineHeight: 1.8,
+  letterSpacing: 0.3
 }));
 
 const PathForm = styled('form')(() => ({
