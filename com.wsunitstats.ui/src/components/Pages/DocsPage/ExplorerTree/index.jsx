@@ -12,7 +12,6 @@ import {
   IntermediateInternalExpandedIcon,
   IntermediateLeafIcon,
   IntermediateLineIcon,
-  NodeIcon,
   NodeIcon2,
   NumberPropIcon,
   StringPropIcon,
