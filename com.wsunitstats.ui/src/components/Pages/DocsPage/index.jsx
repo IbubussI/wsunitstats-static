@@ -74,18 +74,6 @@ const PathButtonIcon = styled(SearchIcon)(() => ({
 // replace . accessor with [] one for number indexes to match valid lua syntax
 const idToFileName = (id) => id.replaceAll('[', '.').replaceAll('].', '.').replaceAll(']', '');
 
-// remove home element, since it is always the same and redundant
-const idToInput = (id) => {
-  if (id.includes('.')) {
-    return id.substring(id.indexOf(Constants.TREE_HOME_PREFIX) + Constants.TREE_HOME_PREFIX.length + 1);
-  } else {
-    return id.substring(id.indexOf(Constants.TREE_HOME_PREFIX));
-  }
-};
-
-// append home prefix to create valid id from input
-const inputToId = (input) => `${Constants.TREE_HOME_PREFIX}.${input}`;
-
 export const DocsPage = () => {
   const initialTree = useLoaderData();
   const explorerTreeRef = React.useRef();
