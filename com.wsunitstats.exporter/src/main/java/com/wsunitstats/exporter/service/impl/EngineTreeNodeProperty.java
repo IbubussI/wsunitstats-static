@@ -18,10 +18,10 @@ public class EngineTreeNodeProperty {
     private final int jsonSize;
 
     public EngineTreeNodeProperty(String name,
-                                  String type,
+                                  EngineNodeType type,
                                   String value) {
         this.name = name;
-        this.type = type;
+        this.type = type.getLabel();
         this.value = value;
         this.jsonSize = jsonSize();
     }

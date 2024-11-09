@@ -25,7 +25,11 @@ const pages = [
   {
     path: Constants.RESEARCH_SELECTOR_PAGE_PATH,
     name: 'Researches'
-  }
+  },
+  {
+    path: Constants.MODS_PAGE_PATH,
+    name: 'Modding'
+  },
 ];
 
 export const Header = ({ context }) => {

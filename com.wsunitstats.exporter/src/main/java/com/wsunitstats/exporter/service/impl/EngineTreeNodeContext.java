@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.wsunitstats.exporter.service.EngineDataBuilder.CONTAINER_ITEM_JSON_LENGTH_OVERHEAD;
@@ -17,6 +18,12 @@ public class EngineTreeNodeContext {
     private final List<EngineTreeNodeTextContent> textContent;
     @JsonIgnore
     private final int jsonSize;
+
+    public EngineTreeNodeContext() {
+        this.properties = new ArrayList<>();
+        this.textContent = new ArrayList<>();
+        this.jsonSize = jsonSize();
+    }
 
     public EngineTreeNodeContext(List<EngineTreeNodeProperty> properties,
                                  List<EngineTreeNodeTextContent> textContent) {

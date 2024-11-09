@@ -71,7 +71,20 @@ const PathButtonIcon = styled(SearchIcon)(() => ({
   height: '18px',
 }));
 
+// replace . accessor with [] one for number indexes to match valid lua syntax
 const idToFileName = (id) => id.replaceAll('[', '.').replaceAll('].', '.').replaceAll(']', '');
+
+// remove home element, since it is always the same and redundant
+const idToInput = (id) => {
+  if (id.includes('.')) {
+    return id.substring(id.indexOf(Constants.TREE_HOME_PREFIX) + Constants.TREE_HOME_PREFIX.length + 1);
+  } else {
+    return id.substring(id.indexOf(Constants.TREE_HOME_PREFIX));
+  }
+};
+
+// append home prefix to create valid id from input
+const inputToId = (input) => `${Constants.TREE_HOME_PREFIX}.${input}`;
 
 export const DocsPage = () => {
   const initialTree = useLoaderData();
@@ -103,7 +116,12 @@ export const DocsPage = () => {
   }, []);
 
   React.useEffect(() => {
-    setInput(getCurrentPath());
+    const currentPath = getCurrentPath();
+    if (currentPath.startsWith(Constants.TREE_HOME_PREFIX)) {
+      setInput('');
+    } else {
+      setInput(currentPath);
+    }
   }, [getCurrentPath]);
 
   const currentPath = getCurrentPath();
@@ -144,7 +162,8 @@ export const DocsPage = () => {
                   .then((context) => setNodeContext(context))}
                 currentPath={currentPath}
                 fetchNodeChildren={fetchNodeChildren}
-                onMounted={() => explorerTreeRef.current.navigateToPath(currentPath)} />
+                onMounted={() => explorerTreeRef.current.navigateToPath(currentPath)}
+                virtualRootPrefix={Constants.TREE_HOME_PREFIX} />
             </Box>
           </PanelContent>
         </Panel>

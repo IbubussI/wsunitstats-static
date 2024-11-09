@@ -1,14 +1,22 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
 import {
+  BoolPropIcon,
   EndInternalCollapsedIcon,
   EndInternalExpandedIcon,
   EndLeafIcon,
+  FolderIcon,
+  FuncPropIcon,
+  HomeIcon,
   IntermediateInternalCollapsedIcon,
   IntermediateInternalExpandedIcon,
   IntermediateLeafIcon,
   IntermediateLineIcon,
-  NodeIcon
+  NodeIcon,
+  NodeIcon2,
+  NumberPropIcon,
+  StringPropIcon,
+  TagsPropIcon
 } from 'components/Pages/DocsPage/Svg';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeTree } from 'react-vtree';
@@ -77,12 +85,49 @@ const LoadingIcon = () => {
   );
 };
 
+const NodeIconSelector = (props) => {
+  const {
+    type,
+    ...iconProps
+  } = props;
+  let Icon = NodeIcon2;
+
+  switch(type) {
+    case 'str': 
+      Icon = StringPropIcon;
+      break;
+    case 'bool':
+      Icon = BoolPropIcon;
+      break;
+    case 'num':
+      Icon = NumberPropIcon;
+      break;
+    case 'func':
+      Icon = FuncPropIcon;
+      break;
+    case 'tags':
+      Icon = TagsPropIcon;
+      break;
+    case 'home':
+      Icon = HomeIcon;
+      break;
+    case 'folder':
+      Icon = FolderIcon;
+      break;
+  }
+
+  return (
+    <Icon {...iconProps}/>
+  );
+}
+
 const Label = styled('div')(({ theme }) => ({
   width: '100%',
   boxSizing: 'border-box',
   minWidth: 0,
   position: 'relative',
   overflow: 'hidden',
+  whiteSpace: 'nowrap',
   ...theme.typography.body1,
   fontSize: '0.8rem'
 }));
@@ -132,7 +177,8 @@ const ExplorerTreeItem = (props) => {
       contextBatch,
       rowIcons,
       updateChildren,
-      loadingState
+      loadingState,
+      type
     },
     treeData: {
       onPathChange,
@@ -184,8 +230,8 @@ const ExplorerTreeItem = (props) => {
     }} >
       {rowIcons}
       {nodeSlotIcon}
-      <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5, alignItems: 'center' }}>
-        {loadingState.isLoading ? <LoadingIcon /> : <NodeIcon sx={{ width: '24px', height: '24px' }} />}
+      <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.2, alignItems: 'center' }}>
+        {loadingState.isLoading ? <LoadingIcon /> : <NodeIconSelector type={type} sx={{ width: '24px', height: '24px' }} />}
         <Label>
           {label}
         </Label>
@@ -200,7 +246,8 @@ export const ExplorerTree = React.forwardRef(({
   onContextChange,
   currentPath,
   fetchNodeChildren,
-  onMounted = () => { }
+  onMounted = () => { },
+  virtualRootPrefix
 }, ref) => {
   const treeRef = React.useRef();
   // save loaded ids to not display expand icon and fetch children if prev fetch loaded nothing
@@ -239,11 +286,14 @@ export const ExplorerTree = React.forwardRef(({
 
   const navigateToPath = async (path) => {
     navigationInProgress.current = true;
-    const pathItems = splitPath(path);
+    const hasVirtualRoot = virtualRootPrefix?.length > 0;
+    const prefix = hasVirtualRoot ? virtualRootPrefix + Constants.EXPLORER_PATH_SEPARATOR : '';
+    const pathItems = splitPath(prefix + path);
     let currentItem = tree;
     for (let i = 1; i < pathItems.length; ++i) {
       const pathToOpenItems = [];
-      for (let j = 0; j <= i; ++j) {
+      const startIndex = hasVirtualRoot ? 1 : 0;
+      for (let j = startIndex; j <= i; ++j) {
         pathToOpenItems.push(pathItems[j]);
       }
       const openItemId = joinPath(pathToOpenItems);
@@ -319,6 +369,7 @@ export const ExplorerTree = React.forwardRef(({
         label: node.lb,
         contextBatch: node.cb,
         rowIcons: rowIcons.reverse(),
+        type: node.tp,
         updateChildren: () => {
           if (node.ch === undefined) {
             return fetchChildren(node.id, true).then((children) => {

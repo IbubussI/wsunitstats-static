@@ -18,6 +18,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 import static com.wsunitstats.exporter.utils.Constants.FILE_PATH_DELIMITER;
 import static com.wsunitstats.exporter.utils.Constants.JSON_EXTENSION;
@@ -30,12 +31,20 @@ public class ExportEngineDataJsonTask implements ExecutionTask {
     @Autowired
     private FileReaderService fileReaderService;
 
-    @Value("${engine.tree.input.file}")
-    private String inputFilePath;
-    @Value("${engine.tree.output.path}")
-    private String treeOutputPath;
-    @Value("${engine.context.output.path}")
-    private String contextOutputPath;
+    @Value("${docs.input.file.gameplay}")
+    private String gameplayInputFilePath;
+    @Value("${docs.input.file.visual}")
+    private String visualInputFilePath;
+    @Value("${docs.output.root}")
+    private String outputRootPath;
+    @Value("${docs.output.gameplay}")
+    private String gameplayPath;
+    @Value("${docs.output.visual}")
+    private String visualPath;
+    @Value("${docs.output.tree}")
+    private String treePath;
+    @Value("${docs.output.context}")
+    private String contextPath;
 
     @Override
     public String getName() {
@@ -46,22 +55,23 @@ public class ExportEngineDataJsonTask implements ExecutionTask {
     public void execute(ExecutionPayload payload) throws TaskExecutionException {
         try {
             LOG.info("Exporting engine data");
-            LOG.info("Engine data file path {}", inputFilePath);
-            LOG.info("Tree data output directory {}", treeOutputPath);
-            LOG.info("Tree data output directory {}", contextOutputPath);
+            LOG.info("Engine gameplay data file path {}", gameplayInputFilePath);
+            LOG.info("Engine visual data file path {}", visualInputFilePath);
+            LOG.info("Data output directory {}", outputRootPath);
 
             LOG.info("Reading json input file");
-            ObjectNode fileRoot = fileReaderService.readJson(inputFilePath, ObjectNode.class);
-            EngineDataBuilder builder = new EngineDataBuilder();
+            ObjectNode gameplayRoot = fileReaderService.readJson(gameplayInputFilePath, ObjectNode.class);
+            ObjectNode visualRoot = fileReaderService.readJson(visualInputFilePath, ObjectNode.class);
+            EngineDataBuilder gameplayBuilder = new EngineDataBuilder();
             LOG.info("Generating output");
-            builder.build(fileRoot);
+            gameplayBuilder.build(Map.of(gameplayPath, gameplayRoot, visualPath, visualRoot));
             LOG.info("Generating output completed");
 
-            List<FileEntry> treeFileEntries = builder.getTreeFileEntries();
-            List<FileEntry> contextFileEntries = builder.getContextFileEntries();
+            List<FileEntry> treeFileEntries = gameplayBuilder.getTreeFileEntries();
+            List<FileEntry> contextFileEntries = gameplayBuilder.getContextFileEntries();
 
-            processEntryList(treeFileEntries, treeOutputPath);
-            processEntryList(contextFileEntries, contextOutputPath);
+            processEntryList(treeFileEntries, String.join("/", outputRootPath, treePath));
+            processEntryList(contextFileEntries, String.join("/", outputRootPath, contextPath));
         } catch (Exception ex) {
             throw new TaskExecutionException(ex);
         }

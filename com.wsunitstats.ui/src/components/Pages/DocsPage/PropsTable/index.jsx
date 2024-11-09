@@ -66,21 +66,18 @@ const ExpandButton = styled(IconButton)(({ theme }) => ({
 }));
 
 
-const IdTableCell = styled(TableCell)(({ theme }) => ({
+const IdTableCell = styled(TableCell)(({ theme, noBackground }) => ({
   width: '30px',
   minWidth: '30px',
   textAlign: 'center',
   padding: '6px',
   borderRight: '1px solid rgb(190, 190, 190)',
-  background: 'linear-gradient(to right, #e4f2f8 70%, #c6e6ff);',
+  background: noBackground ? '' : 'linear-gradient(to right, #e4f2f8 70%, #c6e6ff);',
   color: alpha(theme.palette.common.black, 0.45)
 }));
 
 const HeadingTableRow = styled(TableRow)(({ theme }) => ({
   background: 'linear-gradient(#d9f1fc 50%, #acdafc)',
-  '& th:first-of-type': {
-    background: 'linear-gradient(#d9f1fc 50%, #acdafc)'
-  }
 }));
 
 const ContentTableRow = styled(TableRow)(({ theme }) => ({
@@ -268,7 +265,7 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }
       <Table size='small' sx={{ tableLayout: 'fixed', width: 0 }}>
         <TableHead sx={{ userSelect: 'none' }}>
           <HeadingTableRow>
-            <IdTableCell />
+            <IdTableCell noBackground={true} />
             {headCells.map((headCell, i) => {
               return (
                 <ContentTableCell

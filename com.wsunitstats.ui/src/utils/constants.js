@@ -11,10 +11,11 @@ export const UNIT_DATA_PATH = '/files/units';
 export const RESEARCH_DATA_PATH = '/files/researches';
 export const CONTEXT_DATA_PATH = '/files/context.json';
 export const UNIT_SELECTOR_DATA_PATH = '/files/units/unitSelector.json';
-export const DOCS_DATA_TREE_PATH = '/files/docs/tree';
-export const DOCS_DATA_TREE_ROOT_FILE_PATH = DOCS_DATA_TREE_PATH + "/root.json";
-export const DOCS_DATA_CONTEXT_PATH = '/files/docs/context';
-export const DOCS_DATA_CONTEXT_ROOT_FILE_PATH = DOCS_DATA_CONTEXT_PATH + "/root.json";
+export const DOCS_DATA_ROOT_PATH = '/files/docs';
+export const DOCS_DATA_TREE_PATH = DOCS_DATA_ROOT_PATH + '/tree';
+export const DOCS_DATA_TREE_ROOT_FILE_PATH = DOCS_DATA_TREE_PATH + "/home.json";
+export const DOCS_DATA_CONTEXT_PATH = DOCS_DATA_ROOT_PATH + '/context';
+export const DOCS_DATA_CONTEXT_ROOT_FILE_PATH = DOCS_DATA_CONTEXT_PATH + "/home.json";
 
 export const UNIT_SELECTOR_PAGE_PATH = 'units';
 export const RESEARCH_SELECTOR_PAGE_PATH = 'researches';
@@ -58,6 +59,7 @@ export const EXPLORER_PATH_SEPARATOR = '.';
 export const EXPLORER_PATH_SEPARATOR_REGEX = /\.|\[/;
 export const EXPLORER_PATH_SEPARATOR_END_SQUARE = ']';
 export const EXPLORER_PATH_SQUARE_TARGET_REGEX = /^\d/;
+export const TREE_HOME_PREFIX = "home";
 
 export const JS_NBSP = '\u00A0';
 export const SECONDS_END_MARKER = `${JS_NBSP}sec`;

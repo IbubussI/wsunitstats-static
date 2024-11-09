@@ -8,6 +8,10 @@ import com.wsunitstats.exporter.service.impl.EngineTreeNode;
 import java.io.IOException;
 
 public class EngineTreeNodeSerializer extends StdSerializer<EngineTreeNode> {
+    public EngineTreeNodeSerializer() {
+        this(null);
+    }
+
     public EngineTreeNodeSerializer(Class<EngineTreeNode> t) {
         super(t);
     }
@@ -18,11 +22,12 @@ public class EngineTreeNodeSerializer extends StdSerializer<EngineTreeNode> {
         gen.writeStartObject();
         gen.writeStringField("id", value.getEnginePath());
         gen.writeStringField("lb", value.getLabel());
+        gen.writeStringField("tp", value.getType());
         if (value.isExpanded()) {
             gen.writeBooleanField("ex", true);
         }
 
-        boolean isAsync = value.isAsync();
+        boolean isAsync = value.getIsAsync() != null ? value.getIsAsync() : false;
         if (isAsync) {
             gen.writeBooleanField("as", true);
         }
