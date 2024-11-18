@@ -163,10 +163,10 @@ public class EngineDataBuilder {
                     if (isFunction(childKey, childNode.asText())) {
                         String value = childNode.asText();
                         String funcValue = childKey + value;
-                        childTreeNode = buildFunctionValue(value, childKey, ROOT, funcValue);
+                        childTreeNode = buildFunctionValue(value, childKey, id, funcValue);
                         properties.add(new EngineTreeNodeProperty(childKey, EngineNodeType.FUNCTION, funcValue));
                     } else {
-                        childTreeNode = buildStringValue(childNode.asText(), childKey, ROOT, EngineNodeType.STRING);
+                        childTreeNode = buildStringValue(childNode.asText(), childKey, id, EngineNodeType.STRING);
                         properties.add(new EngineTreeNodeProperty(childKey, EngineNodeType.STRING, childNode.asText()));
                     }
                 }
@@ -188,7 +188,7 @@ public class EngineDataBuilder {
         List<EngineTreeNodeProperty> properties = new ArrayList<>();
         List<EngineTreeNodeTextContent> textContent = new ArrayList<>();
         textContent.add(new EngineTreeNodeTextContent(NAME, key));
-        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, path));
+        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, getEnginePath(path)));
 
         int childrenSubtreeLength = 0;
         for (Iterator<Map.Entry<String, JsonNode>> it = inputObject.fields(); it.hasNext(); ) {
@@ -247,7 +247,7 @@ public class EngineDataBuilder {
         List<EngineTreeNodeProperty> properties = new ArrayList<>();
         List<EngineTreeNodeTextContent> textContent = new ArrayList<>();
         textContent.add(new EngineTreeNodeTextContent(NAME, key));
-        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, path));
+        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, getEnginePath(path)));
 
         int childrenSubtreeLength = 0;
         for (int i = 0; i < inputArray.size(); ++i) {
@@ -308,7 +308,7 @@ public class EngineDataBuilder {
         List<EngineTreeNodeProperty> properties = new ArrayList<>();
         List<EngineTreeNodeTextContent> textContent = new ArrayList<>();
         textContent.add(new EngineTreeNodeTextContent(NAME, key));
-        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, path));
+        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, getEnginePath(path)));
         properties.add(new EngineTreeNodeProperty(SELF, type, value));
 
         EngineTreeNode node = new EngineTreeNode(path, label, type, pureId, new EngineTreeNodeContext(properties, textContent));
@@ -323,7 +323,7 @@ public class EngineDataBuilder {
 
         List<EngineTreeNodeProperty> properties = new ArrayList<>();
         List<EngineTreeNodeTextContent> textContent = new ArrayList<>();
-        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, path));
+        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, getEnginePath(path)));
         textContent.add(new EngineTreeNodeTextContent("Function Name", key));
         textContent.add(new EngineTreeNodeTextContent("Function Args", argStringClear));
         properties.add(new EngineTreeNodeProperty(ARGS, EngineNodeType.FUNCTION_ARGS, argStringClear));
@@ -353,7 +353,7 @@ public class EngineDataBuilder {
         List<EngineTreeNodeProperty> properties = new ArrayList<>();
         List<EngineTreeNodeTextContent> textContent = new ArrayList<>();
         textContent.add(new EngineTreeNodeTextContent(NAME, key));
-        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, path));
+        textContent.add(new EngineTreeNodeTextContent(ENGINE_PATH, getEnginePath(path)));
         textContent.add(new EngineTreeNodeTextContent("Decimal value", decimalValue));
         textContent.add(new EngineTreeNodeTextContent("Binary value", binaryTagsString));
         textContent.add(new EngineTreeNodeTextContent("Active tags", tagSet.substring(1, tagSet.length() - 1)));
@@ -444,5 +444,9 @@ public class EngineDataBuilder {
         }
         matcher.appendTail(output);
         return output.toString();
+    }
+
+    private String getEnginePath(String path) {
+        return path.substring(path.indexOf(TREE_PATH_DELIMITER) + 1);
     }
 }
