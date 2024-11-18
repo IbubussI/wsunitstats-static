@@ -113,6 +113,7 @@ const NodeIconSelector = (props) => {
     case 'folder':
       Icon = FolderIcon;
       break;
+    default:
   }
 
   return (
