@@ -38,7 +38,7 @@ public class TaskExecutionPool {
                     notFound++;
                 }
             } catch (TaskExecutionException ex) {
-                LOG.error("Task execution failed with exception: {}", ex.getMessage());
+                LOG.error("Task execution failed with exception", ex);
                 error++;
             }
         }

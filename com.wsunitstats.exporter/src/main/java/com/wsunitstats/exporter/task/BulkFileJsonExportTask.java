@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 
+import static com.wsunitstats.exporter.utils.Constants.JSON_EXTENSION;
+
 public abstract class BulkFileJsonExportTask<T> implements ExecutionTask {
     private static final Logger LOG = LogManager.getLogger(BulkFileJsonExportTask.class);
 
@@ -27,7 +29,7 @@ public abstract class BulkFileJsonExportTask<T> implements ExecutionTask {
                     String filename = getFilename(object);
                     LOG.info("Converting object {} to json...", filename);
                     String json = exporterService.exportToJson(getExportedObject(object));
-                    File file = new File(path + "/" + filename + ".json");
+                    File file = new File(path + "/" + filename + JSON_EXTENSION);
                     try (Writer fileWriter = new FileWriter(file)) {
                         fileWriter.write(json);
                         fileWriter.flush();

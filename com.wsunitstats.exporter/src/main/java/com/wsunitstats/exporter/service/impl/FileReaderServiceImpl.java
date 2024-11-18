@@ -41,7 +41,7 @@ public class FileReaderServiceImpl implements FileReaderService {
 
     @Override
     public <T> T readJson(String path, Class<T> clazz) {
-        LOG.debug("Reading json gameplay file at path: {}", path);
+        LOG.debug("Reading json file at path: {}", path);
         try (FileReader fileReader = new FileReader(path)) {
             ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(fileReader, clazz);
@@ -149,4 +149,3 @@ public class FileReaderServiceImpl implements FileReaderService {
         return result;
     }
 }
-

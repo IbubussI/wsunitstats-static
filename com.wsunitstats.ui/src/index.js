@@ -16,11 +16,16 @@ import { ResearchCard } from 'components/Pages/ResearchPage/ResearchCard';
 import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
+import { DocsPage } from 'components/Pages/DocsPage';
 
 const theme = createTheme({
   palette: {
     secondary: {
       main: "#f3e5f5"
+    },
+    action: {
+      selected: 'rgba(23, 118, 212, 0.3)',
+      hover: 'rgba(0, 0, 0, 0.1)'
     }
   },
 });
@@ -62,6 +67,7 @@ const unitLoader = (route) => entityLoader(route, Constants.UNIT_DATA_PATH);
 const researchLoader = (route) => entityLoader(route, Constants.RESEARCH_DATA_PATH);
 const contextLoader = () => fetch(new URL(Constants.HOST + Constants.CONTEXT_DATA_PATH));
 const unitSelectorLoader = () => fetch(new URL(Constants.HOST + Constants.UNIT_SELECTOR_DATA_PATH));
+const docsLoader = () => fetch(new URL(Constants.HOST + Constants.DOCS_DATA_TREE_ROOT_FILE_PATH));
 
 const unitSelectorOptions = {
   title: 'WS Units',
@@ -127,11 +133,17 @@ const router = createBrowserRouter([
         element: <HomePage />
       },
       {
+        path: Constants.MODS_PAGE_PATH,
+        element: <DocsPage />,
+        loader: docsLoader,
+        shouldRevalidate: () => false,
+      },
+      {
         path: Constants.UNIT_SELECTOR_PAGE_PATH,
         element: <EntitySelectorPage selectorOptions={unitSelectorOptions} getSelectorOptions={filterUnitSelectorOptions} />,
         loader: unitSelectorLoader,
         shouldRevalidate: () => false,
-      },
+      },  
       {
         path: `${Constants.UNIT_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,

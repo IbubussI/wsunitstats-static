@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 
+import static com.wsunitstats.exporter.utils.Constants.JSON_EXTENSION;
+
 @Component
 public abstract class FileJsonExportTask<T> implements ExecutionTask {
     private static final Logger LOG = LogManager.getLogger(FileJsonExportTask.class);
@@ -29,7 +31,7 @@ public abstract class FileJsonExportTask<T> implements ExecutionTask {
                 String filename = entry.getFilename();
                 LOG.info("Converting object {} to json...", filename);
                 String json = exporterService.exportToJson(entry.getExportedObject());
-                File file = new File(path + "/" + filename + ".json");
+                File file = new File(path + "/" + filename + JSON_EXTENSION);
                 try (Writer fileWriter = new FileWriter(file)) {
                     fileWriter.write(json);
                     fileWriter.flush();

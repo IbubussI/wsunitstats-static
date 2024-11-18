@@ -9,7 +9,6 @@ import match from 'autosuggest-highlight/match';
 import SearchIcon from '@mui/icons-material/Search';
 import { Image } from 'components/Atoms/Renderer';
 import { InputAdornment, Popper, Stack, Typography, alpha, inputBaseClasses, outlinedInputClasses, styled, svgIconClasses } from '@mui/material';
-import { useParams } from 'react-router-dom';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',

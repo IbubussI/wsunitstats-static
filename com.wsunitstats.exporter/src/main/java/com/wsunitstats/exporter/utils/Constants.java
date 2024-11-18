@@ -30,13 +30,15 @@ public class Constants {
     private static final String UNDEF = "N/A";
 
     public static final String LOCALIZATION_MULTI_VALUE_DELIMITER_REGEX = "\\|";
-
-    public static final String LOCALIZATION_INDEX_DELIMITER = "/";
+    public static final String SLASH = "/";
+    public static final String LOCALIZATION_INDEX_DELIMITER = SLASH;
+    public static final String FILE_PATH_DELIMITER = SLASH;
     public static final String CLOSING_ANGLE_BRACKET = ">";
 
     public static final String BASIC_DAMAGE_TYPE = "Base";
     public static final String GENERIC_UNIT_TAG = "Unit";
     public static final String NIL = "nil";
+    public static final String JSON_EXTENSION = ".json";
 
     public enum TagGroupName {
         UNIT_SEARCH_TAGS("Unit search tags"),
