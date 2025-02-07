@@ -36,7 +36,7 @@ To build exporter Java 17 and Maven required
 
 Build:
 - Download sources
-- Got to root project folder
+- Go to root project folder
 - Run `mvn clean install`
 - The result will be a jar file located at **com.wsunitstats.exporter/target/com.wsunitstats.exporter.jar**
 

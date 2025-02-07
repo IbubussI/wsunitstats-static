@@ -1,4 +1,6 @@
 export const HOST = process.env.NODE_ENV === 'development' ? `http://localhost:3000` : `${window.location.protocol}//${window.location.host}`;
+
+// Service Layer (deprecated as there is no server anymore)
 export const UNIT_OPTIONS_API = '/api/units/options';
 export const RESEARCH_OPTIONS_API = '/api/researches/options';
 export const RESEARCH_UNIT_OPTIONS_API = '/api/researches/unit-options';
@@ -6,6 +8,13 @@ export const LOCALE_OPTIONS_API = '/api/locales/options';
 export const NATION_OPTIONS_API = '/api/units/nations';
 export const SEARCH_TAGS_OPTIONS_API = '/api/units/search-tags';
 export const UNIT_TAGS_OPTIONS_API = '/api/units/unit-tags';
+// -----------------------------------------
+
+// WS API ----------------------------------
+export const WS_GAMES_API_HOST = 'https://games-api.warselect.io';
+export const WS_GAMES_API_REPALY_BY_CODE = WS_GAMES_API_HOST + "/getByReplay?code="
+
+// -----------------------------------------
 
 export const UNIT_DATA_PATH = '/files/units';
 export const RESEARCH_DATA_PATH = '/files/researches';
@@ -21,11 +30,13 @@ export const UNIT_SELECTOR_PAGE_PATH = 'units';
 export const RESEARCH_SELECTOR_PAGE_PATH = 'researches';
 export const UNIT_PAGE_PATH = 'unit';
 export const RESEARCH_PAGE_PATH = 'research';
-export const ENV_PAGE_PATH = 'env';
-export const RESOURCE_PAGE_PATH = 'resource';
+export const ENV_PAGE_PATH = 'env'; // not used
+export const RESOURCE_PAGE_PATH = 'resource'; // not used
 export const HOME_PAGE_PATH = 'home';
 export const ERROR_PAGE_PATH = 'error';
 export const MODS_PAGE_PATH = 'modding';
+export const REPLAYS_PAGE_PATH = 'replays';
+export const REPLAY_PAGE_PATH = 'replay';
 
 export const INITIAL_TAB = 'index';
 

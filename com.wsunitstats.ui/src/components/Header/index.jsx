@@ -30,6 +30,10 @@ const pages = [
     path: Constants.MODS_PAGE_PATH,
     name: 'Modding'
   },
+  {
+    path: Constants.REPLAYS_PAGE_PATH,
+    name: 'Replays'
+  },
 ];
 
 export const Header = ({ context }) => {
