@@ -1,9 +1,10 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
-import { Box, Button, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import { CheckmarksSelect } from 'components/Atoms/CheckmarksSelect';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
 import { useOptionsController } from 'components/Hooks/useOptionsController';
+import { FormButton } from 'components/Atoms/FormButton';
 
 const FilterPanel = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -63,12 +64,7 @@ export const UnitFilters = ({ filterOptions }) => {
         limitTags={1}
         isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
       <FilterButtonGroup>
-        <Button
-          variant='outlined'
-          sx={{
-            backgroundColor: isAllApplied ? "rgba(121, 131, 141, 0.1)" : "rgba(44, 138, 232, 0.1)",
-            "&:hover": { backgroundColor: "rgba(12, 127, 241, 0.26)" }
-          }}
+        <FormButton
           onClick={() => {
             const map = new Map();
             map.set(Constants.PARAM_NATIONS, nationOptionsController.values);
@@ -78,13 +74,8 @@ export const UnitFilters = ({ filterOptions }) => {
           }}
           disabled={isAllApplied}>
           APPLY
-        </Button>
-        <Button
-          variant='outlined'
-          sx={{
-            backgroundColor: !hasQueryString ? "rgba(121, 131, 141, 0.1)" : "rgba(44, 138, 232, 0.1)",
-            "&:hover": { backgroundColor: "rgba(12, 127, 241, 0.26)" }
-          }}
+        </FormButton>
+        <FormButton
           onClick={() => {
             clear([Constants.PARAM_NATIONS, Constants.PARAM_UNIT_TAGS, Constants.PARAM_SEARCH_TAGS]);
             nationOptionsController.setValues([]);
@@ -93,7 +84,7 @@ export const UnitFilters = ({ filterOptions }) => {
           }}
           disabled={!hasQueryString}>
           CLEAR
-        </Button>
+        </FormButton>
       </FilterButtonGroup>
     </FilterPanel>
   );

@@ -1,9 +1,10 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
-import { Button, Stack } from '@mui/material';
+import { Stack } from '@mui/material';
 import { CheckmarksSelect } from 'components/Atoms/CheckmarksSelect';
 import { useOptionsController } from 'components/Hooks/useOptionsController';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
+import { FormButton } from 'components/Atoms/FormButton';
 
 export const ResearchSelector = ({ researches }) => {
   const { sync } = useValuesToQueryStringSync();
@@ -22,12 +23,7 @@ export const ResearchSelector = ({ researches }) => {
         getSecondaryText={(option) => 'ID: ' + option.gameId}
         isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
       />
-      <Button
-        variant='outlined'
-        sx={{
-          backgroundColor: optionsController.isApplied ? "rgba(121, 131, 141, 0.1)" : "rgba(44, 138, 232, 0.1)",
-          "&:hover": { backgroundColor: "rgba(12, 127, 241, 0.26)" }
-        }}
+      <FormButton
         onClick={() => {
           const map = new Map();
           map.set(Constants.PARAM_RESEARCH_IDS, researchValues);
@@ -35,7 +31,7 @@ export const ResearchSelector = ({ researches }) => {
         }}
         disabled={optionsController.isApplied}>
         APPLY
-      </Button>
+      </FormButton>
     </Stack>
   ) : (false);
 }

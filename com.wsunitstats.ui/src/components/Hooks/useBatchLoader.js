@@ -1,5 +1,10 @@
 import * as React from 'react';
 
+/**
+ * Provides cache storage for the data. Each next loaded entry replaces previous one
+ * if the data capacity (number of entries) exceeded. If the requested item is in the storage
+ * it will be taken out of there instead of loading via given fetch call
+ */
 export function useBatchLoader(fetchBatch, capacity) {
   const storage = React.useRef(new Map());
 
