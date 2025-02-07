@@ -1,6 +1,6 @@
 # WS Unit Stats
 
-A project designed to provide some basic tools to observe different War Selection game data.
+A project designed to provide some basic tools to observe different War Selection game data. Live page: https://wsunitstats.com
 
 ## Features
 Current main features:
