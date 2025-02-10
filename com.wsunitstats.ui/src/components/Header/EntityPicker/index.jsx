@@ -128,11 +128,9 @@ export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
                 <Grid item sx={{ width: 'calc(100% - 44px)' }}>
                   <Stack direction='row' alignItems='center'>
                     <Stack sx={{ marginRight: 0.6, height: 'fit-content' }}>
-                      <Image data={{
-                        path: option.image,
-                        width: 42,
-                        height: 42,
-                      }} />
+                      <Image path={option.image}
+                        width={42}
+                        height={42} />
                     </Stack>
                     <Stack>
                       <Box>
