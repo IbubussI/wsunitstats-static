@@ -31,8 +31,8 @@ const pages = [
     name: 'Modding'
   },
   {
-    path: Constants.REPLAYS_PAGE_PATH,
-    name: 'Replays'
+    path: Constants.REPLAY_INFO_PAGE_PATH,
+    name: 'Replay'
   },
 ];
 
@@ -103,11 +103,11 @@ export const Header = ({ context }) => {
               }}
             >
               {pages.map((page) => (
-                <MenuItem key={page.path} onClick={handleCloseNavMenu}>
-                  <NavLink to={page.path} style={{ textDecoration: 'none', color: 'initial' }}>
+                <NavLink key={page.path} to={page.path} style={{ textDecoration: 'none', color: 'initial' }}>
+                  <MenuItem onClick={handleCloseNavMenu}>
                     <Typography textAlign="center">{page.name}</Typography>
-                  </NavLink>
-                </MenuItem>
+                  </MenuItem>
+                </NavLink>
               ))}
             </Menu>
           </Box>

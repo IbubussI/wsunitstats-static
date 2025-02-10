@@ -41,6 +41,7 @@ import com.wsunitstats.exporter.service.TagResolver;
 import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -68,6 +69,11 @@ public class ModelBuilderImpl implements ModelBuilder {
     private NationResolver nationResolver;
     @Autowired
     private TagResolver tagResolver;
+
+    @Value("${researches.ageTransitionResearches}")
+    private List<Integer> ageTransitionResearches;
+    @Value("${researches.wonderTransitionResearches}")
+    private List<Integer> wonderTransitionResearches;
 
     @Override
     public List<UnitModel> buildUnits() {
@@ -173,7 +179,7 @@ public class ModelBuilderImpl implements ModelBuilder {
         List<ResearchJsonModel> researches = gameplayModel.getResearches().getList();
         List<UpgradeJsonModel> upgrades = gameplayModel.getResearches().getUpgrades();
 
-        List<ResearchModel> result = new ArrayList<>();
+        List<ResearchModel> result = new ArrayList<>(researches.size());
         for (int id = 0; id < researches.size(); id++) {
             ResearchJsonModel researchJsonModel = researches.get(id);
             ResearchModel researchModel = new ResearchModel();
@@ -182,9 +188,23 @@ public class ModelBuilderImpl implements ModelBuilder {
             researchModel.setName(localizationKeyModel.getResearchNames().get(id));
             researchModel.setDescription(localizationKeyModel.getResearchTexts().get(id));
             researchModel.setUpgrades(getUpgrades(researchJsonModel, upgrades));
+            researchModel.setType(getResearchType(id));
+            // insertion order here is crucial, since in Replay Info UI we have a retrieval of research by index in this array
             result.add(researchModel);
         }
         return result;
+    }
+
+    private String getResearchType(int id) {
+        if (ageTransitionResearches.contains(id)) {
+            return UpgradeType.AGE_TRANSITION.getType();
+        }
+
+        if (wonderTransitionResearches.contains(id)) {
+            return UpgradeType.WONDER_TRANSITION.getType();
+        }
+
+        return UpgradeType.OTHER.getType();
     }
 
     private List<UpgradeModel> getUpgrades(ResearchJsonModel research, List<UpgradeJsonModel> upgrades) {

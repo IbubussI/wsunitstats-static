@@ -111,11 +111,18 @@ export const getSearchParamList = (searchParams, paramName) => {
   return currentQuerySearchParams ? [...currentQuerySearchParams] : [];
 };
 
-export const fetchJson = (fetchURI, callback) => {
+export const fetchJson = (fetchURI, successCallback, failCallback) => {
   fetch(fetchURI)
-    .then((response) => response.ok ? response.json() : [])
-    .then(callback)
-    .catch(console.log);
+    .then((response) => {
+      const contentType = response.headers.get('content-type');
+        if (contentType && contentType.indexOf('application/json') !== -1) {
+          return response.ok ? response.json() : [];
+        } else {
+          return response.text().then((text) => Promise.reject('Received response is not JSON type:' + text));
+        }
+    })
+    .then(successCallback)
+    .catch(failCallback ? failCallback : console.log);
 }
 
 /**

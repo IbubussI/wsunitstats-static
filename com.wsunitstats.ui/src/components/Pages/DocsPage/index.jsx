@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
 import { ExplorerTree } from 'components/Pages/DocsPage/ExplorerTree';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, styled, Typography } from '@mui/material';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import styled from '@emotion/styled';
 import { useLoaderData, useSearchParams } from 'react-router-dom';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
 import SearchIcon from '@mui/icons-material/Search';

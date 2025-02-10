@@ -12,7 +12,7 @@ export const UNIT_TAGS_OPTIONS_API = '/api/units/unit-tags';
 
 // WS API ----------------------------------
 export const WS_GAMES_API_HOST = 'https://games-api.warselect.io';
-export const WS_GAMES_API_REPALY_BY_CODE = WS_GAMES_API_HOST + "/getByReplay?code="
+export const WS_GAMES_API_REPLAY_BY_CODE = WS_GAMES_API_HOST + "/getByReplay?code="
 
 // -----------------------------------------
 
@@ -36,7 +36,7 @@ export const HOME_PAGE_PATH = 'home';
 export const ERROR_PAGE_PATH = 'error';
 export const MODS_PAGE_PATH = 'modding';
 export const REPLAYS_PAGE_PATH = 'replays';
-export const REPLAY_PAGE_PATH = 'replay';
+export const REPLAY_INFO_PAGE_PATH = 'replay';
 
 export const INITIAL_TAB = 'index';
 
@@ -59,6 +59,7 @@ export const PARAM_NATIONS = 'nations';
 export const PARAM_UNIT_TAGS = 'unitTags';
 export const PARAM_SEARCH_TAGS = 'searchTags';
 export const PARAM_PATH = 'path';
+export const PARAM_REPLAY_CODE = "replayCode";
 export const NO_LINK_INDICATOR = 'no-link';
 
 export const DEFAULT_LOCALE_OPTION = 'en';

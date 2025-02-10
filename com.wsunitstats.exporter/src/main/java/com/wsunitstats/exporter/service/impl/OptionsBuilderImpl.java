@@ -40,6 +40,7 @@ public class OptionsBuilderImpl implements OptionsBuilder {
             researchOption.setDescription(research.getDescription());
             researchOption.setGameId(research.getGameId());
             researchOption.setImage(research.getImage());
+            researchOption.setType(research.getType());
             return researchOption;
         }).toList();
     }

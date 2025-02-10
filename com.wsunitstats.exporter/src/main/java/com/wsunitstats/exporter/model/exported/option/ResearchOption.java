@@ -12,4 +12,5 @@ public class ResearchOption {
     private String name;
     private String image;
     private int gameId;
+    private String type;
 }

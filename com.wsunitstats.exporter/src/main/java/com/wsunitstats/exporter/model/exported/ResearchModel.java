@@ -13,4 +13,5 @@ import java.util.List;
 public class ResearchModel extends GenericEntityModel {
     private String description;
     private List<UpgradeModel> upgrades;
+    private String type;
 }

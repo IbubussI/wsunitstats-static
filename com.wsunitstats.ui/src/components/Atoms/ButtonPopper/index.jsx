@@ -2,7 +2,6 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import {
   Button,
-  Chip,
   ClickAwayListener,
   Paper,
   Popper,
@@ -12,6 +11,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { getTagData } from 'data';
 import { DoubleColumnTable } from 'components/Layout/DoubleColumnTable';
+import { TagChip } from 'components/Atoms/TagChip';
 
 export const ButtonPopper = ({
   children,
@@ -120,20 +120,7 @@ export const MenuListButtonPopper = ({ children, label }) => {
   );
 }
 
-const TagChip = styled(Chip)(() => ({
-  borderRadius: '1000px', // to match any height
-  height: 'fit-content',
-  backgroundColor: 'rgb(24, 117, 238)',
-  textTransform: 'uppercase',
-  color: 'white',
-  '& span': {
-    fontWeight: 'bold',
-    fontSize: 11,
-    whiteSpace: 'normal',
-    textAlign: 'center',
-    paddingTop: '4px',
-    paddingBottom: '4px',
-  },
+const InteractiveTagChip = styled(TagChip)(() => ({
   '&:hover': {
     backgroundColor: 'rgb(139, 195, 255)'
   },
@@ -145,7 +132,7 @@ const TagChip = styled(Chip)(() => ({
 export const PopperTag = ({ tag, placement }) => {
   const Tag = ({ onClick }) => {
     return (
-      <TagChip onClick={onClick} label={tag.name}/>
+      <InteractiveTagChip onClick={onClick} label={tag.name}/>
     );
   }
 

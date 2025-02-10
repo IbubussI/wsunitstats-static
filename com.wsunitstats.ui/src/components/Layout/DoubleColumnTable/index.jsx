@@ -10,6 +10,7 @@ import {
   TableRow,
   Typography
 } from "@mui/material";
+import { Image } from 'components/Atoms/Renderer';
 
 const DamageRow = ({ data }) => {
   let textVariant = 'caption';
@@ -70,16 +71,10 @@ const ResourceRow = ({ data }) => {
       </TableCell>
       <TableCell sx={{ width: data.rowStyle.rightRowWidth }}>
         <Stack direction='row' alignItems='center'>
-          <Box
-            component="img"
-            sx={{
-              height: 24,
-              width: 24,
-              marginRight: 0.4
-            }}
-            alt=''
-            src={Utils.resolveImage(data.row.image)}
-          />
+          <Image path={data.row.image}
+            width={24}
+            height={24}
+            sx={{ marginRight: 0.4 }} />
           <Typography variant='body2' color='text.primary'>
             {data.row.value}
           </Typography>

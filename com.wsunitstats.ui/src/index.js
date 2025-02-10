@@ -17,7 +17,7 @@ import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
 import { DocsPage } from 'components/Pages/DocsPage';
-import { ReplaysPage } from 'components/Pages/ReplaysPage';
+import { ReplayInfoPage } from 'components/Pages/ReplayInfoPage';
 
 const theme = createTheme({
   palette: {
@@ -140,8 +140,8 @@ const router = createBrowserRouter([
         shouldRevalidate: () => false,
       },
       {
-        path: Constants.REPLAYS_PAGE_PATH,
-        element: <ReplaysPage />
+        path: Constants.REPLAY_INFO_PAGE_PATH,
+        element: <ReplayInfoPage />
       },
       {
         path: Constants.UNIT_SELECTOR_PAGE_PATH,
