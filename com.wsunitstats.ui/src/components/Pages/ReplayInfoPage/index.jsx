@@ -80,10 +80,10 @@ const FormContainer = styled(Stack)(({ theme }) => ({
 
 export const ReplayInfoPage = () => {
   const { localizedResearches, localizedUnits } = useOutletContext();
-  const { sync } = useValuesToQueryStringSync();
+  const { sync, clear } = useValuesToQueryStringSync();
   const [searchParams] = useSearchParams();
   const [replayCodeInput, setReplayCodeInput] = React.useState('');
-  const [replayInfo, setReplayInfo] = React.useState('');
+  const [replayInfo, setReplayInfo] = React.useState({});
 
   React.useEffect(() => {
     const replayCodeParam = searchParams.get(Constants.PARAM_REPLAY_CODE);
@@ -100,7 +100,7 @@ export const ReplayInfoPage = () => {
         }
       );
     } else if (replayCodeParam) {
-      setReplayInfo({ error: 255, message: "Submitted replay code is not valid."})
+      setReplayInfo({ error: 255, message: "Submitted replay code is not valid."});
     }
   }, [searchParams, localizedResearches]);
 
@@ -118,7 +118,8 @@ export const ReplayInfoPage = () => {
             map.set(Constants.PARAM_REPLAY_CODE, [replayCode]);
             sync(map);
           } else if (replayCodeInput) {
-            setReplayInfo({ error: 255, message: "Submitted replay code is not valid."})
+            setReplayInfo({ error: 255, message: "Submitted replay code is not valid."});
+            clear([Constants.PARAM_REPLAY_CODE]);
           }
         }}
         onInputChange={(event) => setReplayCodeInput(event.target.value)}
