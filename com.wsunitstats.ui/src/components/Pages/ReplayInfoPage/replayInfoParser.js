@@ -105,7 +105,7 @@ export class ReplayInfoParser {
 
       team.id = teamId;
       team.factions = teamFactions;
-      team.players = teamFactions.map((factionId) => this.#getFactionPlayer(factionId));
+      team.players = teamFactions.map((factionId) => this.#getFactionPlayer(factionId)).filter(e => e !== null);
       team.isWinner = this.#teamWinners.has(teamId);
       team.isPlayerTeam = team.players.some(playerId => playerId !== null);
       team.color = TEAM_COLORS[teamId % 2];
