@@ -29,11 +29,18 @@ export class ReplayInfoParser {
         message: 'Replay does not exist.'
       };
     }
+    if (replayApiResponse.error === 6) {
+      return {
+        error: replayApiResponse.error,
+        message: 'War Selection API is unavailable due to the server maintenance. ' +
+        'It can last up to several hours before endpoint will be available again. Please, try later'
+      };
+    }
     if (replayApiResponse.error !== 0) {
       return {
         error: replayApiResponse.error,
-        message: 'War Selection API responded with error [' +
-        `${replayApiResponse.error}].  Original description: ${replayApiResponse.description}`
+        message: `War Selection API responded with error [${replayApiResponse.error}]. ` +
+        `Original description: ${replayApiResponse.description}`
       };
     }
     
@@ -289,11 +296,11 @@ export class ReplayInfoParser {
     if (wonderLeaderCandidates.length > 0) {
       // unfortunately there is no way to determine who built the wonder first in case
       // time is the same (it should be extremely rare case), so leaders are multiple
-      const wonderLeaders = { time: 0, players: [] };
+      const wonderLeaders = { time: Number.MAX_VALUE, players: [] };
       wonderLeaderCandidates.forEach((entry) => {
         const time = entry.researchTime;
-        // winner == survived
-        if (wonderLeaders.time < time) {
+        // find the very first wonder
+        if (wonderLeaders.time > time) {
           wonderLeaders.time = time;
           wonderLeaders.players = [entry.playerId];
         } else if (wonderLeaders.time === time) {

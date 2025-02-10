@@ -115,11 +115,15 @@ export const fetchJson = (fetchURI, successCallback, failCallback) => {
   fetch(fetchURI)
     .then((response) => {
       const contentType = response.headers.get('content-type');
-        if (contentType && contentType.indexOf('application/json') !== -1) {
-          return response.ok ? response.json() : [];
+      if (contentType && contentType.indexOf('application/json') !== -1) {
+        if (response.ok) {
+          return response.json();
         } else {
-          return response.text().then((text) => Promise.reject('Received response is not JSON type:' + text));
+          return response.json().then((json) => Promise.reject('Received response is not sucesseful:' + json));
         }
+      } else {
+        return response.text().then((text) => Promise.reject('Received response is not JSON type:' + text));
+      }
     })
     .then(successCallback)
     .catch(failCallback ? failCallback : console.log);
