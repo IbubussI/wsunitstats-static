@@ -1,6 +1,4 @@
-import * as Utils from 'utils/utils';
 import {
-  Box,
   Stack,
   Table,
   TableBody,

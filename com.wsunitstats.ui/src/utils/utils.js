@@ -1,4 +1,11 @@
 import * as Constants from "utils/constants";
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(duration);
+dayjs.extend(timezone);
+
 const LOCALIZATION_REGEX = new RegExp("<\\*[a-zA-Z0-9/]+>", "g");
 
 export const resolveImage = (name) => {
@@ -168,4 +175,12 @@ export const localize = (target, localeData) => {
   }
   return result;
 };
+
+export const formatDuration = (durationMillis) => {
+  return dayjs.duration(durationMillis).format('HH:mm:ss').replace(/^(00:00:)|^(00:)|^(0)/, "");
+}
+
+export const formatTimeLong = (timeSec) => {
+  return dayjs.unix(timeSec).format('ddd, D MMM YYYY, HH:mm:ss z');
+}
 

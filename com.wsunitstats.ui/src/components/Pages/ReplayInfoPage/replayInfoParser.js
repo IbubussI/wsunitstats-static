@@ -8,18 +8,20 @@ export class ReplayInfoParser {
   #start;
   #version;
   #scriptParameters;
-  #researchesContext;
+  #context;
+  #replayCode;
 
   // generated structures
-  #factionTeams; 
+  #factionTeams;
   #playerSurvival; // optional
   #playerWinners; // optional
   #teamWinners; // optional
   #winnerSurvivalTime; // optional
   #isWonderWin;
-  
-  constructor(researchesContext) {
-    this.#researchesContext = researchesContext;
+
+  constructor(context, replayCode) {
+    this.#context = context;
+    this.#replayCode = replayCode;
   }
 
   parse(replayApiResponse) {
@@ -33,17 +35,17 @@ export class ReplayInfoParser {
       return {
         error: replayApiResponse.error,
         message: 'War Selection API is unavailable due to the server maintenance. ' +
-        'It can last up to several hours before endpoint will be available again. Please, try later'
+          'It can last up to several hours before endpoint will be available again. Please, try later'
       };
     }
     if (replayApiResponse.error !== 0) {
       return {
         error: replayApiResponse.error,
         message: `War Selection API responded with error [${replayApiResponse.error}]. ` +
-        `Original description: ${replayApiResponse.description}`
+          `Original description: ${replayApiResponse.description}`
       };
     }
-    
+
     try {
       const replayApiResponseData = replayApiResponse.data;
       this.#matchData = JSON.parse(replayApiResponseData.extraData["0"]);
@@ -53,6 +55,8 @@ export class ReplayInfoParser {
       this.#researches = replayApiResponseData.extraData["4"] && JSON.parse(replayApiResponseData.extraData["4"]);
       this.#initData = replayApiResponseData.initData;
       this.#scriptParameters = this.#parseScriptParams(replayApiResponseData.initData.scriptParameters);
+      this.#version = replayApiResponseData.version;
+      this.#start = replayApiResponseData.start;
 
       this.#factionTeams = this.#generateTeamsMap();
       this.#playerSurvival = this.#generateSurvivalMap();
@@ -81,18 +85,19 @@ export class ReplayInfoParser {
   #parseMatch() {
     const match = new Match();
     match.startTime = this.#start;
-    match.duration = this.#matchData.duration;
-    match.mode = MatchType.fromId(this.#matchData.mode);
+    match.duration = this.#matchData.duration * 1000;
+    match.mode = MatchType.fromId(this.#matchData.mode).type;
     match.winnerTeams = Array.from(this.#teamWinners.keys());
-    match.playersCount = this.#matchData.players;
+    match.playersCount = this.#matchData.players.length;
     match.factionsCount = this.#initData.factions;
     match.region = this.#matchData.region;
     match.gameVersion = this.#version;
     match.matchSeed = this.#initData.seed;
-    match.creator = this.#scriptParameters.creator;
     match.isMatchmaking = this.#scriptParameters.matchmaking;
+    match.creator = match.isMatchmaking ? 0 : this.#matchData.players[this.#scriptParameters.creator][0];
     match.isDevMode = this.#scriptParameters.devMode;
     match.isWonderWin = this.#isWonderWin;
+    match.replayCode = this.#replayCode;
     return match;
   }
 
@@ -141,7 +146,7 @@ export class ReplayInfoParser {
       if (player.isWonderBuilt && player.isWinner && this.#isWonderWin) {
         wonderLeaderCandidates.push({ playerId: playerId, researchTime: researchResult.wonderTime });
       }
-      player.lastAgeResearch = researchResult.lastAgeResearch;
+      player.lastAgeResearch = researchResult.lastAgeResearch || this.#context.localizedUnits[0].image;
       player.isWonderWin = false;
     });
 
@@ -201,7 +206,7 @@ export class ReplayInfoParser {
       return false;
     }
 
-    return Array.from(this.#playerSurvival.entries()).some(([playerId, survTime]) => 
+    return Array.from(this.#playerSurvival.entries()).some(([playerId, survTime]) =>
       !this.#playerWinners.has(playerId) && this.#winnerSurvivalTime <= survTime
     );
   }
@@ -268,7 +273,7 @@ export class ReplayInfoParser {
     researchTimeline.forEach((researchEntry) => {
       const time = researchEntry[0];
       const id = researchEntry[1];
-      const research = this.#researchesContext[id];
+      const research = this.#context.localizedResearches[id];
 
       const playerResearch = new PlayerResearch();
       playerResearch.id = id;
@@ -408,71 +413,71 @@ function getSetBitPositions(bitset) {
 
 // taken from WS
 const FACTION_COLORS = [
-	"#7f7f7f",
-	"#dadada",
-	"#ff0000",
-	"#bfff3f",
-	"#00bfff",
-	"#ffbf00",
-	"#bf007f",
-	"#7f00ff",
-	"#00ffbf",
-	"#ffff00",
-	"#ff007f",
-	"#00007f",
-	"#7fbf7f",
-	"#007fff",
-	"#ff7f00",
-	"#bf00bf",
-	"#3fbf00",
-	"#bfbf7f",
-	"#ffbf7f",
-	"#7f0000",
-	"#333366",
-	"#3fff00",
-	"#ffff7f",
-	"#ff3f7f",
-	"#7f7fff",
-	"#7fbf3f",
-	"#bf7f00",
-	"#ff00ff",
-	"#bfbfff",
-	"#7fff7f",
-	"#ffffbf",
-	"#ff7fbf",
-	"#3f3fbf",
-	"#dfff7f",
-	"#ffbfbf",
-	"#ff7fff",
-	"#3f7fbf",
-	"#3f7f3f",
-	"#ff7f7f",
-	"#bf00ff",
-	"#7fbfff",
-	"#007f00",
-	"#bf7f7f",
-	"#7f00bf",
-	"#bfffff",
-	"#bfbf00",
-	"#bf3f3f",
-	"#3f003f",
-	"#00bfbf",
-	"#bf0000",
-	"#ffbfff",
-	"#00bf7f",
-	"#7f3f3f",
-	"#7fbfbf",
-	"#7f7f00",
-	"#3f0000",
-	"#bf7fbf",
-	"#bfffbf",
-	"#7f3f7f",
-	"#00ffff",
-	"#7fffbf",
-	"#007f7f",
-	"#7f007f",
-	"#0000b3",
-	"#bfbfbf"
+  "#7f7f7f",
+  "#dadada",
+  "#ff0000",
+  "#bfff3f",
+  "#00bfff",
+  "#ffbf00",
+  "#bf007f",
+  "#7f00ff",
+  "#00ffbf",
+  "#ffff00",
+  "#ff007f",
+  "#00007f",
+  "#7fbf7f",
+  "#007fff",
+  "#ff7f00",
+  "#bf00bf",
+  "#3fbf00",
+  "#bfbf7f",
+  "#ffbf7f",
+  "#7f0000",
+  "#333366",
+  "#3fff00",
+  "#ffff7f",
+  "#ff3f7f",
+  "#7f7fff",
+  "#7fbf3f",
+  "#bf7f00",
+  "#ff00ff",
+  "#bfbfff",
+  "#7fff7f",
+  "#ffffbf",
+  "#ff7fbf",
+  "#3f3fbf",
+  "#dfff7f",
+  "#ffbfbf",
+  "#ff7fff",
+  "#3f7fbf",
+  "#3f7f3f",
+  "#ff7f7f",
+  "#bf00ff",
+  "#7fbfff",
+  "#007f00",
+  "#bf7f7f",
+  "#7f00bf",
+  "#bfffff",
+  "#bfbf00",
+  "#bf3f3f",
+  "#3f003f",
+  "#00bfbf",
+  "#bf0000",
+  "#ffbfff",
+  "#00bf7f",
+  "#7f3f3f",
+  "#7fbfbf",
+  "#7f7f00",
+  "#3f0000",
+  "#bf7fbf",
+  "#bfffbf",
+  "#7f3f7f",
+  "#00ffff",
+  "#7fffbf",
+  "#007f7f",
+  "#7f007f",
+  "#0000b3",
+  "#bfbfbf"
 ];
 
 const TEAM_COLORS = [
