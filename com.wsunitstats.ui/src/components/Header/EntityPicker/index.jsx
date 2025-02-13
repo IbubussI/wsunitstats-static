@@ -42,7 +42,7 @@ const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
 
 const StyledPopper = styled(Popper)(({ theme }) => ({
   [`& .${autocompleteClasses.groupLabel}`]: {
-    backgroundColor: theme.palette.secondary.light
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.secondary.light
   },
 }));
 
