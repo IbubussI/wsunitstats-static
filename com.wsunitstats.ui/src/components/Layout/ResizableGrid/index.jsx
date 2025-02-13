@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants'
-import { Box, Grid, Stack, debounce } from "@mui/material";
-import { BasicPaper } from "components/Atoms/BasicPaper";
+import { Box, Grid, Paper, Stack, debounce } from "@mui/material";
 import { ResizableBox } from 'react-resizable';
 
 const MAX_COLUMNS = 12;
@@ -54,9 +53,15 @@ export const ResizableGrid = ({ children, minWidth, defaultWidth = Constants.DEF
         onResizeStop={onResizeStop}
         handle={<ResizeHandle />}
         axis='x'>
-        <BasicPaper sx={{ padding: 1, paddingTop: typeof paddingTop === 'number' ? paddingTop : 3, width: '100%', boxSizing: 'border-box' }}>
+        <Paper elevation={3}
+          sx={{
+            padding: 1,
+            paddingTop: typeof paddingTop === 'number' ? paddingTop : 3,
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
           {children}
-        </BasicPaper>
+        </Paper>
       </ResizableBox>
     </Box>
   );

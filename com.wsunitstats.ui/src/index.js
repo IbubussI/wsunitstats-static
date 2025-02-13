@@ -18,14 +18,39 @@ import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFil
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
 import { DocsPage } from 'components/Pages/DocsPage';
 
-const theme = createTheme({
+const lightTheme = createTheme({
   palette: {
-    secondary: {
-      main: "#f3e5f5"
-    },
-    action: {
-      selected: 'rgba(23, 118, 212, 0.3)',
-      hover: 'rgba(0, 0, 0, 0.1)'
+    docs: {
+      main: '#a6daff',
+      input: {
+        gStart: '#daf1f7',
+        gEnd: '#fff0'
+      },
+      propTable: {
+        idCell: {
+          gStart: '#d9f1fc',
+          gEnd: '#acdafc'
+        }
+      }
+    }
+  },
+});
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    docs: {
+      main: 'initial',
+      input: {
+        gStart: '#181818',
+        gEnd: '#fff0'
+      },
+      propTable: {
+        idCell: {
+          gStart: '0000004d',
+          gEnd: '#fff0'
+        }
+      }
     }
   },
 });
@@ -46,7 +71,7 @@ const Root = () => {
   context.localizedResearches = localizedResearchOptions;
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <Header context={context} />
       <div className="body-root">

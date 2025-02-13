@@ -91,35 +91,6 @@ export const InfoButtonPopper = ({ children, label }) => {
   );
 }
 
-export const MenuListButtonPopper = ({ children, label }) => {
-  const ButtonContentRenderer = ({ onClick, open }) => {
-    const Icon = open ? ArrowDropUpIcon : ArrowDropDownIcon
-    return (
-      <Button
-        variant='outlined'
-        onClick={onClick}
-        sx={{
-          width: '100%',
-          height: '100%',
-          textTransform: 'none',
-          padding: '5px 24px',
-          borderColor: 'rgb(203, 203, 203)',
-          color: 'rgba(0, 0, 0, 0.87)',
-          '&:hover': { borderColor: 'rgba(0, 0, 0, 0.87)', backgroundColor: 'initial' },
-        }}>
-        {label}
-        <Icon sx={{ color: 'rgb(117, 117, 117)', position: "absolute", right: '9px', top: 'calc(50% - 12px)' }} />
-      </Button>
-    );
-  }
-  return (
-    <ButtonPopper
-      children={children}
-      buttonRenderer={ButtonContentRenderer}
-      placement='bottom' />
-  );
-}
-
 const TagChip = styled(Chip)(() => ({
   borderRadius: '1000px', // to match any height
   height: 'fit-content',

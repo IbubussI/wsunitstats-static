@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography, useTheme } from '@mui/material';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export const ArmorChart = ({content, valuePrefix, colors}) => {
+  const theme = useTheme();
   const [labels, probabilities, values, avg, legendEntries] = React.useMemo(() => {
     const labels_ = [];
     const probabilities_ = [];
@@ -57,11 +58,8 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
       ctx.font = 'bolder 20px sans-relief';
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      ctx.fillStyle = theme.palette.text.primary;
       ctx.fillText(dataset.centerText, x, y - 10);
-
-      ctx.font = 'bolder 20px sans-relief';
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
       ctx.fillText(opts.avg, x, y + 10);
     }
   }

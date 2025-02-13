@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
 import { ExplorerTree } from 'components/Pages/DocsPage/ExplorerTree';
-import { Box, Button, Typography } from '@mui/material';
+import { alpha, Box, Button, Paper, Typography } from '@mui/material';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import styled from '@emotion/styled';
 import { useLoaderData, useSearchParams } from 'react-router-dom';
@@ -12,11 +12,10 @@ import { useBatchLoader } from 'components/Hooks/useBatchLoader';
 
 const PANEL_GAP = 8;
 
-const PanelContent = styled('div')(() => ({
+const PanelContent = styled(Paper)(() => ({
   overflow: 'auto',
-  border: '1px solid #8ac8f4',
-  height: '100%',
-  backgroundColor: 'white'
+  borderRadius: 0,
+  height: '100%'
 }));
 
 const StyledPanelGroup = styled(PanelGroup)(() => ({
@@ -24,26 +23,27 @@ const StyledPanelGroup = styled(PanelGroup)(() => ({
   height: 'inherit'
 }));
 
-const PageRoot = styled(Box)(() => ({
+const PageRoot = styled(Box)(({ theme }) => ({
   display: 'flex',
   flex: '1 1',
   width: '100%',
   flexDirection: 'column',
   gap: PANEL_GAP,
   padding: 8,
-  backgroundColor: '#a6daff80',
+  backgroundColor: theme.palette.docs.main,
   // possible variant for more compact font
   //font: 'normal 11px arial, tahoma, helvetica, sans-serif'
 }));
 
-const Input = styled('input')(() => ({
+const Input = styled('input')(({ theme }) => ({
   border: 'none',
   width: '100%',
   outline: 'none',
   paddingTop: 0,
   paddingBottom: 0,
-  background: 'linear-gradient(#daf1f7, #fff 50%)',
+  background: `linear-gradient(${theme.palette.docs.input.gStart}, ${theme.palette.docs.input.gEnd} 50%)`,
   font: '14px arial, tahoma, helvetica, sans-serif',
+  color: 'inherit',
   lineHeight: 1.8,
   letterSpacing: 0.3
 }));
@@ -53,16 +53,12 @@ const PathForm = styled('form')(() => ({
   display: 'flex'
 }));
 
-const PathButton = styled(Button)(() => ({
+const PathButton = styled(Button)(({ theme }) => ({
   padding: 0,
   border: 'none',
-  borderLeft: '1px solid #8ac8f4',
+
   borderRadius: 'initial',
-  background: 'linear-gradient(#f7f7f9 20%, #dfe5e6)',
-  '&:hover': {
-    background: '#cee3ea',
-    transition: 'none'
-  },
+  background: `linear-gradient(${theme.palette.docs.input.gEnd} 20%, ${theme.palette.docs.input.gStart})`,
   minWidth: '20px'
 }));
 

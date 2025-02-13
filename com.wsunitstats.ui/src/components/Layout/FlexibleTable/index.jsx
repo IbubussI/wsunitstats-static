@@ -1,7 +1,9 @@
-import { Box, Stack } from "@mui/material";
+import { alpha, Box, Stack, useTheme } from "@mui/material";
 import { Text } from "components/Atoms/Renderer";
 
 export const FlexibleTable = ({ columns, rows, data, minWidth }) => {
+  const theme = useTheme();
+
   if (data.length < rows*columns) {
     fillEmptyRows(data, columns, rows);
   }
@@ -15,14 +17,14 @@ export const FlexibleTable = ({ columns, rows, data, minWidth }) => {
       gridRowGap: '0px',
       gridAutoFlow: 'column',
       width: '100%',
-      '&>*:nth-of-type(n):hover': { backgroundColor: 'rgb(225, 225, 225)' }
+      '&>*:nth-of-type(n):hover': { backgroundColor: alpha(theme.palette.action.hover, '0.2') }
     }}>
       {data.map((entry, index) => {
         let rowSpan = 'span ' + (entry.rowSpan ? entry.rowSpan : '1');
         let Renderer = entry.renderer;
         let column = entry.column;
         let row = entry.row ? entry.row : 'auto';
-        let backgroundColor = isFillBackground(index, rows, column) ? 'rgb(240, 240, 240)' : '';
+        let backgroundColor = isFillBackground(index, rows, column) ? theme.palette.action.hover : '';
         return (
           <Box
             key={index}
