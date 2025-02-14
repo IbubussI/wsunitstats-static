@@ -20,6 +20,5 @@ public class ExecutionPayload {
     private Map<String, BufferedImage> images;
     private FileExportPayloadEntry<UnitSelectorModel> unitSelector;
     private FileExportPayloadEntry<ContextModel> context;
-    // for local tasks
     private Collection<LocalizationModel> localization;
 }

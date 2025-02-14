@@ -1,14 +1,27 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
-import Autocomplete, { autocompleteClasses, createFilterOptions } from '@mui/material/Autocomplete';
-import Grid from '@mui/material/Grid';
 import parse from 'autosuggest-highlight/parse';
 import match from 'autosuggest-highlight/match';
 import SearchIcon from '@mui/icons-material/Search';
 import { Image } from 'components/Atoms/Renderer';
-import { InputAdornment, Popper, Stack, Typography, alpha, inputBaseClasses, outlinedInputClasses, styled, svgIconClasses } from '@mui/material';
+import {
+  Box,
+  TextField,
+  Grid,
+  Autocomplete,
+  InputAdornment,
+  Popper,
+  Stack,
+  Typography,
+  alpha,
+  inputBaseClasses,
+  outlinedInputClasses,
+  svgIconClasses,
+  autocompleteClasses,
+  createFilterOptions,
+  styled
+} from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -18,7 +31,7 @@ const Search = styled('div')(({ theme }) => ({
     backgroundColor: alpha(theme.palette.common.white, 0.25),
   },
   width: '100%',
-  maxWidth: '400px',
+  maxWidth: '300px',
   margin: 10
 }));
 
@@ -42,11 +55,12 @@ const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
 
 const StyledPopper = styled(Popper)(({ theme }) => ({
   [`& .${autocompleteClasses.groupLabel}`]: {
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.secondary.light
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[300]
   },
 }));
 
 export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
+  const { t } = useTranslation();
   const [value, setValue] = React.useState(null);
   const [inputValue, setInputValue] = React.useState('');
 
@@ -58,8 +72,8 @@ export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
     return array
   };
 
-  const unitOptionsSource = addOptionMetadata(unitOptions, Constants.UNIT_PAGE_PATH, "Units");
-  const researchOptionsSource = addOptionMetadata(researchOptions, Constants.RESEARCH_PAGE_PATH, "Researches");
+  const unitOptionsSource = addOptionMetadata(unitOptions, Constants.UNIT_PAGE_PATH, t('entityPickerUnits'));
+  const researchOptionsSource = addOptionMetadata(researchOptions, Constants.RESEARCH_PAGE_PATH, t('entityPickerResearches'));
   const options = [...unitOptionsSource, ...researchOptionsSource]
 
   const selectValue = React.useCallback((newValue) => {
@@ -78,7 +92,7 @@ export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
         autoComplete
         autoHighlight
         includeInputInList
-        getOptionLabel={(option) => option.name ? option.name : ''}
+        getOptionLabel={(option) => option.name ? t(option.name) : ''}
         isOptionEqualToValue={(option, value) => value && option.gameId === value.gameId}
         groupBy={option => option.optionGroupName}
         options={options}
@@ -105,7 +119,7 @@ export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
           return (
             <TextField
               {...params}
-              placeholder="Search..."
+              placeholder={t('entityPickerSearch')}
               fullWidth
               InputProps={{
                 ...params.InputProps,
@@ -119,9 +133,9 @@ export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
           );
         }}
         renderOption={(props, option) => {
-          const matches = match(option.name, inputValue, { insideWords: true });
-          const parts = parse(option.name, matches);
-          const secondary = option.nation ? `${option.nation}, ID: ${option.gameId}` : `ID: ${option.gameId}`;
+          const matches = match(t(option.name), inputValue, { insideWords: true });
+          const parts = parse(t(option.name), matches);
+          const secondary = option.nation ? `${t(option.nation)}, ID: ${option.gameId}` : `ID: ${option.gameId}`;
           return (
             <Box component='li' {...props} key={option.gameId}>
               <Grid container alignItems="center">

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
 import { ExplorerTree } from 'components/Pages/DocsPage/ExplorerTree';
-import { alpha, Box, Button, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper, Typography } from '@mui/material';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import styled from '@emotion/styled';
 import { useLoaderData, useSearchParams } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStr
 import SearchIcon from '@mui/icons-material/Search';
 import { PropsTable } from 'components/Pages/DocsPage/PropsTable';
 import { useBatchLoader } from 'components/Hooks/useBatchLoader';
+import { useTranslation } from 'react-i18next';
 
 const PANEL_GAP = 8;
 
@@ -71,6 +72,7 @@ const PathButtonIcon = styled(SearchIcon)(() => ({
 const idToFileName = (id) => id.replaceAll('[', '.').replaceAll('].', '.').replaceAll(']', '');
 
 export const DocsPage = () => {
+  const { t } = useTranslation();
   const initialTree = useLoaderData();
   const explorerTreeRef = React.useRef();
   const [searchParams] = useSearchParams();
@@ -192,9 +194,9 @@ export const DocsPage = () => {
                     return { name, type, value }
                   })}
                   headCells={[
-                    { id: 'name', label: 'Name', width: 200 },
-                    { id: 'type', label: 'Type', width: 150 },
-                    { id: 'value', label: 'Value', width: 600 }
+                    { id: 'name', label: t('moddingPropsName'), width: 200 },
+                    { id: 'type', label: t('moddingPropsType'), width: 150 },
+                    { id: 'value', label: t('moddingPropsValue'), width: 600 }
                   ]} />
               </PanelContent>
             </Panel>

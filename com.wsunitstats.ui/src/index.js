@@ -17,6 +17,7 @@ import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
 import { DocsPage } from 'components/Pages/DocsPage';
+import i18n from './i18n';
 
 const lightTheme = createTheme({
   palette: {
@@ -47,7 +48,7 @@ const darkTheme = createTheme({
       },
       propTable: {
         idCell: {
-          gStart: '0000004d',
+          gStart: '#0003',
           gEnd: '#fff0'
         }
       }
@@ -58,17 +59,13 @@ const darkTheme = createTheme({
 const Root = () => {
   const params = useParams();
   const context = useLoaderData();
-  const localizationData = context.localization[params.locale];
-  if (!localizationData && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
+  const isLocale = context.localeOptions.includes(params.locale);
+
+  if (!isLocale && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
     return <Navigate
       to={`/${Constants.DEFAULT_LOCALE_OPTION}/${Constants.ERROR_PAGE_PATH}`}
       state={{ msg: "Requested locale not found", code: 404 }} replace={true} />;
   }
-
-  const localizedUnitOptions = Utils.localize(context.units, localizationData);
-  const localizedResearchOptions = Utils.localize(context.researches, localizationData);
-  context.localizedUnits = localizedUnitOptions;
-  context.localizedResearches = localizedResearchOptions;
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -90,9 +87,15 @@ const entityLoader = async (route, path) => {
 
 const unitLoader = (route) => entityLoader(route, Constants.UNIT_DATA_PATH);
 const researchLoader = (route) => entityLoader(route, Constants.RESEARCH_DATA_PATH);
-const contextLoader = () => fetch(new URL(Constants.HOST + Constants.CONTEXT_DATA_PATH));
 const unitSelectorLoader = () => fetch(new URL(Constants.HOST + Constants.UNIT_SELECTOR_DATA_PATH));
 const docsLoader = () => fetch(new URL(Constants.HOST + Constants.DOCS_DATA_TREE_ROOT_FILE_PATH));
+const contextLoader = (route) => Promise.all([
+  // potentially there is no need to reload context on locale change
+  // need a way to setup multiple loaders conditionally
+  // or use one more level of components for localization
+  fetch(new URL(Constants.HOST + Constants.CONTEXT_DATA_PATH)),
+  i18n.changeLanguage(route.params.locale)
+]).then(result => result[0]);
 
 const unitSelectorOptions = {
   title: 'WS Units',
@@ -110,7 +113,7 @@ const filterUnitSelectorOptions = (context, searchParams) => {
   const nations = searchParams.get(Constants.PARAM_NATIONS)?.split(',').map(v => Number(v)).filter(v => !isNaN(v));
   const searchTags = searchParams.get(Constants.PARAM_SEARCH_TAGS)?.split(',').map(v => Number(v)).filter(v => !isNaN(v));
   const unitTags = searchParams.get(Constants.PARAM_UNIT_TAGS)?.split(',').map(v => Number(v)).filter(v => !isNaN(v));
-  return context.localizedUnits.filter(option =>
+  return context.units.filter(option =>
     (!nations || nations.some(nation => option.nationId === nation)) &&
     (!searchTags || searchTags.some(searchTag => option.searchTags.includes(searchTag))) &&
     (!unitTags || unitTags.some(unitTag => option.unitTags.includes(unitTag))));
@@ -139,7 +142,7 @@ const router = createBrowserRouter([
     path: `/${Constants.PARAM_LOCALE}`,
     element: <Root />,
     loader: contextLoader,
-    shouldRevalidate: () => false,
+    shouldRevalidate: ({ currentParams, nextParams }) => currentParams.locale !== nextParams.locale,
     children: [
       {
         index: true,
@@ -168,7 +171,7 @@ const router = createBrowserRouter([
         element: <EntitySelectorPage selectorOptions={unitSelectorOptions} getSelectorOptions={filterUnitSelectorOptions} />,
         loader: unitSelectorLoader,
         shouldRevalidate: () => false,
-      },  
+      },
       {
         path: `${Constants.UNIT_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,
         element: <EntityPage />,
@@ -186,7 +189,7 @@ const router = createBrowserRouter([
       },
       {
         path: Constants.RESEARCH_SELECTOR_PAGE_PATH,
-        element: <EntitySelectorPage selectorOptions={researchSelectorOptions} getSelectorOptions={(context) => context.localizedResearches} />
+        element: <EntitySelectorPage selectorOptions={researchSelectorOptions} getSelectorOptions={(context) => context.researches} />
       },
       {
         path: `${Constants.RESEARCH_PAGE_PATH}/${Constants.PARAM_GAME_ID}`,

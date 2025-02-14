@@ -121,6 +121,7 @@ export const fetchJson = (fetchURI, callback) => {
 /**
  * Replaces found localization tokens with values provided in localeData
  * 
+ * @deprecated to be replaced with localization framework and locale files
  * @param {*} target anything to be localized
  * @param {*} localeData object that reprtesents a list of localization key-value pairs
  * @returns 

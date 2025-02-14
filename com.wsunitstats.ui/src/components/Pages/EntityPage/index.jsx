@@ -11,7 +11,6 @@ const StyledRootContainer = styled(Box)(({ theme }) => ({
 
 export const EntityPage = () => {
   const params = useParams();
-  const context = useOutletContext();
   const entity = useLoaderData();
   const applyResearches = useResearches();
 
@@ -22,11 +21,10 @@ export const EntityPage = () => {
   }
 
   const modifiedEntity = applyResearches(entity);
-  const localizedEntity = Utils.localize(modifiedEntity, context.localization[params.locale]);
 
   return (
     <StyledRootContainer>
-      <Outlet context={localizedEntity} />
+      <Outlet context={modifiedEntity} />
     </StyledRootContainer>
   );
 }

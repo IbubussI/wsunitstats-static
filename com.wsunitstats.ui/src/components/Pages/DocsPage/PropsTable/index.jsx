@@ -42,7 +42,7 @@ const ContentTableCell = styled(React.forwardRef(
   letterSpacing: 0
 }));
 
-const TableCellText = styled('div')(({ theme }) => ({
+const TableCellText = styled('div')(() => ({
   textOverflow: 'ellipsis',
   overflow: 'hidden',
   whiteSpace: 'nowrap',
@@ -66,13 +66,13 @@ const ExpandButton = styled(IconButton)(() => ({
 }));
 
 
-const IdTableCell = styled(TableCell)(({ theme, noBackground }) => ({
+const IdTableCell = styled(TableCell)(({ theme, nobackground }) => ({
   width: '30px',
   minWidth: '30px',
   textAlign: 'center',
   padding: '6px',
   borderRight: '1px solid rgb(190, 190, 190)',
-  background: noBackground ? '' : `linear-gradient(to right, ${theme.palette.docs.propTable.idCell.gStart} 70%, ${theme.palette.docs.propTable.idCell.gEnd});`,
+  background: nobackground ? '' : `linear-gradient(to right, ${theme.palette.docs.propTable.idCell.gStart} 70%, ${theme.palette.docs.propTable.idCell.gEnd});`,
   color: alpha(theme.palette.text.primary, 0.5)
 }));
 
@@ -265,7 +265,7 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }
       <Table size='small' sx={{ tableLayout: 'fixed', width: 0 }}>
         <TableHead sx={{ userSelect: 'none' }}>
           <HeadingTableRow>
-            <IdTableCell noBackground={true} />
+            <IdTableCell nobackground="true" />
             {headCells.map((headCell, i) => {
               return (
                 <ContentTableCell

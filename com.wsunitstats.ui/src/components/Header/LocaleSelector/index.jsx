@@ -4,6 +4,7 @@ import * as Utils from 'utils/utils';
 import { autocompleteClasses, inputLabelClasses, outlinedInputClasses, styled, svgIconClasses } from "@mui/material";
 import { DynamicSelect } from "components/Atoms/DynamicSelect";
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const StyledDynamicSelect = styled(DynamicSelect)({
   [`& .${autocompleteClasses.inputRoot} .${autocompleteClasses.input}`]: {
@@ -30,6 +31,7 @@ const StyledDynamicSelect = styled(DynamicSelect)({
 });
 
 export const LocaleSelector = ({ currentLocale, options }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = React.useState(null);
 
@@ -54,6 +56,7 @@ export const LocaleSelector = ({ currentLocale, options }) => {
       getOptionLabel={(locale) => locale.toUpperCase()}
       value={value}
       options={options}
+      label={t('localeSelectorLabel')}
     />
   );
 }
