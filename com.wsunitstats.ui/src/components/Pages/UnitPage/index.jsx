@@ -13,61 +13,63 @@ import { SubmarineTab } from 'components/Pages/UnitPage/Tabs/Submarine';
 import { TabsUnitWrapper } from 'components/Pages/UnitPage/TabsUnitWrapper';
 import { EntityTabsView } from 'components/Pages/EntityPage/EntityTabsView';
 import { useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const UnitPage = () => {
+  const { t } = useTranslation();
   const unit = useOutletContext();
   const tabsData = [
     {
       id: Constants.INITIAL_TAB,
-      label: 'Common',
+      label: t('unitTabCommon'),
       component: CommonTab,
       isShow: !!unit
     },
     {
       id: Constants.UNIT_WEAPONS_TAB,
-      label: 'Weapons',
+      label: t('unitTabWeapons'),
       component: WeaponTab,
       isShow: unit?.weapons?.length || unit?.turrets?.length
     },
     {
       id: Constants.UNIT_ABILITIES_TAB,
-      label: 'Abilities',
+      label: t('unitTabAbilities'),
       component: AbilitiesTab,
       isShow: unit?.abilities?.length
     },
     {
       id: Constants.UNIT_BUILD_TAB,
-      label: 'Building',
+      label: t('unitTabBuilding'),
       component: BuildingTab,
       isShow: unit?.build
     },
     {
       id: Constants.UNIT_CONSTRUCTION_TAB,
-      label: 'Construct',
+      label: t('unitTabConstruct'),
       component: ConstructionsTab,
       isShow: unit?.construction
     },
     {
       id: Constants.UNIT_GATHER_TAB,
-      label: 'Gather',
+      label: t('unitTabGather'),
       component: GatheringTab,
       isShow: unit?.gather
     },
     {
       id: Constants.UNIT_HEAL_TAB,
-      label: 'Heal',
+      label: t('unitTabHeal'),
       component: HealTab,
       isShow: unit?.heal
     },
     {
       id: Constants.UNIT_AIRPLANE_TAB,
-      label: 'Airplane',
+      label: t('unitTabAirplane'),
       component: AirplaneTab,
       isShow: unit?.airplane
     },
     {
       id: Constants.UNIT_SUBMARINE_TAB,
-      label: 'Submarine',
+      label: t('unitTabSubmarine'),
       component: SubmarineTab,
       isShow: unit?.submarine
     },

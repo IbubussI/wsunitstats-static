@@ -6,7 +6,7 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(duration);
 dayjs.extend(timezone);
 
-const LOCALIZATION_REGEX = new RegExp("<\\*[a-zA-Z0-9/]+>", "g");
+export const LOCALIZATION_REGEX = new RegExp("<\\*[a-zA-Z0-9/]+>", "g");
 
 export const resolveImage = (name) => {
   return `/files/images/${name}`;
@@ -139,6 +139,7 @@ export const fetchJson = (fetchURI, successCallback, failCallback) => {
 /**
  * Replaces found localization tokens with values provided in localeData
  * 
+ * @deprecated replaced with localization framework and locale files
  * @param {*} target anything to be localized
  * @param {*} localeData object that reprtesents a list of localization key-value pairs
  * @returns 
@@ -183,4 +184,3 @@ export const formatDuration = (durationMillis) => {
 export const formatTimeLong = (timeSec) => {
   return dayjs.unix(timeSec).format('ddd, D MMM YYYY, HH:mm:ss z');
 }
-

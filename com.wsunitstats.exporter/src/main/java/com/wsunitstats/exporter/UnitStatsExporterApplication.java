@@ -28,8 +28,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @SpringBootApplication
 @ComponentScan({"com.wsunitstats.*"})
@@ -69,8 +67,6 @@ public class UnitStatsExporterApplication {
             List<LocalizationModel> localizationModels = fileContentService.getLocalizationFileModels().stream()
                     .map(locFile -> localizationModelBuilder.buildFromFileModel(locFile))
                     .toList();
-            Map<String, Map<String, String>> localizationMap = localizationModels.stream()
-                    .collect(Collectors.toMap(LocalizationModel::getLocale, LocalizationModel::getEntries));
 
             Collection<UnitOption> unitOptions = optionsBuilder.buildUnitOptions(unitModels);
             Collection<ResearchOption> researchOptions = optionsBuilder.buildResearchOptions(researchModels);
@@ -87,7 +83,6 @@ public class UnitStatsExporterApplication {
             ContextModel context = new ContextModel();
             context.setResearches(researchOptions);
             context.setUnits(unitOptions);
-            context.setLocalization(localizationMap);
             context.setLocaleOptions(localeOptions);
 
             LOG.info("Executing configured tasks...");

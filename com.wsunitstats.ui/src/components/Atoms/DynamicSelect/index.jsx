@@ -7,6 +7,7 @@ export const DynamicSelect = (props) => {
     getOptionLabel,
     value,
     options,
+    label,
     ...forwardedProps
   } = props;
 
@@ -27,7 +28,7 @@ export const DynamicSelect = (props) => {
         }
       }}
       renderInput={({ inputProps, ...props }) => (
-        <TextField {...props} inputProps={{ ...inputProps, readOnly: true }} label="Locale" />
+        <TextField {...props} inputProps={{ ...inputProps, readOnly: true }} label={label} />
       )}
     />
   );

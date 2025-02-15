@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants'
-import { Box, Grid, Stack, debounce } from "@mui/material";
-import { BasicPaper } from "components/Atoms/BasicPaper";
+import { Box, Grid, Paper, Stack, debounce, useTheme } from "@mui/material";
 import { ResizableBox } from 'react-resizable';
+import { useTranslation } from 'react-i18next';
 
 const MAX_COLUMNS = 12;
 
@@ -54,15 +54,22 @@ export const ResizableGrid = ({ children, minWidth, defaultWidth = Constants.DEF
         onResizeStop={onResizeStop}
         handle={<ResizeHandle />}
         axis='x'>
-        <BasicPaper sx={{ padding: 1, paddingTop: typeof paddingTop === 'number' ? paddingTop : 3, width: '100%', boxSizing: 'border-box' }}>
+        <Paper elevation={3}
+          sx={{
+            padding: 1,
+            paddingTop: typeof paddingTop === 'number' ? paddingTop : 3,
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
           {children}
-        </BasicPaper>
+        </Paper>
       </ResizableBox>
     </Box>
   );
 }
 
 const ResizeHandle = React.forwardRef((props, ref) => {
+  const theme = useTheme();
   const { handleAxis, ...restProps } = props;
   return (
     <Box
@@ -81,7 +88,7 @@ const ResizeHandle = React.forwardRef((props, ref) => {
       <Box sx={{
         height: '100%',
         width: '4px',
-        backgroundColor: 'white',
+        backgroundColor: theme.palette.background.default,
         margin: 'auto',
         border: '1px solid #076fad69',
         boxShadow: '0px 0px 3px #0779a6',
@@ -96,7 +103,7 @@ const ResizeHandle = React.forwardRef((props, ref) => {
           width: 'fit-content',
           lineHeight: 0,
           color: 'rgb(85, 120, 218)',
-          backgroundColor: 'white',
+          backgroundColor: theme.palette.background.default,
           padding: '1px',
           border: '1px solid #076fad69',
           boxShadow: '0px 0px 4px #0779a6',
@@ -149,9 +156,10 @@ const getArray = (object) => {
 }
 
 export const GridGroup = ({ columnWidth, children, heading }) => {
+  const { t } = useTranslation();
   return (
     <Stack>
-      {heading && <h4 style={{ textAlign: 'center' }}>{heading}</h4>}
+      {heading && <h4 style={{ textAlign: 'center' }}>{t(heading)}</h4>}
       <GridLayout columnWidth={columnWidth}>
         {children}
       </GridLayout>

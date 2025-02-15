@@ -237,7 +237,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 .map(unitJson -> {
                     UnitRequirementModel result = new UnitRequirementModel();
                     int unitId = unitJson.getType();
-                    result.setQuantity(Utils.getQuantityString(unitJson.getMin(), unitJson.getMax()));
+                    setQuantity(result, unitJson.getMin(), unitJson.getMax());
                     result.setUnitImage(imageService.getImageName(Constants.EntityType.UNIT.getName(), unitId));
                     result.setUnitId(unitId);
                     result.setUnitName(localization.getUnitNames().get(unitId));
@@ -619,5 +619,31 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         } else {
             return weaponModel.getSpread() != null ? Constants.WeaponType.RANGE.getName() : Constants.WeaponType.MELEE.getName();
         }
+    }
+
+    private void setQuantity(UnitRequirementModel model, Integer min, Integer max) {
+        String str = Constants.QuantityType.FROM_TO.getName();
+        Integer actualMin = min;
+        Integer actualMax = max;
+        if (min == null && max == null) {
+            str = Constants.QuantityType.NOT_LESS_THAN.getName();
+            actualMin = 1;
+            actualMax = -1;
+        }
+        if (min != null && max == null) {
+            str = Constants.QuantityType.NOT_LESS_THAN.getName();
+            // assigned actualMin = min;
+            actualMax = -1;
+        }
+        // min == null && max != null
+        if (min == null && max != null) {
+            str = Constants.QuantityType.NOT_MORE_THAN.getName();
+            actualMin = -1;
+            // assigned actualMax = max;
+        }
+        // min != null && max != null
+        model.setQuantityStr(str);
+        model.setQuantityMin(actualMin);
+        model.setQuantityMax(actualMax);
     }
 }

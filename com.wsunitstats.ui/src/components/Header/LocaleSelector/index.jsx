@@ -1,35 +1,32 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
-import { autocompleteClasses, inputLabelClasses, outlinedInputClasses, styled, svgIconClasses } from "@mui/material";
+import {
+  autocompleteClasses,
+  inputBaseClasses,
+  Stack,
+  styled,
+  Tooltip
+} from "@mui/material";
 import { DynamicSelect } from "components/Atoms/DynamicSelect";
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 const StyledDynamicSelect = styled(DynamicSelect)({
-  [`& .${autocompleteClasses.inputRoot} .${autocompleteClasses.input}`]: {
-    color: 'white',
-    borderColor: 'white',
-    cursor: 'pointer'
-  },
-  [`& .${inputLabelClasses.root}`]: {
-    color: 'white !important',
-  },
-  [`& .${outlinedInputClasses.notchedOutline}`]: {
-    borderColor: 'white'
-  },
-  [`&:hover .${outlinedInputClasses.notchedOutline}`]: {
-    borderColor: 'white !important'
-  },
-  [`&:focus-within .${outlinedInputClasses.notchedOutline}`]: {
-    borderColor: 'white !important',
-    borderWidth: '1px !important'
-  },
-  [`& .${svgIconClasses.root}`]: {
-    color: 'white'
+  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}, .${inputBaseClasses.root}`]: {
+    cursor: 'pointer',
+    userSelect: 'none'
   },
 });
 
-export const LocaleSelector = ({ currentLocale, options }) => {
+export const LocaleSelector = (props) => {
+  const {
+    currentLocale,
+    options,
+    ...otherProps
+  } = props;
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = React.useState(null);
 
@@ -49,11 +46,17 @@ export const LocaleSelector = ({ currentLocale, options }) => {
   }, [currentLocale, options, onLocaleChange]);
 
   return (
-    <StyledDynamicSelect
-      onSelect={(locale) => onLocaleChange(locale, true)}
-      getOptionLabel={(locale) => locale.toUpperCase()}
-      value={value}
-      options={options}
-    />
+    <Stack {...otherProps} style={{ gap: 1, alignItems: 'center', flexDirection: 'row', py: 1 }}>
+      <StyledDynamicSelect
+        onSelect={(locale) => onLocaleChange(locale, true)}
+        getOptionLabel={(locale) => locale.toUpperCase()}
+        value={value}
+        options={options}
+      />
+      {currentLocale !== Constants.DEFAULT_LOCALE_OPTION &&
+        <Tooltip arrow title={t('localeSelectorWarn')}>
+          <WarningAmberIcon style={{ color: '#fd853c', filter: 'drop-shadow(0px 0px 3px rgb(0 0 0 / 0.8))', fontSize: 25 }} />
+        </Tooltip>}
+    </Stack>
   );
 }

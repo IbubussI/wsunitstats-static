@@ -11,43 +11,36 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { EntityPicker } from 'components/Header/EntityPicker';
-import { Stack, Tooltip } from '@mui/material';
+import { FormControl, FormControlLabel, FormGroup, FormLabel, Stack, useMediaQuery } from '@mui/material';
 import { LocaleSelector } from './LocaleSelector';
-
-const pages = [
-  {
-    path: Constants.UNIT_SELECTOR_PAGE_PATH,
-    name: 'Units'
-  },
-  {
-    path: Constants.RESEARCH_SELECTOR_PAGE_PATH,
-    name: 'Researches'
-  },
-  {
-    path: Constants.MODS_PAGE_PATH,
-    name: 'Modding'
-  },
-  {
-    path: Constants.REPLAY_INFO_PAGE_PATH,
-    name: 'Replay'
-  },
-];
+import { useTranslation } from 'react-i18next';
+import { ThemeSelector } from './ThemeSelector';
 
 export const Header = ({ context }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [anchorElNav, setAnchorElNav] = React.useState(null);
-  const { locale } = useParams();
 
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
-  };
-
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
-  };
+  const pages = [
+    {
+      path: Constants.UNIT_SELECTOR_PAGE_PATH,
+      name: t('headerUnits')
+    },
+    {
+      path: Constants.RESEARCH_SELECTOR_PAGE_PATH,
+      name: t('headerResearches')
+    },
+    {
+      path: Constants.MODS_PAGE_PATH,
+      name: t('headerModding')
+    },
+    {
+      path: Constants.REPLAY_INFO_PAGE_PATH,
+      name: t('headerReplay')
+    },
+  ];
 
   const onEntityChange = (newRoute, newGameId) => {
     if (newGameId !== null) {
@@ -60,78 +53,140 @@ export const Header = ({ context }) => {
     <AppBar position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          {
-            <Stack sx={{
-              '& *': {
-                display: { xs: 'none', md: 'flex' },
-                color: '#ffda6b',
-              }
-            }}>
-              <Typography fontSize='12px' mr={2}>
-                Last updated: 27.01.2025
-              </Typography>
-              <Typography fontSize='12px' mr={2}>
-                Game version: v173.2907_27889
-              </Typography>
-            </Stack>
-          }
-
-          <Box sx={{ flexGrow: 1, display: { xs: 'flex', sm: 'none' } }}>
-            <IconButton
-              size="large"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-              }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: 'block', sm: 'none' },
-              }}
-            >
-              {pages.map((page) => (
-                <NavLink key={page.path} to={page.path} style={{ textDecoration: 'none', color: 'initial' }}>
-                  <MenuItem onClick={handleCloseNavMenu}>
-                    <Typography textAlign="center">{page.name}</Typography>
-                  </MenuItem>
-                </NavLink>
-              ))}
-            </Menu>
-          </Box>
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' } }}>
-            {pages.map((page) => (
-              <NavLink key={page.path} to={page.path} style={{ textDecoration: 'none' }}>
-                <Button
-                  onClick={handleCloseNavMenu}
-                  sx={{ my: 2, color: 'white', display: 'block' }}
-                >
-                  {page.name}
-                </Button>
-              </NavLink>
-            ))}
-          </Box>
-          <EntityPicker onSelect={onEntityChange} unitOptions={context.localizedUnits} researchOptions={context.localizedResearches}/>
-          <Stack sx={{ width: '135px', gap: 1, alignItems: 'center', flexDirection: 'row', paddingTop: 1, paddingBottom: 1 }}>
-            <LocaleSelector currentLocale={locale} options={context.localeOptions}/>
-            {locale !== Constants.DEFAULT_LOCALE_OPTION && <Tooltip arrow title='Only in-game values are localized using game localization files. Most of the UI is available only in English now'>
-              <WarningAmberIcon sx={{ color: '#fd853c', filter: 'drop-shadow(0px 0px 3px rgb(0 0 0 / 0.8))', fontSize: 25 }} />
-            </Tooltip>}
+          <Stack sx={{
+            '& *': {
+              display: { xs: 'none', md: 'flex' },
+              color: '#ffda6b',
+            }
+          }}>
+            <Typography fontSize='12px' mr={2}>
+              {t('headerLastUpdated', { value: '27.01.2025' })}
+            </Typography>
+            <Typography fontSize='12px' mr={2}>
+              {t('headerGameVersion', { value: 'v173.2907_27889' })}
+            </Typography>
           </Stack>
+          <NavigationMenu pages={pages} />
+          <EntityPicker onSelect={onEntityChange} unitOptions={context.units} researchOptions={context.researches} />
+          <SettingsMenu context={context} />
         </Toolbar>
       </Container>
     </AppBar>
   );
-}
+};
+
+const NavigationMenu = ({ pages }) => {
+  const isFullSize = useMediaQuery((theme) => theme.breakpoints.up('md'));
+  const [anchorElNav, setAnchorElNav] = React.useState(null);
+
+  const handleOpenNavMenu = (event) => {
+    setAnchorElNav(event.currentTarget);
+  };
+
+  const handleCloseNavMenu = () => {
+    setAnchorElNav(null);
+  };
+
+  return (
+    <>
+      {!isFullSize &&
+        <Box sx={{ flexGrow: 1, display: 'flex' }}>
+          <IconButton size="large"
+            onClick={handleOpenNavMenu}
+            color="inherit">
+            <MenuIcon />
+          </IconButton>
+          <Menu anchorEl={anchorElNav}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
+            open={Boolean(anchorElNav)}
+            onClose={handleCloseNavMenu}>
+            {pages.map((page) => (
+              <NavLink key={page.path} to={page.path} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <MenuItem onClick={handleCloseNavMenu}>
+                  <Typography textAlign="center">
+                    {page.name}
+                  </Typography>
+                </MenuItem>
+              </NavLink>
+            ))}
+          </Menu>
+        </Box>}
+      {isFullSize && <Box sx={{ flexGrow: 1, display: 'flex' }}>
+        {pages.map((page) => (
+          <NavLink key={page.path} to={page.path} style={{ textDecoration: 'none' }}>
+            <Button onClick={handleCloseNavMenu}
+              sx={{ my: 2, color: 'white', display: 'block', whiteSpace: 'nowrap' }}>
+              {page.name}
+            </Button>
+          </NavLink>
+        ))}
+      </Box>}
+    </>
+  );
+};
+
+const SettingsMenu = ({ context }) => {
+  const { t } = useTranslation();
+  const { locale } = useParams();
+  const [anchorElNav, setAnchorElNav] = React.useState(null);
+
+  const handleOpenNavMenu = (event) => {
+    setAnchorElNav(event.currentTarget);
+  };
+
+  const handleCloseNavMenu = () => {
+    setAnchorElNav(null);
+  };
+
+  return (
+    <>
+      <IconButton
+        size="large"
+        onClick={handleOpenNavMenu}
+        color="inherit">
+        <SettingsIcon />
+      </IconButton>
+      <Menu anchorEl={anchorElNav}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        keepMounted
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        open={Boolean(anchorElNav)}
+        onClose={handleCloseNavMenu}>
+        <FormControl component="fieldset" variant="standard">
+          <FormGroup>
+              <FormControlLabel
+                sx={{ alignItems: 'start', pointerEvents: 'none', py: 1 }}
+                labelPlacement='top'
+                control={
+                  <LocaleSelector sx={{ pointerEvents: 'all' }} currentLocale={locale} options={context.localeOptions} />
+                }
+                label={t('localeSelectorLabel')}
+              />
+              <FormControlLabel
+                sx={{ alignItems: 'start', pointerEvents: 'none', py: 1 }}
+                labelPlacement='top'
+                control={
+                  <ThemeSelector sx={{ pointerEvents: 'all' }}/>
+                }
+                label={t('themeSelectorLabel')}
+              />
+            </FormGroup>
+        </FormControl>
+      </Menu>
+    </>
+  );
+};

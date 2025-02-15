@@ -7,7 +7,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Contains objects that are immutable part of any page
@@ -16,7 +15,6 @@ import java.util.Map;
 @Setter
 @ToString
 public class ContextModel {
-    private Map<String, Map<String, String>> localization;
     private Collection<String> localeOptions;
     private Collection<ResearchOption> researches;
     private Collection<UnitOption> units;

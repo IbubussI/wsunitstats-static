@@ -5,6 +5,7 @@ import { CheckmarksSelect } from 'components/Atoms/CheckmarksSelect';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
 import { useOptionsController } from 'components/Hooks/useOptionsController';
 import { FormButton } from 'components/Atoms/FormButton';
+import { useTranslation } from 'react-i18next';
 
 const FilterPanel = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -23,6 +24,7 @@ const FilterButtonGroup = styled(Box)(({ theme }) => ({
 }));
 
 export const UnitFilters = ({ filterOptions }) => {
+  const { t } = useTranslation();
   const { sync, clear } = useValuesToQueryStringSync();
 
   const nationOptionsController = useOptionsController(Constants.PARAM_NATIONS, filterOptions.nations);
@@ -41,7 +43,7 @@ export const UnitFilters = ({ filterOptions }) => {
     <FilterPanel>
       <CheckmarksSelect
         sx={{ width: '300px' }}
-        label='Unit Tags'
+        label={t('filtersUnitTags')}
         values={unitTagOptionsController.values}
         options={unitTagOptionsController.options}
         onChange={unitTagOptionsController.setValues}
@@ -49,7 +51,7 @@ export const UnitFilters = ({ filterOptions }) => {
         isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
       <CheckmarksSelect
         sx={{ width: '300px' }}
-        label='Search Tags'
+        label={t('filtersSearchTags')}
         values={searchTagOptionsController.values}
         options={searchTagOptionsController.options}
         onChange={searchTagOptionsController.setValues}
@@ -57,7 +59,7 @@ export const UnitFilters = ({ filterOptions }) => {
         isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
       <CheckmarksSelect
         sx={{ width: '300px' }}
-        label='Nations'
+        label={t('filtersNations')}
         values={nationOptionsController.values}
         options={nationOptionsController.options}
         onChange={nationOptionsController.setValues}
@@ -73,7 +75,7 @@ export const UnitFilters = ({ filterOptions }) => {
             sync(map);
           }}
           disabled={isAllApplied}>
-          APPLY
+          {t('filtersApply')}
         </FormButton>
         <FormButton
           onClick={() => {
@@ -83,7 +85,7 @@ export const UnitFilters = ({ filterOptions }) => {
             searchTagOptionsController.setValues([]);
           }}
           disabled={!hasQueryString}>
-          CLEAR
+          {t('filtersClear')}
         </FormButton>
       </FilterButtonGroup>
     </FilterPanel>

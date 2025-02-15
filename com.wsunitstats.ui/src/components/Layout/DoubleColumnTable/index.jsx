@@ -8,6 +8,7 @@ import {
   TableRow,
   Typography
 } from "@mui/material";
+import { useTranslation } from 'react-i18next';
 import { Image } from 'components/Atoms/Renderer';
 
 const DamageRow = ({ data }) => {
@@ -46,6 +47,7 @@ const DamageRow = ({ data }) => {
 }
 
 const ResourceRow = ({ data }) => {
+  const { t } = useTranslation();
   let textVariant = 'body2';
   let textColor = 'text.primary';
   let paddingTop = data.rowStyle.paddingTop;
@@ -64,7 +66,7 @@ const ResourceRow = ({ data }) => {
     }}>
       <TableCell>
         <Typography variant={textVariant} color={textColor} sx={{ width: data.rowStyle.leftRowWidth }}>
-          {data.row.resourceName}
+          {t(data.row.resourceName)}
         </Typography>
       </TableCell>
       <TableCell sx={{ width: data.rowStyle.rightRowWidth }}>

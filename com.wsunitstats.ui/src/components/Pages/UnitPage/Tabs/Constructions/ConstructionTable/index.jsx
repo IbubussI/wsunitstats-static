@@ -3,12 +3,14 @@ import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 import { EntityInfo, HeaderChip } from "components/Atoms/Renderer";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const BUILD_COLUMNS = 1;
 const FLEX_TABLE_RIGHT_WIDTH = '65%';
 const FLEX_TABLE_LEFT_WIDTH = '35%';
 
 export const ConstructionTable = ({ construction, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
 
   const constructionData = [
@@ -16,12 +18,12 @@ export const ConstructionTable = ({ construction, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Target',
+        label: t('abilitiesTargetCell'),
         value: {
           values: [
             construction.entityInfo && {
-              primary: construction.entityInfo.entityName,
-              secondary: construction.entityInfo.entityNation && construction.entityInfo.entityNation.name,
+              primary: t(construction.entityInfo.entityName),
+              secondary: construction.entityInfo.entityNation && t(construction.entityInfo.entityNation.name),
               image: {
                 path: construction.entityInfo.entityImage,
                 width: 35,
@@ -45,7 +47,7 @@ export const ConstructionTable = ({ construction, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Distance',
+        label: t('constructionDistanceCell'),
         value: construction.distance,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -55,8 +57,8 @@ export const ConstructionTable = ({ construction, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Construction speed*',
-        value: construction.constructionSpeed + '% / sec (for 1 worker)',
+        label: t('constructionConstructionSpeedCell'),
+        value: t('constructionConstructionSpeedValue', { value: construction.constructionSpeed }),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
@@ -65,7 +67,7 @@ export const ConstructionTable = ({ construction, overflowMinWidth }) => {
 
   const labelData = {
     value: {
-      tooltip: "Construction ID #" + construction.constructionId,
+      tooltip: t('constructionTooltipID', { value: construction.constructionId }),
       id: construction.constructionId
     },
     valueRenderer: HeaderChip,

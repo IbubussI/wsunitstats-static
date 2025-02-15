@@ -1,9 +1,10 @@
 import * as Utils from 'utils/utils';
 import * as Constants from "utils/constants";
-import { Avatar, Box, Chip, Link, Stack, Tooltip, Typography } from "@mui/material";
+import { Avatar, Box, Chip, Link, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { PopperTag } from "components/Atoms/ButtonPopper";
+import { useTranslation } from 'react-i18next';
 
 export const Image = (props) => {
   const {
@@ -29,14 +30,6 @@ export const Image = (props) => {
 export const Text = ({ data }) => {
   return (
     <Typography variant='body2' color='text.primary'>
-      {data}
-    </Typography>
-  );
-}
-
-export const ButtonText = ({ data }) => {
-  return (
-    <Typography variant='body2' color='rgb(25, 118, 210)'>
       {data}
     </Typography>
   );
@@ -198,22 +191,23 @@ export const TransformInfo = ({ data }) => {
 }
 
 export const HeaderChip = ({ data }) => {
+  const { t } = useTranslation();
+  const theme = useTheme();
   const color = data.disabled ? 'error.main' : 'text.secondary';
   const textColor = data.disabled ? 'error.main' : 'text.primary';
   const borderColor = data.disabled ? 'error.main' : 'rgb(85, 120, 218)';
   const isLabel = data.label || (data.disabledLabel && data.disabled);
   return (
     <Box sx={{
-      border: '3px solid',
+      border: '1px solid',
       borderColor: borderColor,
       color: color,
-      borderRadius: '18px',
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontWeight: '700',
       height: '32px',
-      backgroundColor: 'white',
+      backgroundColor: theme.palette.background.paper,
 
     }}>
       <Tooltip title={data.tooltip}>
@@ -248,7 +242,7 @@ export const HeaderChip = ({ data }) => {
         </Typography>
         {data.disabled &&
           <Chip
-            label='disabled'
+            label={t('disabledHeaderChip')}
             variant='contained'
             color='error'
             sx={{

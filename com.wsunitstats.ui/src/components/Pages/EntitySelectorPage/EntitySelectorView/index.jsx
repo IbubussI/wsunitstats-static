@@ -5,6 +5,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { Button, Grid, Toolbar, Typography, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroller';
+import { useTranslation } from 'react-i18next';
 
 const Main = styled('main')(() => ({
   display: 'flex',
@@ -18,6 +19,7 @@ const FlexFilterDrawer = styled(Drawer)(({ theme }) => ({
 }));
 
 export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, options, selectorContext, viewSize }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
@@ -78,7 +80,7 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
       <Main>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Typography variant="h4" color="text.primary" sx={{ p: theme.spacing(3, 0) }}>
-            {title}
+            {t(title)}
           </Typography>
           {Filters && <Button
             variant="outlined"
@@ -86,7 +88,7 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
             onClick={handleDrawerToggle}
             sx={{ m: theme.spacing(0, 1) }}
           >
-            Filters
+            {t('entityPageFiltersUnits')}
           </Button>}
         </Toolbar>
         <InfiniteScroll
