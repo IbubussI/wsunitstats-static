@@ -24,7 +24,7 @@ export const DeathAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
 
   const labelData = {
     value: {
-      tooltip: t('unitAbilitiesTooltipID', { value: ability.abilityId }),
+      tooltip: t('abilitiesTooltipID', { value: ability.abilityId }),
       id: ability.abilityId,
       label: t(ability.abilityName),
       disabled: false

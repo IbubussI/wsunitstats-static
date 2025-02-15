@@ -25,7 +25,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesTargetCell'),
+        label: t('abilitiesTargetCell'),
         value: {
           values: [
             ability.entityInfo && {
@@ -54,7 +54,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitWorkAbilityMakeTimeCell'),
+        label: t('workAbilityMakeTimeCell'),
         value: work.makeTime && work.makeTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -64,7 +64,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitWorkAbilityReserveLimitCell'),
+        label: t('workAbilityReserveLimitCell'),
         value: work.reserve?.reserveLimit,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -74,7 +74,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitWorkAbilityReserveTimeCell'),
+        label: t('workAbilityReserveTimeCell'),
         value: work.reserve && work.reserve.reserveTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -84,7 +84,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesCountCell'),
+        label: t('abilitiesCountCell'),
         value: ability.count,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -94,7 +94,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesDurationCell'),
+        label: t('abilitiesDurationCell'),
         value: ability.duration && ability.duration + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -104,7 +104,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesLifeTimeCell'),
+        label: t('abilitiesLifeTimeCell'),
         value: ability.lifeTime && ability.lifeTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -114,7 +114,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitWorkAbilityWorkIdCell'),
+        label: t('workAbilityWorkIdCell'),
         value: work.workId,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -125,7 +125,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
   const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, locale, t);
 
   const costTableData = {
-    label: t('unitWorkAbilityCostLabel'),
+    label: t('workAbilityCostLabel'),
     variant: 'resource',
     width: '150px',
     rowStyle: {
@@ -141,7 +141,7 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
   const disabled = work.enabled === false && 'disabled';
   const labelData = {
     value: {
-      tooltip: t('unitAbilitiesTooltipID', { value: ability.abilityId }),
+      tooltip: t('abilitiesTooltipID', { value: ability.abilityId }),
       id: ability.abilityId,
       label: t(ability.abilityName),
       disabled: disabled

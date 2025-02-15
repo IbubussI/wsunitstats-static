@@ -29,7 +29,7 @@ export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) =>
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitZoneAbilitySizeCell'),
+        label: t('zoneAbilitySizeCell'),
         value: abilityContainer.size,
         widthRight: FLEX_TABLE_ABILITY_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_ABILITY_LEFT_WIDTH
@@ -39,7 +39,7 @@ export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) =>
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitZoneAbilityEnvSearchDistanceCell'),
+        label: t('zoneAbilityEnvSearchDistanceCell'),
         value: abilityContainer.envSearchDistance,
         widthRight: FLEX_TABLE_ABILITY_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_ABILITY_LEFT_WIDTH
@@ -48,7 +48,7 @@ export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) =>
   ].filter(x => x.childData.value);
 
   const searchTagsData = {
-    label: t('unitZoneAbilityEnvTagsCell'),
+    label: t('tagContainerEnv'),
     tags: abilityContainer.envTags
   };
 
@@ -63,7 +63,7 @@ export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) =>
         <TagBox tagsData={searchTagsData} />
       </>
       <Stack alignItems='center' spacing={3}>
-        <p>{t('unitZoneAbilityAssociatedAbilitiesTitle')}</p>
+        <p>{t('zoneAbilityAssociatedAbilitiesTitle')}</p>
         {abilities.map((ability, index) => {
           return (
             <Box key={index} sx={{ width: '100%' }}>
@@ -86,7 +86,7 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesTargetCell'),
+        label: t('abilitiesTargetCell'),
         value: {
           values: [
             ability.entityInfo && {
@@ -115,7 +115,7 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesCountCell'),
+        label: t('abilitiesCountCell'),
         value: ability.count,
         widthRight: FLEX_TABLE_ABILITY_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_ABILITY_LEFT_WIDTH
@@ -125,7 +125,7 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesDurationCell'),
+        label: t('abilitiesDurationCell'),
         value: ability.duration && ability.duration + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_ABILITY_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_ABILITY_LEFT_WIDTH
@@ -135,7 +135,7 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesLifeTimeCell'),
+        label: t('abilitiesLifeTimeCell'),
         value: ability.lifeTime && ability.lifeTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_ABILITY_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_ABILITY_LEFT_WIDTH
@@ -147,7 +147,7 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
 
   const labelData = {
     value: {
-      tooltip: t('unitAbilitiesTooltipID', { value: ability.abilityId }),
+      tooltip: t('abilitiesTooltipID', { value: ability.abilityId }),
       id: ability.abilityId,
       label: t(ability.abilityName),
       disabled: false
@@ -185,7 +185,7 @@ const DamageAbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
 
   const labelData = {
     value: {
-      tooltip: t('unitAbilitiesTooltipID', { value: ability.abilityId }),
+      tooltip: t('abilitiesTooltipID', { value: ability.abilityId }),
       id: ability.abilityId,
       label: t(ability.abilityName),
       disabled: false

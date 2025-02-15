@@ -5,7 +5,7 @@ import { Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography,
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export const ArmorChart = ({content, valuePrefix, colors}) => {
+export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
   const theme = useTheme();
   const [labels, probabilities, values, avg, legendEntries] = React.useMemo(() => {
     const labels_ = [];
@@ -42,13 +42,13 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
           titlePrefix: valuePrefix,
           labelSuffix: '%',
         },
-        centerText: "AVG",
+        centerText: avgText,
       },
     ],
   };
 
-  const avgText = {
-    id: "avgText",
+  const avgPlugin = {
+    id: "avgPlugin",
     beforeDraw(chart, _, opts) {
       const { ctx, data } = chart;
       let x = chart.getDatasetMeta(0).data[0].x;
@@ -82,7 +82,7 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
     maintainAspectRatio: false,
     devicePixelRatio: 1.5,
     plugins: {
-      avgText: {
+      avgPlugin: {
         avg: avg
       },
       legend: {
@@ -105,7 +105,7 @@ export const ArmorChart = ({content, valuePrefix, colors}) => {
         <Doughnut
           data={data}
           options={options}
-          plugins={[avgText]}
+          plugins={[avgPlugin]}
         />
       </Box>
       <Box sx={{ paddingTop: '10px' }}>

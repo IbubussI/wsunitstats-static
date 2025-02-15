@@ -29,9 +29,9 @@ export const WeaponTable = ({ item, overflowMinWidth }) => {
   const disabled = weapon.enabled === false && 'disabled';
   const labelData = {
     value: {
-      tooltip: item.isTurret ? "Turret ID #" + item.turretId : "Weapon ID #" + weapon.weaponId,
+      tooltip: item.isTurret ? t('weaponsTurretTooltipID', { value: item.turretId }) : t('weaponsWeaponTooltipID', { value: weapon.weaponId }),
       id: item.isTurret ? "T" + item.turretId : "W" + weapon.weaponId,
-      label: weapon.weaponType,
+      label: t(weapon.weaponType),
       disabled: disabled
     },
     valueRenderer: HeaderChip,

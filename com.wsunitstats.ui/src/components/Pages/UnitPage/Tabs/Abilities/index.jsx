@@ -17,7 +17,7 @@ export const AbilitiesTab = ({ entity: unit }) => {
 
   return (
     <>
-      <h3>{t('unitAbilitiesTabTitle')}</h3>
+      <h3>{t('abilitiesTabTitle')}</h3>
       <ResizableGrid minWidth={MIN_WIDTH} paddingTop={0}>
         <GridGroup heading={workAbilities[0]?.containerName} columnWidth={COLUMN_WIDTH}>
           {getTables(WorkAbilityTable, workAbilities)}

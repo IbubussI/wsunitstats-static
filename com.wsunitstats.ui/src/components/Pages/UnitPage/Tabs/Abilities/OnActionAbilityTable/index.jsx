@@ -24,7 +24,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitOnActionAbilityTargetCell'),
+        label: t('onActionAbilityTargetCell'),
         value: {
           values: [
             ability.entityInfo && {
@@ -53,7 +53,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesCountCell'),
+        label: t('abilitiesCountCell'),
         value: ability.count,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -63,7 +63,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesDurationCell'),
+        label: t('abilitiesDurationCell'),
         value: ability.duration && ability.duration + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -73,7 +73,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('unitAbilitiesLifeTimeCell'),
+        label: t('abilitiesLifeTimeCell'),
         value: ability.lifeTime && ability.lifeTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -83,7 +83,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
 
   
   const actionData = {
-    label: t('unitOnActionAbilityActionLabel'),
+    label: t('onActionAbilityActionLabel'),
     variant: 'popper',
     tableLayout: 'fixed',
     width: 'max-content',
@@ -107,12 +107,12 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
         },
       },
       {
-        label: t('unitOnActionAbilityActionAgroCell'),
+        label: t('onActionAbilityActionAgroCell'),
         renderer: Text,
         value: t('' + abilityContainer.onAgro),
       },
       {
-        label: t('unitOnActionAbilityActionRechargeCell'),
+        label: t('onActionAbilityActionRechargeCell'),
         renderer: Text,
         value: abilityContainer.rechargeTime && abilityContainer.rechargeTime + t(Constants.SECONDS_END_MARKER),
       },
@@ -124,7 +124,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
   const disabled = abilityContainer.enabled === false && 'disabled';
   const labelData = {
     value: {
-      tooltip: t('unitAbilitiesTooltipID', { value: ability.abilityId }),
+      tooltip: t('abilitiesTooltipID', { value: ability.abilityId }),
       id: ability.abilityId,
       label: t(ability.abilityName),
       disabled: disabled,

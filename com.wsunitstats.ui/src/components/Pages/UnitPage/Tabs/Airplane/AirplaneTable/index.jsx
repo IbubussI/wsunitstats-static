@@ -17,8 +17,8 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: {
-          primaryValue: t('airplaneFuel'),
-          subValues: [{ value: t('airplaneFuelSub') }]
+          primaryValue: t('airplaneFuelCell'),
+          subValues: [{ value: t('airplaneFuelSubCell') }]
         },
         labelRenderer: SubValue,
         value: airplane.fuel && airplane.fuel + t(Constants.SECONDS_END_MARKER),
@@ -31,8 +31,8 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: {
-          primaryValue: t('airplaneReload'),
-          subValues: [{ value: t('airplaneReloadSub') }]
+          primaryValue: t('airplaneReloadCell'),
+          subValues: [{ value: t('airplaneReloadSubCell') }]
         },
         labelRenderer: SubValue,
         value: airplane.rechargePeriod && airplane.rechargePeriod + t(Constants.SECONDS_END_MARKER),
@@ -44,7 +44,7 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('airplaneRefuelSpeed'),
+        label: t('airplaneRefuelSpeedCell'),
         value: airplane.refuelSpeed && airplane.refuelSpeed + t('perSecMarker'),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -54,7 +54,7 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('Heal speed'),
+        label: t('airplaneHealCell'),
         value: airplane.healingSpeed && airplane.healingSpeed + t('hpSecMarker'),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -64,7 +64,7 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('airplaneAscensionSpeed'),
+        label: t('airplaneAscensionSpeedCell'),
         value: airplane.ascensionSpeed,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -74,7 +74,7 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('airplaneHeight'),
+        label: t('airplaneHeightCell'),
         value: airplane.flyHeight,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -84,7 +84,7 @@ export const AirplaneTable = ({ airplane, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('airplaneSuicide'),
+        label: t('airplaneSuicideCell'),
         value: t('' + !!airplane.kamikaze),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
