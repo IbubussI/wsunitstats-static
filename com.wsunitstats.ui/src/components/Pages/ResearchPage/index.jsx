@@ -4,19 +4,21 @@ import { useOutletContext } from 'react-router-dom';
 import { ResearchTable } from 'components/Pages/ResearchPage/ResearchTable';
 import { GridGroup, ResizableGrid } from 'components/Layout/ResizableGrid';
 import { Box } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const MIN_WIDTH = 400;
 const OVERFLOW_WIDTH = 200;
 const COLUMN_WIDTH = 500;
 
 export const ResearchPage = () => {
+  const { t } = useTranslation()
   const entity = useOutletContext();
   const research = entity;
 
   return (
     <>
       <Box display="flex" justifyContent="center" width="100%">
-        <h3>Research</h3>
+        <h3>{t('researchPageTitle')}</h3>
       </Box>
       <ResizableGrid minWidth={MIN_WIDTH} paddingTop={1}>
         <GridGroup columnWidth={COLUMN_WIDTH}>

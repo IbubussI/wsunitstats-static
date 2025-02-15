@@ -12,6 +12,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { getTagData } from 'data';
 import { DoubleColumnTable } from 'components/Layout/DoubleColumnTable';
+import { useTranslation } from 'react-i18next';
 
 export const ButtonPopper = ({
   children,
@@ -91,35 +92,6 @@ export const InfoButtonPopper = ({ children, label }) => {
   );
 }
 
-export const MenuListButtonPopper = ({ children, label }) => {
-  const ButtonContentRenderer = ({ onClick, open }) => {
-    const Icon = open ? ArrowDropUpIcon : ArrowDropDownIcon
-    return (
-      <Button
-        variant='outlined'
-        onClick={onClick}
-        sx={{
-          width: '100%',
-          height: '100%',
-          textTransform: 'none',
-          padding: '5px 24px',
-          borderColor: 'rgb(203, 203, 203)',
-          color: 'rgba(0, 0, 0, 0.87)',
-          '&:hover': { borderColor: 'rgba(0, 0, 0, 0.87)', backgroundColor: 'initial' },
-        }}>
-        {label}
-        <Icon sx={{ color: 'rgb(117, 117, 117)', position: "absolute", right: '9px', top: 'calc(50% - 12px)' }} />
-      </Button>
-    );
-  }
-  return (
-    <ButtonPopper
-      children={children}
-      buttonRenderer={ButtonContentRenderer}
-      placement='bottom' />
-  );
-}
-
 const TagChip = styled(Chip)(() => ({
   borderRadius: '1000px', // to match any height
   height: 'fit-content',
@@ -143,9 +115,10 @@ const TagChip = styled(Chip)(() => ({
 }));
 
 export const PopperTag = ({ tag, placement }) => {
+  const { t } = useTranslation();
   const Tag = ({ onClick }) => {
     return (
-      <TagChip onClick={onClick} label={tag.name}/>
+      <TagChip onClick={onClick} label={t(tag.name)}/>
     );
   }
 
@@ -155,7 +128,7 @@ export const PopperTag = ({ tag, placement }) => {
       placement={placement}
       padding='8px'
     >
-      <DoubleColumnTable data={getTagData(tag)} />
+      <DoubleColumnTable data={getTagData(tag, t)} />
     </ButtonPopper>
   );
 }

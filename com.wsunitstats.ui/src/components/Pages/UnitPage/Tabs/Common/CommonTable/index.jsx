@@ -1,54 +1,55 @@
 import * as React from 'react';
-import * as Constants from "utils/constants";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from 'components/Layout/FlexibleTable';
 import { Stack, Typography } from '@mui/material';
 import { DoubleColumnFrame } from 'components/Layout/DoubleColumnFrame';
 import { ArmorChart } from 'components/Pages/UnitPage/Tabs/Common/ArmorChart';
 import { TagBox } from 'components/Atoms/TagBox';
 import { EntityImage } from 'components/Atoms/EntityImage';
+import { useTranslation } from 'react-i18next';
 
 const COMMON_COLUMN = 1;
 const FLEX_TABLE_RIGHT_WIDTH = '50%';
 const FLEX_TABLE_LEFT_WIDTH = '50%';
 
 export const CommonTable = ({ unit, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const commonData = [
-    createRowData('Game ID', unit.gameId),
-    createRowData('Nation', unit.nation.name),
-    createRowData('Health', unit.health),
-    createRowData('View Range', unit.viewRange),
-    createRowData('Size', unit.size),
-    createRowData('Regeneration Speed', unit.regenerationSpeed, 'hp/sec'),
+    createRowData(t('gameID'), unit.gameId),
+    createRowData(t('commonNationCell'), t(unit.nation.name)),
+    createRowData(t('commonHealthCell'), unit.health),
+    createRowData(t('commonViewRangeCell'), unit.viewRange),
+    createRowData(t('commonSizeCell'), unit.size),
+    createRowData(t('commonRegenerationSpeedCell'), unit.regenerationSpeed, t('hpSecMarker')),
 
-    createRowData('Movement Speed', unit.movement?.speed),
-    createRowData('Rotation Speed', unit.movement?.rotationSpeed),
+    createRowData(t('commonMovementSpeedCell'), unit.movement?.speed),
+    createRowData(t('commonRotationSpeedCell'), unit.movement?.rotationSpeed),
 
-    createRowData('Transporting size', unit.transporting?.ownSize),
-    createRowData('Transporting capacity', unit.transporting?.carrySize),
-    createRowData('Can transport', unit.transporting?.carrySize ? (unit.transporting.onlyInfantry ? 'Only infantry' : 'Any land unit') : null),
+    createRowData(t('commonTransportingSizeCell'), unit.transporting?.ownSize),
+    createRowData(t('commonTransportingCapacityCell'), unit.transporting?.carrySize),
+    createRowData(t('commonCanTransportCell'), unit.transporting?.carrySize ? (unit.transporting.onlyInfantry ? t('commonCanTransportInfantry') : t('commonCanTransportAll')) : null),
 
-    createRowData('Takes population', unit.supply?.consume),
-    createRowData('Gives population', unit.supply?.produce),
-    createRowData('Limit', unit.limit),
+    createRowData(t('commonTakesPopCell'), unit.supply?.consume),
+    createRowData(t('commonGivesPopulationCell'), unit.supply?.produce),
+    createRowData(t('commonLimitCell'), unit.limit),
 
-    createRowData(`Receives friendly${Constants.JS_NBSP}dmg`, '' + !!unit.receiveFriendlyDamage),
-    createRowData('Parent must not move', unit.parentMustIdle ? '' + true : null),
-    createRowData('Controllable', '' + !!unit.controllable),
+    createRowData(t(`commonReceivesFriendlyCell`), t('' + !!unit.receiveFriendlyDamage)),
+    createRowData(t('commonParentNotMoveCell'), unit.parentMustIdle ? t('' + true) : null),
+    createRowData(t('commonControllableCell'), t('' + !!unit.controllable)),
 
-    createRowData('Storage efficiency', unit.storageMultiplier && unit.storageMultiplier + '%'),
+    createRowData(t('commonStorageEfficiencyCell'), unit.storageMultiplier && unit.storageMultiplier + '%'),
 
-    createRowData('Threat', unit.threat),
-    createRowData('Weight', unit.weight),
-    createRowData('Death weapon', typeof unit.weaponOnDeath === 'number' ? ('W' + unit.weaponOnDeath) : null),
+    createRowData(t('commonThreatCell'), unit.threat),
+    createRowData(t('commonWeightCell'), unit.weight),
+    createRowData(t('commonDeathWeaponCell'), typeof unit.weaponOnDeath === 'number' ? ('W' + unit.weaponOnDeath) : null),
   ].filter(element => element);
 
   const searchTagsData = {
-    label: 'Search tags:',
+    label: t('tagContainerSearch'),
     tags: unit.searchTags
   };
 
   const tagsData = {
-    label: 'Unit tags:',
+    label: t('tagContainerUnit'),
     tags: unit.tags
   };
 
@@ -56,17 +57,16 @@ export const CommonTable = ({ unit, overflowMinWidth }) => {
     <Stack spacing={0.5}>
       <DoubleColumnFrame childrenProps={[null, { overflow: 'auto', width: '100%' }]}>
         <Stack alignItems='center'>
-          <h3 style={{ marginBlockStart: '0.4em', marginBlockEnd: '0.65em', maxWidth: '150px', textAlign: 'center' }}>{unit.name}</h3>
+          <h3 style={{ marginBlockStart: '0.4em', marginBlockEnd: '0.65em', maxWidth: '150px', textAlign: 'center' }}>{t(unit.name)}</h3>
           <EntityImage image={unit.image} width='150px' height='150px'/>
           <Typography variant='body2' align='center' sx={{maxWidth: '150px'}}>
-            {unit.description}
+            {t(unit.description)}
           </Typography>
           {unit.armor?.length > 0 &&
             <>
-              <h3>Armor</h3>
+              <h3>{t('commonArmorTitle')}</h3>
               <ArmorChart
                 content={unit.armor}
-                valuePrefix={'Thickness: '}
                 colors={[
                   'rgba(122, 16, 16, 1)',
                   'rgba(168, 87, 15, 1)',
@@ -90,7 +90,7 @@ export const CommonTable = ({ unit, overflowMinWidth }) => {
       </DoubleColumnFrame>
     </Stack>
   );
-}
+};
 
 function createRowData(name, valueObject, units) {
   if (valueObject != null) {

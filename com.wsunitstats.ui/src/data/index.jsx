@@ -3,9 +3,9 @@ import * as Constants from "utils/constants";
 import { EntityInfo, SubValue, TagList, Text } from 'components/Atoms/Renderer';
 import { FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 
-export const getRequirementsData = (requirements, locale) => {
-  const unitsAll = requirements.unitsAll ? '(All of below)' : '(One of below)';
-  const researchesAll = requirements.researchesAll ? '(All of below)' : '(One of below)';
+export const getRequirementsData = (requirements, locale, t) => {
+  const unitsAll = requirements.unitsAll ? t('requirementsAll') : t('requirementsOne');
+  const researchesAll = requirements.researchesAll ? t('requirementsAll') : t('requirementsOne');
   const unitRequirements = requirements.units?.map((unit) => {
     return [
       {
@@ -18,8 +18,8 @@ export const getRequirementsData = (requirements, locale) => {
         data: {
           values: [
             {
-              primary: unit.unitName,
-              secondary: unit.unitNation?.name,
+              primary: t(unit.unitName),
+              secondary: t(unit.unitNation?.name),
               image: {
                 path: unit.unitImage,
                 width: 35,
@@ -37,7 +37,7 @@ export const getRequirementsData = (requirements, locale) => {
       },
       {
         renderer: Text,
-        data: unit.quantity
+        data: t(unit.quantityStr, { min: unit.quantityMin, max: unit.quantityMax })
       },
     ]
   });
@@ -54,7 +54,7 @@ export const getRequirementsData = (requirements, locale) => {
         data: {
           values: [
             {
-              primary: research.researchName,
+              primary: t(research.researchName),
               image: {
                 path: research.researchImage,
                 width: 35,
@@ -74,37 +74,37 @@ export const getRequirementsData = (requirements, locale) => {
   });
 
   return {
-    label: 'Requirements',
+    label: t('requirementsLabel'),
     unitData: {
-      label: 'Units',
+      label: t('requirementsUnitsLabel'),
       subLabel: unitsAll,
       head: [
-        `Game${Constants.JS_NBSP}ID`,
-        'Unit',
-        'Quantity'
+        t('gameID').replace(" ", Constants.JS_NBSP),
+        t('requirementsUnitsUnit').replace(" ", Constants.JS_NBSP),
+        t('requirementsUnitsQuantity').replace(" ", Constants.JS_NBSP)
       ],
       body: unitRequirements
     },
     researchData: {
-      label: 'Researches',
+      label: t('requirementsResearchesLabel'),
       subLabel: researchesAll,
       head: [
-        `Game${Constants.JS_NBSP}ID`,
-        'Research'
+        t('gameID').replace(" ", Constants.JS_NBSP),
+        t('requirementsResearchesResearch').replace(" ", Constants.JS_NBSP)
       ],
       body: researchRequirements
     }
   }
 }
 
-export const getDamagesData = (damages, attacksNumber) => {
+export const getDamagesData = (damages, attacksNumber, t) => {
   const damageData = damages ? damages.map((damage) => {
     let damageValue = attacksNumber > 1 && damage.value > 0 ? attacksNumber + 'x' + damage.value : damage.value;
-    return { leftCell: damage.type, rightCell: damageValue }
+    return { leftCell: t(damage.type), rightCell: damageValue }
   }) : [];
 
   return {
-    label: 'Damage',
+    label: t('damagesLabel'),
     variant: 'damage',
     width: '150px',
     rowStyle: {
@@ -118,15 +118,15 @@ export const getDamagesData = (damages, attacksNumber) => {
   }
 }
 
-export const getDamageData = (damage, rightWidth, leftWidth) => {
+export const getDamageData = (damage, rightWidth, leftWidth, t) => {
   return [
     {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Area type',
+        label: t('damageAreaCell'),
         value: {
-          primaryValue: damage.areaType,
+          primaryValue: t(damage.areaType),
           subValues: [
             {
               label: 'radius',
@@ -147,8 +147,8 @@ export const getDamageData = (damage, rightWidth, leftWidth) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Friendly damage',
-        value: '' + !!damage.damageFriendly,
+        label: t('damageFriendlyCell'),
+        value: t('' + !!damage.damageFriendly),
         widthRight: rightWidth,
         widthLeft: leftWidth
       }
@@ -156,14 +156,14 @@ export const getDamageData = (damage, rightWidth, leftWidth) => {
   ].filter(element => element.childData.type !== undefined || (element.childData.value !== undefined && (!Array.isArray(element.childData.value) || element.childData.value.length > 0)));
 }
 
-export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
+export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth, t) => {
   return [
     {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Reload',
-        value: weapon.rechargePeriod + Constants.SECONDS_END_MARKER,
+        label: t('weaponReloadCell'),
+        value: weapon.rechargePeriod + t(Constants.SECONDS_END_MARKER),
         widthRight: rightWidth,
         widthLeft: leftWidth
       }
@@ -172,7 +172,7 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Spread',
+        label: t('weaponSpreadCell'),
         value: weapon.spread && weapon.spread + `${Constants.JS_NBSP}%`,
         widthRight: rightWidth,
         widthLeft: leftWidth
@@ -182,16 +182,16 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Area type',
+        label: t('damageAreaCell'),
         value: {
-          primaryValue: weapon.damage.areaType,
+          primaryValue: t(weapon.damage.areaType),
           subValues: [
             {
-              label: 'radius',
+              label: t('damageAreaCellRadius'),
               value: weapon.damage.radius
             },
             {
-              label: 'angle',
+              label: t('damageAreaCellAngle'),
               value: weapon.damage.damageAngle
             }
           ]
@@ -205,12 +205,12 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Range',
+        label: t('weaponRangeCell'),
         value: {
           primaryValue: weapon.distance.min ? weapon.distance.min + '...' + weapon.distance.max : weapon.distance.max,
           subValues: [
             {
-              label: 'stop',
+              label: t('weaponRangeCellStop'),
               value: weapon.distance.stop
             }
           ]
@@ -224,7 +224,7 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Angle',
+        label: t('weaponAngleCell'),
         value: weapon.angle,
         widthRight: rightWidth,
         widthLeft: leftWidth
@@ -234,7 +234,7 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Rotation speed',
+        label: t('weaponRotationSpeedCell'),
         value: rotationSpeed,
         widthRight: rightWidth,
         widthLeft: leftWidth
@@ -244,8 +244,8 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Friendly damage',
-        value: '' + !!weapon.damage.damageFriendly,
+        label: t('damageFriendlyCell'),
+        value: t('' + !!weapon.damage.damageFriendly),
         widthRight: rightWidth,
         widthLeft: leftWidth
       }
@@ -254,8 +254,8 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: `Ground attack${Constants.JS_NBSP}(X)`,
-        value: '' + !!weapon.attackGround,
+        label: t('weaponGroundAttackCell'),
+        value: t('' + !!weapon.attackGround),
         widthRight: rightWidth,
         widthLeft: leftWidth
       }
@@ -264,8 +264,8 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Auto attack',
-        value: '' + !!weapon.autoAttack,
+        label: t('weaponAutoAttackCell'),
+        value: t('' + !!weapon.autoAttack),
         widthRight: rightWidth,
         widthLeft: leftWidth
       }
@@ -274,7 +274,7 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Projectile speed',
+        label: t('weaponProjectileSpeedCell'),
         value: weapon.projectile?.speed,
         widthRight: rightWidth,
         widthLeft: leftWidth
@@ -284,8 +284,8 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Projectile inactive',
-        value: weapon.projectile?.timeToStartCollision && weapon.projectile?.timeToStartCollision + Constants.SECONDS_END_MARKER,
+        label: t('weaponProjectileInactiveCell'),
+        value: weapon.projectile?.timeToStartCollision && weapon.projectile?.timeToStartCollision + t(Constants.SECONDS_END_MARKER),
         widthRight: rightWidth,
         widthLeft: leftWidth
       }
@@ -293,9 +293,9 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth) => {
   ].filter(element => element.childData.type !== undefined || (element.childData.value !== undefined && (!Array.isArray(element.childData.value) || element.childData.value.length > 0)));
 }
 
-export const getBuffData = (buff, locale) => {
+export const getBuffData = (buff, locale, t) => {
   return {
-    label: 'Buff info',
+    label: t('buffInfoLabel'),
     variant: 'popper',
     tableLayout: 'fixed',
     width: 'max-content',
@@ -306,12 +306,12 @@ export const getBuffData = (buff, locale) => {
     },
     content: buff && [
       {
-        label: 'Buff',
+        label: t('buffLabel'),
         renderer: EntityInfo,
         value: buff.entityInfo && {
           values: [
             {
-              primary: buff.entityInfo.entityName,
+              primary: t(buff.entityInfo.entityName),
               image: {
                 path: buff.entityInfo.entityImage,
                 width: 35,
@@ -328,12 +328,12 @@ export const getBuffData = (buff, locale) => {
         },  
       },
       {
-        label: 'Duration',
+        label: t('buffDuration'),
         renderer: Text,
-        value: buff.period && buff.period + " sec",
+        value: buff.period && buff.period + t(Constants.SECONDS_END_MARKER),
       },
       {
-        label: 'Affected units',
+        label: t('buffAffectedUnits'),
         baseline: true,
         renderer: TagList,
         value: buff.affectedUnits && {
@@ -344,9 +344,9 @@ export const getBuffData = (buff, locale) => {
   }
 }
 
-export const getAttackData = (weapon) => {
+export const getAttackData = (weapon, t) => {
   return {
-    label: 'Attack info',
+    label: t('attackInfoLabel'),
     variant: 'popper',
     tableLayout: 'fixed',
     width: 'max-content',
@@ -357,47 +357,47 @@ export const getAttackData = (weapon) => {
     },
     content: [
       {
-        label: 'Ammo',
+        label: t('attackAmmoCell'),
         renderer: Text,
         value: weapon.charges,
       },
       {
-        label: 'Damages per projectile',
+        label: t('attackDPPCell'),
         renderer: Text,
         value: weapon.damage.damagesCount,
       },
       {
-        label: 'Damages per attack',
+        label: t('attackDPACell'),
         renderer: Text,
         value: weapon.attacksPerAttack,
       },
       {
-        label: 'Attacks per action',
+        label: t('attackAPACell'),
         renderer: Text,
         value: weapon.attacksPerAction,
       },
       {
-        label: 'Attack delay',
+        label: t('attackDelayCell'),
         renderer: Text,
-        value: weapon.attackDelay && weapon.attackDelay + Constants.SECONDS_END_MARKER,
+        value: weapon.attackDelay && weapon.attackDelay + t(Constants.SECONDS_END_MARKER),
       },
       {
-        label: 'Attack time',
+        label: t('attackTimeCell'),
         renderer: Text,
-        value: weapon.attackTime && weapon.attackTime + Constants.SECONDS_END_MARKER,
+        value: weapon.attackTime && weapon.attackTime + t(Constants.SECONDS_END_MARKER),
       },
       {
-        label: 'Average shot time',
+        label: t('attackShotTimeCell'),
         renderer: Text,
-        value: weapon.avgShotTime && weapon.avgShotTime + Constants.SECONDS_END_MARKER,
+        value: weapon.avgShotTime && weapon.avgShotTime + t(Constants.SECONDS_END_MARKER),
       }
     ].filter(element => element.value !== undefined)
   }
 }
 
-export const getEnvData = (damage) => {
+export const getEnvData = (damage, t) => {
   return {
-    label: 'Env info',
+    label: t('envInfoLabel'),
     variant: 'popper',
     tableLayout: 'fixed',
     width: 'max-content',
@@ -408,12 +408,12 @@ export const getEnvData = (damage) => {
     },
     content: [
       {
-        label: 'Damage',
+        label: t('envDamageCell'),
         renderer: Text,
         value: damage.envDamage,
       },
       {
-        label: 'Can damage',
+        label: t('envCanDamageCell'),
         labelBaseline: true,
         renderer: TagList,
         value: damage.envsAffected && {
@@ -424,7 +424,7 @@ export const getEnvData = (damage) => {
   }
 }
 
-export const getTagData = (tag) => {
+export const getTagData = (tag, t) => {
   return {
     variant: 'popper',
     tableLayout: 'fixed',
@@ -436,20 +436,20 @@ export const getTagData = (tag) => {
     },
     content: [
       {
-        label: 'Tag Name',
+        label: t('tagNameCell'),
         renderer: Text,
-        value: tag.name,
+        value: t(tag.name),
       },
       {
-        label: 'Tag Group',
+        label: t('tagGroupCell'),
         renderer: Text,
-        value: tag.groupName,
+        value: t(tag.groupName),
       },
       {
-        label: 'Tag ID',
+        label: t('tagIdCell'),
         renderer: Text,
         value: tag.gameId,
       },
-    ].filter(element => element.value !== undefined)
+    ].filter(element => element.value !== undefined || element.value.length !== 0)
   }
 }

@@ -52,6 +52,7 @@ export const NO_LINK_INDICATOR = 'no-link';
 
 export const DEFAULT_LOCALE_OPTION = 'en';
 export const LOCAL_RESIZABLE_WIDTH = 'resizable-width';
+export const LOCAL_THEME_MODE = 'theme-provider-mode-is-dark';
 export const LOCAL_MODS_TREE_CONENT_RESIZABLE_ID = 'mods-page-resizable-tree-content-horizontal';
 export const LOCAL_MODS_CONENT_PROPS_RESIZABLE_ID = 'mods-page-resizable-content-props-vertical';
 export const LOCAL_MODS_PROPS_TABLE_COLUMNS_RESIZABLE_ID = 'mods-page-resizable-props-table-columns';
@@ -62,7 +63,7 @@ export const EXPLORER_PATH_SQUARE_TARGET_REGEX = /^\d/;
 export const TREE_HOME_PREFIX = "home";
 
 export const JS_NBSP = '\u00A0';
-export const SECONDS_END_MARKER = `${JS_NBSP}sec`;
+export const SECONDS_END_MARKER = 'secondsMarker';
 
 export const DEFAULT_COLUMN_WIDTH = 600;
 export const FILTER_PANEL_HEIGHT = 120;

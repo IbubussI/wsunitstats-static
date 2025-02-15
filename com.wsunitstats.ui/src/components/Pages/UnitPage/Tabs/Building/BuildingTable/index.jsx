@@ -6,12 +6,14 @@ import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 import { Resource } from "components/Atoms/Renderer";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const BUILD_COLUMNS = 1;
 const FLEX_TABLE_RIGHT_WIDTH = '65%';
 const FLEX_TABLE_LEFT_WIDTH = '35%';
 
 export const BuildingTable = ({ build, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
 
   const buildData = [
@@ -19,7 +21,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Full cost',
+        label: t('buildFullCostCell'),
         value: build.fullCost,
         valueRenderer: Resource,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -30,7 +32,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Init cost',
+        label: t('buildInitCostCell'),
         value: build.initCost,
         valueRenderer: Resource,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -41,7 +43,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Heal cost',
+        label: t('buildHealCostCell'),
         value: build.healCost,
         valueRenderer: Resource,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -52,7 +54,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Income value',
+        label: t('buildIncomeValueCell'),
         value: build.income?.value,
         valueRenderer: Resource,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -63,7 +65,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Income period',
+        label: t('buildIncomePeriodCell'),
         value: build.income?.period && build.income.period + Constants.SECONDS_END_MARKER,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -73,7 +75,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Init health',
+        label: t('buildInitHealthCell'),
         value: build.initHealth,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -83,7 +85,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Build ID',
+        label: t('buildBuildIdCell'),
         value: build.buildId,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -91,7 +93,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
     },
   ].filter(element => element.childData.value);
 
-  const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, locale);
+  const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, locale, t);
 
   return (
     <DoubleColumnFrame childrenProps={[ { width: '100%' }, null ]} column>

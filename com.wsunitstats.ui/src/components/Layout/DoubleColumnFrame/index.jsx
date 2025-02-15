@@ -1,9 +1,9 @@
 import { Box, Stack } from "@mui/material";
 
-const BORDER = '3px solid';
-const BORDER_ENABLED = 'rgb(85, 120, 218)';
+const BORDER = '1px solid';
+const BORDER_ENABLED = 'primary.dark';
 const BORDER_DISABLED = 'error.main';
-const BORDER_RADIUS = 2;
+const BORDER_RADIUS = 0;
 
 export const DoubleColumnFrame = ({ children, childrenProps, column, borderLabel, disabled }) => {
   const isArray = Array.isArray(children);

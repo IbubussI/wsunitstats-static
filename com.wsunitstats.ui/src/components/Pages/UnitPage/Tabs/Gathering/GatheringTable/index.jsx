@@ -4,6 +4,7 @@ import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/Fle
 import { EntityInfo, HeaderChip, TransformInfo } from "components/Atoms/Renderer";
 import { useParams } from "react-router-dom";
 import { TagBox } from "components/Atoms/TagBox";
+import { useTranslation } from "react-i18next";
 
 const GATHER_COLUMNS = 2;
 const GATHER_ROWS = 4;
@@ -11,6 +12,7 @@ const FLEX_TABLE_RIGHT_WIDTH = '45%';
 const FLEX_TABLE_LEFT_WIDTH = '55%';
 
 export const GatheringTable = ({ gather, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
 
   const transformData = {
@@ -18,7 +20,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       direction: 'column',
       values: gather.envTags.map((envTag) => {
         return ({
-          primary: envTag.envName,
+          primary: t(envTag.envName),
           image: {
             path: envTag.envImage,
             width: 35,
@@ -35,7 +37,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
     },
     to: {
       values: [{
-        primary: gather.resource.resourceName,
+        primary: t(gather.resource.resourceName),
         image: {
           path: gather.resource.image,
           width: 35,
@@ -58,8 +60,8 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Gather speed',
-        value: gather.perSecond && gather.perSecond + ' / sec',
+        label: t('gatherSpeedCell'),
+        value: gather.perSecond && gather.perSecond + t('perSecMarker'),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
@@ -68,7 +70,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Bag size',
+        label: t('gatherBagSizeCell'),
         value: gather.bagSize,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -78,7 +80,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Gather angle',
+        label: t('gatherAngleCell'),
         value: gather.angle,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -88,7 +90,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Gather distance',
+        label: t('gatherGatherDistanceCell'),
         value: gather.gatherDistance,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -98,7 +100,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Put distance',
+        label: t('gatherPutDistanceCell'),
         value: gather.putDistance,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -108,7 +110,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Find next distance',
+        label: t('gatherFindNextDistanceCell'),
         value: gather.findTargetDistance,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -118,7 +120,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Find storage distance',
+        label: t('gatherFindStorageDistanceCell'),
         value: gather.findStorageDistance,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -127,18 +129,18 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
   ].filter(element => element.childData.value);
 
   const storageTagsData = {
-    label: 'Storage tags:',
+    label: t('gatherStorageTags'),
     tags: gather.storageTags
   };
 
   const unitTagsData = {
-    label: 'Unit tags:',
+    label: t('tagContainerUnit'),
     tags: gather.unitTags
   };
 
   const labelData = {
     value: {
-      tooltip: "Gather ID #" + gather.gatherId,
+      tooltip: t('gatherTooltipID', { value: gather.gatherId }),
       id: gather.gatherId
     },
     valueRenderer: HeaderChip,

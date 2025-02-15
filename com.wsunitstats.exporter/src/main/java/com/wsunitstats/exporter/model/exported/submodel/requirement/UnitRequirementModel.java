@@ -12,5 +12,7 @@ public class UnitRequirementModel {
     private String unitName;
     private NationModel unitNation;
     private String unitImage;
-    private String quantity;
+    private String quantityStr;
+    private int quantityMin;
+    private int quantityMax;
 }

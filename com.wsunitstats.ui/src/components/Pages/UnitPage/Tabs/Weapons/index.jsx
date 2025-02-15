@@ -1,11 +1,13 @@
 import * as React from 'react';
 import { WeaponTable } from "components/Pages/UnitPage/Tabs/Weapons/WeaponTable";
 import { GridGroup, ResizableGrid } from 'components/Layout/ResizableGrid';
+import { useTranslation } from 'react-i18next';
 
 const MIN_WIDTH = 340;
 const COLUMN_WIDTH = 570;
 
 export const WeaponTab = ({ entity: unit }) => {
+  const { t } = useTranslation();
   const getWeaponArray = (unit) => {
     const weapons = [];
     if (unit.weapons) {
@@ -38,7 +40,7 @@ export const WeaponTab = ({ entity: unit }) => {
   }
   return (
     <>
-      <h3>Weapons</h3>
+      <h3>{t('weaponsTitle')}</h3>
       <ResizableGrid minWidth={MIN_WIDTH}>
         <GridGroup columnWidth={COLUMN_WIDTH}>
           {getWeaponArray(unit)}

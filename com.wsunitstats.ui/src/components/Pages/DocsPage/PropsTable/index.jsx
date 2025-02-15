@@ -37,18 +37,18 @@ function getComparator(order, orderBy) {
 
 const ContentTableCell = styled(React.forwardRef(
   (props, ref) => <TableCell ref={ref} {...props} />
-))(({ theme }) => ({
+))(() => ({
   padding: '6px',
   letterSpacing: 0
 }));
 
-const TableCellText = styled('div')(({ theme }) => ({
+const TableCellText = styled('div')(() => ({
   textOverflow: 'ellipsis',
   overflow: 'hidden',
   whiteSpace: 'nowrap',
 }));
 
-const TableCellBox = styled('div')(({ theme }) => ({
+const TableCellBox = styled('div')(() => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'flex-start',
@@ -58,7 +58,7 @@ const TableCellBox = styled('div')(({ theme }) => ({
   }
 }));
 
-const ExpandButton = styled(IconButton)(({ theme }) => ({
+const ExpandButton = styled(IconButton)(() => ({
   [`&.${iconButtonClasses.root}`]: {
     padding: 0
   },
@@ -66,18 +66,18 @@ const ExpandButton = styled(IconButton)(({ theme }) => ({
 }));
 
 
-const IdTableCell = styled(TableCell)(({ theme, noBackground }) => ({
+const IdTableCell = styled(TableCell)(({ theme, nobackground }) => ({
   width: '30px',
   minWidth: '30px',
   textAlign: 'center',
   padding: '6px',
   borderRight: '1px solid rgb(190, 190, 190)',
-  background: noBackground ? '' : 'linear-gradient(to right, #e4f2f8 70%, #c6e6ff);',
-  color: alpha(theme.palette.common.black, 0.45)
+  background: nobackground ? '' : `linear-gradient(to right, ${theme.palette.docs.propTable.idCell.gStart} 70%, ${theme.palette.docs.propTable.idCell.gEnd});`,
+  color: alpha(theme.palette.text.primary, 0.5)
 }));
 
 const HeadingTableRow = styled(TableRow)(({ theme }) => ({
-  background: 'linear-gradient(#d9f1fc 50%, #acdafc)',
+  background: `linear-gradient(${theme.palette.docs.propTable.idCell.gStart} 50%, ${theme.palette.docs.propTable.idCell.gEnd})`,
 }));
 
 const ContentTableRow = styled(TableRow)(({ theme }) => ({
@@ -265,7 +265,7 @@ export const PropsTable = ({ headCells, dataRows, autoSaveId, resizeAllToRight }
       <Table size='small' sx={{ tableLayout: 'fixed', width: 0 }}>
         <TableHead sx={{ userSelect: 'none' }}>
           <HeadingTableRow>
-            <IdTableCell noBackground={true} />
+            <IdTableCell nobackground="true" />
             {headCells.map((headCell, i) => {
               return (
                 <ContentTableCell

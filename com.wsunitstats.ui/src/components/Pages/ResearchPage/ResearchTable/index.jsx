@@ -4,11 +4,13 @@ import { EntityImage } from "components/Atoms/EntityImage";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { EntityInfo } from "components/Atoms/Renderer";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const GRID_ITEM_WIDTH = 170;
 const GRID_ITEM_GAP = 4;
 
 export const ResearchTable = ({ research }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
 
   // get only unique upgrades to form affected unit list
@@ -18,17 +20,17 @@ export const ResearchTable = ({ research }) => {
   return (
     <DoubleColumnFrame column childrenProps={[null, { overflow: 'auto', width: '100%' }]}>
       <Stack alignItems='center' spacing={0.8}>
-        <h3 style={{ marginBlockStart: '0.4em', marginBlockEnd: '0.65em', textAlign: 'center' }}>{research.name}</h3>
+        <h3 style={{ marginBlockStart: '0.4em', marginBlockEnd: '0.65em', textAlign: 'center' }}>{t(research.name)}</h3>
         <EntityImage image={research.image} width='100px' height='100px'/>
         <Typography variant='body2' align='center'>
-          {research.description}
+          {t(research.description)}
         </Typography>
         <Typography variant='body2' align='center'>
-          Game ID: {research.gameId}
+          {t('researchPageGameIDLabel', { value: research.gameId })}
         </Typography>
       </Stack>
       {upgrades?.length && <Stack alignItems='center' spacing={0.8}>
-        <p>Affected units</p>
+        <p>{t('researchPageAffectedUnits')}</p>
         <Box sx={{
           display: 'grid',
           gridTemplateColumns: `repeat(auto-fill, ${GRID_ITEM_WIDTH}px)`,
@@ -41,8 +43,8 @@ export const ResearchTable = ({ research }) => {
             const upgradeData = {
               values: [
                 {
-                  primary: upgrade.unit.entityName,
-                  secondary: upgrade.unit.entityNation ? upgrade.unit.entityNation.name + ', ID: ' + upgrade.unit.entityId : 'ID: ' + upgrade.unit.entityId,
+                  primary: t(upgrade.unit.entityName),
+                  secondary: upgrade.unit.entityNation ? t(upgrade.unit.entityNation.name) + ', ID: ' + upgrade.unit.entityId : 'ID: ' + upgrade.unit.entityId,
                   image: {
                     path: upgrade.unit.entityImage,
                     width: 50,

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { CheckBox, CheckBoxOutlineBlank } from "@mui/icons-material";
 import { Autocomplete, Checkbox, Chip, Stack, TextField, Typography, autocompleteClasses, styled } from "@mui/material";
 import { Image } from "components/Atoms/Renderer";
+import { useTranslation } from 'react-i18next';
 
 const StyledAutocomplete = styled(Autocomplete)(() => ({
   [`& .${autocompleteClasses.inputRoot} .${autocompleteClasses.input}`]: {
@@ -22,6 +23,7 @@ export const CheckmarksSelect = (props) => {
     getSecondaryText,
     ...forwardedProps
   } = props;
+  const { t } = useTranslation();
 
   return (
     <StyledAutocomplete
@@ -31,7 +33,7 @@ export const CheckmarksSelect = (props) => {
       onChange={(_, newValues) => onChange(newValues)}
       options={options}
       value={values}
-      getOptionLabel={(option) => option.name}
+      getOptionLabel={(option) => t(option.name)}
       renderOption={(props, option, { selected }) => {
         return (
           <li {...props}>
@@ -44,15 +46,13 @@ export const CheckmarksSelect = (props) => {
             <Stack direction='row' alignItems='center'>
               {option.image &&
                 <Stack sx={{ marginRight: 0.6, height: 'fit-content' }}>
-                  <Image data={{
-                    path: option.image,
-                    width: 42,
-                    height: 42,
-                  }} />
+                  <Image path={option.image}
+                    width={42}
+                    height={42} />
                 </Stack>}
               <Stack>
                 <Typography variant='body1' color='text.primary'>
-                  {option.name}
+                  {t(option.name)}
                 </Typography>
                 {getSecondaryText &&
                   <Typography variant='body2' color='text.secondary'>
@@ -79,7 +79,7 @@ export const CheckmarksSelect = (props) => {
               <Chip
                 {...getTagProps({ index })}
                 key={index}
-                label={option.name}
+                label={t(option.name)}
               />
             ))}
 

@@ -33,7 +33,7 @@ public class Utils {
     }
 
     public static Double intToDoubleTick(Integer value) {
-        return divide(value, Constants.TICK_RATE_MULTIPLIER);
+        return divide(value, Constants.TICK_TIME);
     }
 
     public static Double intToDoubleSpeed(Integer value) {
@@ -186,24 +186,6 @@ public class Utils {
             result.add(nationName);
         }
         return result;
-    }
-
-    /**
-     * Returns string representation of min...max values, depending on the given input
-     */
-    public static String getQuantityString(Integer min, Integer max) {
-        if (min == null && max == null) {
-            return String.format(Constants.QuantityType.NOT_LESS_THAN.getName(), 1);
-        }
-        if (min != null && max == null) {
-            return String.format(Constants.QuantityType.NOT_LESS_THAN.getName(), min);
-        }
-        // min == null && max != null
-        if (min == null) {
-            return String.format(Constants.QuantityType.NOT_MORE_THAN.getName(), max);
-        }
-        // min != null && max != null
-        return String.format(Constants.QuantityType.FROM_TO.getName(), min, max);
     }
 
     /**

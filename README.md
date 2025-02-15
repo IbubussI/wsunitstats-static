@@ -21,10 +21,11 @@ List of current tasks available:
 - writeBuildIdsSpecial - writes "build id -> unit name, id, nation" entries in the file (.txt file)
 - exportUnits - writes unit stats for website assets in the output folder (.json files)
 - exportResearches - writes research stats for website assets in the output folder (.json files)
+- exportLocalization - writes game localization key-values for website assets in the output folder (.json files)
 - exportUnitSelector - writes data required to render research selectors for website assets in the output folder (.json files)
 - exportImages - writes images data for website assets in the output folder (.png files)
 - exportEngineData - writes engine data (taken from the json files dumped by the mod) for website assets in the output folder (.json files)
-- exportContext - writes context data (localization, unit list, research list) for website assets in the output folder (.json files)
+- exportContext - writes context data (unit list, research list, locale options etc) for website assets in the output folder (.json files)
 
 Exporter automatically locates the game files searching for them in the Steam's Windows Registry data. This can be disabled in the configs, however.
 
