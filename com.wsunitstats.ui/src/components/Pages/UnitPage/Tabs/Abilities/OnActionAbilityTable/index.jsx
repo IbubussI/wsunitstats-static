@@ -24,7 +24,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('onActionAbilityTargetCell'),
+        label: t('abilitiesTargetCell'),
         value: {
           values: [
             ability.entityInfo && {

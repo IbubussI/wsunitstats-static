@@ -4,6 +4,7 @@ import { Avatar, Box, Chip, Link, Stack, Tooltip, Typography, useTheme } from "@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { PopperTag } from "components/Atoms/ButtonPopper";
+import { useTranslation } from 'react-i18next';
 
 export const Image = (props) => {
   const {
@@ -190,6 +191,7 @@ export const TransformInfo = ({ data }) => {
 }
 
 export const HeaderChip = ({ data }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const color = data.disabled ? 'error.main' : 'text.secondary';
   const textColor = data.disabled ? 'error.main' : 'text.primary';
@@ -197,10 +199,9 @@ export const HeaderChip = ({ data }) => {
   const isLabel = data.label || (data.disabledLabel && data.disabled);
   return (
     <Box sx={{
-      border: '3px solid',
+      border: '1px solid',
       borderColor: borderColor,
       color: color,
-      borderRadius: '18px',
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -241,7 +242,7 @@ export const HeaderChip = ({ data }) => {
         </Typography>
         {data.disabled &&
           <Chip
-            label='disabled'
+            label={t('disabledHeaderChip')}
             variant='contained'
             color='error'
             sx={{

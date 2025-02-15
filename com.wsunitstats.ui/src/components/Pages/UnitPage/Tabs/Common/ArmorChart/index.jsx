@@ -2,13 +2,14 @@ import * as React from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
+export const ArmorChart = ({content, colors}) => {
+  const { t } = useTranslation();
   const theme = useTheme();
-  const [labels, probabilities, values, avg, legendEntries] = React.useMemo(() => {
-    const labels_ = [];
+  const [probabilities, values, avg, legendEntries] = React.useMemo(() => {
     const probabilities_ = [];
     const values_ = [];
     const legendEntries_ = [];
@@ -16,7 +17,6 @@ export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
       const probability = content[i].probability;
       if (probability > 0) {
         const value = content[i].value;
-        labels_.push(`${probability}% : ${value}`);
         probabilities_.push(probability);
         values_.push(value);
         legendEntries_.push({
@@ -27,22 +27,18 @@ export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
       }
     }
     const avg_ = findAverage(values_, probabilities_).toFixed(1);
-    return [labels_, probabilities_, values_, avg_, legendEntries_];
+    return [probabilities_, values_, avg_, legendEntries_];
   }, [content, colors]);
 
   const data = {
-    labels: labels,
+    labels: [], // use custom labels function
     datasets: [
       {
         data: probabilities,
         dataValues: values,
         borderWidth: 1,
         backgroundColor: colors,
-        tooltip: {
-          titlePrefix: valuePrefix,
-          labelSuffix: '%',
-        },
-        centerText: avgText,
+        centerText: t('commonArmorAVG'),
       },
     ],
   };
@@ -55,7 +51,7 @@ export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
       let y = chart.getDatasetMeta(0).data[0].y;
       let dataset = data.datasets[0];
 
-      ctx.font = 'bolder 20px sans-relief';
+      ctx.font = 'bolder 18px sans-relief';
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = theme.palette.text.primary;
@@ -68,13 +64,13 @@ export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
     let tooltipItem = tooltipItems[0];
     let dataset = tooltipItem.chart.data.datasets[0];
     let value = dataset.dataValues[tooltipItem.dataIndex];
-    return dataset.tooltip?.titlePrefix + value;
+    return t('commonArmorValue', { value: value });
   }
 
   const tooltipLabel = (tooltipItem) => {
     let dataset = tooltipItem.chart.data.datasets[0];
     let value = dataset.data[tooltipItem.dataIndex];
-    return value + dataset.tooltip?.labelSuffix;
+    return value + '%';
   }
 
   const options = {
@@ -103,6 +99,7 @@ export const ArmorChart = ({content, valuePrefix, avgText, colors}) => {
     <>
       <Box sx={{ width: '150px', height: '150px' }}>
         <Doughnut
+          redraw={true}
           data={data}
           options={options}
           plugins={[avgPlugin]}

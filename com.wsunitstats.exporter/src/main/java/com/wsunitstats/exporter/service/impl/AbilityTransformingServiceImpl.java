@@ -77,8 +77,8 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         if (abilityOnActionJsonModel != null) {
             specialIdList.add(abilityOnActionJsonModel.getAbility());
             GenericAbilityContainer onActionAbility = mapOnActionAbility(unitJsonModel);
-            onActionAbility.setContainerName(Constants.AbilityContainerType.SELF.getName());
-            onActionAbility.setContainerType(Constants.AbilityContainerType.SELF.getType());
+            onActionAbility.setContainerName(Constants.AbilityContainerType.ACTION.getName());
+            onActionAbility.setContainerType(Constants.AbilityContainerType.ACTION.getType());
             result.add(onActionAbility);
         }
         ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getZoneEvent();

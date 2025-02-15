@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants'
-import { Box, Grid, Paper, Stack, debounce } from "@mui/material";
+import { Box, Grid, Paper, Stack, debounce, useTheme } from "@mui/material";
 import { ResizableBox } from 'react-resizable';
 import { useTranslation } from 'react-i18next';
 
@@ -69,6 +69,7 @@ export const ResizableGrid = ({ children, minWidth, defaultWidth = Constants.DEF
 }
 
 const ResizeHandle = React.forwardRef((props, ref) => {
+  const theme = useTheme();
   const { handleAxis, ...restProps } = props;
   return (
     <Box
@@ -87,7 +88,7 @@ const ResizeHandle = React.forwardRef((props, ref) => {
       <Box sx={{
         height: '100%',
         width: '4px',
-        backgroundColor: 'white',
+        backgroundColor: theme.palette.background.default,
         margin: 'auto',
         border: '1px solid #076fad69',
         boxShadow: '0px 0px 3px #0779a6',
@@ -102,7 +103,7 @@ const ResizeHandle = React.forwardRef((props, ref) => {
           width: 'fit-content',
           lineHeight: 0,
           color: 'rgb(85, 120, 218)',
-          backgroundColor: 'white',
+          backgroundColor: theme.palette.background.default,
           padding: '1px',
           border: '1px solid #076fad69',
           boxShadow: '0px 0px 4px #0779a6',

@@ -11,7 +11,7 @@ public class Constants {
     public static final Pattern LOCALIZATION_KEY_PATTERN = Pattern.compile("<\\*[a-zA-Z0-9/]+>");
     public static final Pattern LOCALIZATION_PATTERN = Pattern.compile("^\\{?localize\\(\"(<\\*[a-zA-Z0-9/]+>)\"\\)}?$", Pattern.MULTILINE);
     public static final Pattern LOCALIZATION_MAP_ENTRY_PATTERN = Pattern.compile("^\\[(\\d*)]=localize\\(\"(<\\*[a-zA-Z0-9/]+>)\"\\)$", Pattern.MULTILINE);
-    public static final double TICK_RATE_MULTIPLIER = 50d;
+    public static final double TICK_TIME = 50d;
     public static final double SHIFT_VALUE_MULTIPLIER = 1000d;
     public static final double PROJECTILE_SPEED_VALUE_MULTIPLIER = 1_000_000d;
     public static final double PERCENT_VALUE_MULTIPLIER = 10d;
@@ -94,7 +94,7 @@ public class Constants {
 
     public enum AbilityContainerType {
         UNDEFINED(-1, UNDEF),
-        SELF(0, "abilityContainerSelf"),
+        ACTION(0, "abilityContainerAction"),
         WORK(1, "abilityContainerWork"),
         ZONE_EVENT(2, "abilityContainerZone"),
         DEATH(3, "abilityContainerDeath");

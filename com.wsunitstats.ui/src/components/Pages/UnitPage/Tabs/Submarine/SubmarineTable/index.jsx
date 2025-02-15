@@ -15,7 +15,7 @@ export const SubmarineTable = ({ submarine, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('submarineUnderwaterTime'),
+        label: t('submarineUnderwaterTimeCell'),
         value: submarine.underwaterTime && submarine.underwaterTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -55,7 +55,7 @@ export const SubmarineTable = ({ submarine, overflowMinWidth }) => {
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
     },
-  ].filter(element => element.childData.value);
+  ].filter(element => element.childData.value != null);
 
   return (
     <DoubleColumnFrame childrenProps={[null, null]} column>

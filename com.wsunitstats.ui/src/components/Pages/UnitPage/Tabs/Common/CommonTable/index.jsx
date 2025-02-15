@@ -1,5 +1,4 @@
 import * as React from 'react';
-import * as Constants from "utils/constants";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from 'components/Layout/FlexibleTable';
 import { Stack, Typography } from '@mui/material';
 import { DoubleColumnFrame } from 'components/Layout/DoubleColumnFrame';
@@ -15,7 +14,7 @@ const FLEX_TABLE_LEFT_WIDTH = '50%';
 export const CommonTable = ({ unit, overflowMinWidth }) => {
   const { t } = useTranslation();
   const commonData = [
-    createRowData(t('commonGameIdCell'), unit.gameId),
+    createRowData(t('gameID'), unit.gameId),
     createRowData(t('commonNationCell'), t(unit.nation.name)),
     createRowData(t('commonHealthCell'), unit.health),
     createRowData(t('commonViewRangeCell'), unit.viewRange),
@@ -68,8 +67,6 @@ export const CommonTable = ({ unit, overflowMinWidth }) => {
               <h3>{t('commonArmorTitle')}</h3>
               <ArmorChart
                 content={unit.armor}
-                valuePrefix={t('commonArmorValuePrefix')}
-                avgText={t('commonArmorAVG')}
                 colors={[
                   'rgba(122, 16, 16, 1)',
                   'rgba(168, 87, 15, 1)',

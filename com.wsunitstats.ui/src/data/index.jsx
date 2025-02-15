@@ -79,7 +79,7 @@ export const getRequirementsData = (requirements, locale, t) => {
       label: t('requirementsUnitsLabel'),
       subLabel: unitsAll,
       head: [
-        t('requirementsUnitsGameID').replace(" ", Constants.JS_NBSP),
+        t('gameID').replace(" ", Constants.JS_NBSP),
         t('requirementsUnitsUnit').replace(" ", Constants.JS_NBSP),
         t('requirementsUnitsQuantity').replace(" ", Constants.JS_NBSP)
       ],
@@ -89,7 +89,7 @@ export const getRequirementsData = (requirements, locale, t) => {
       label: t('requirementsResearchesLabel'),
       subLabel: researchesAll,
       head: [
-        t('requirementsResearchesGameID').replace(" ", Constants.JS_NBSP),
+        t('gameID').replace(" ", Constants.JS_NBSP),
         t('requirementsResearchesResearch').replace(" ", Constants.JS_NBSP)
       ],
       body: researchRequirements
@@ -244,7 +244,7 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth, t) =
       column: 2,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: t('weaponFriendlyCell'),
+        label: t('damageFriendlyCell'),
         value: t('' + !!weapon.damage.damageFriendly),
         widthRight: rightWidth,
         widthLeft: leftWidth

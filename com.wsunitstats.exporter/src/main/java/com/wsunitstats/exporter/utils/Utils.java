@@ -33,7 +33,7 @@ public class Utils {
     }
 
     public static Double intToDoubleTick(Integer value) {
-        return divide(value, Constants.TICK_RATE_MULTIPLIER);
+        return divide(value, Constants.TICK_TIME);
     }
 
     public static Double intToDoubleSpeed(Integer value) {
