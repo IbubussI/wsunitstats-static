@@ -13,12 +13,11 @@ import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { EntityPicker } from 'components/Header/EntityPicker';
-import { Stack, Tooltip, useMediaQuery } from '@mui/material';
+import { FormControl, FormControlLabel, FormGroup, FormLabel, Stack, useMediaQuery } from '@mui/material';
 import { LocaleSelector } from './LocaleSelector';
 import { useTranslation } from 'react-i18next';
-
+import { ThemeSelector } from './ThemeSelector';
 
 export const Header = ({ context }) => {
   const { t } = useTranslation();
@@ -154,23 +153,35 @@ const SettingsMenu = ({ context }) => {
       <Menu anchorEl={anchorElNav}
         anchorOrigin={{
           vertical: 'bottom',
-          horizontal: 'left',
+          horizontal: 'right',
         }}
         keepMounted
         transformOrigin={{
           vertical: 'top',
-          horizontal: 'left',
+          horizontal: 'right',
         }}
         open={Boolean(anchorElNav)}
         onClose={handleCloseNavMenu}>
-        <MenuItem onClick={handleCloseNavMenu}>
-          <Stack sx={{ width: '135px', gap: 1, alignItems: 'center', flexDirection: 'row', py: 1 }}>
-            <LocaleSelector currentLocale={locale} options={context.localeOptions} />
-            {locale !== Constants.DEFAULT_LOCALE_OPTION && <Tooltip arrow title={t('localeSelectorWarn')}>
-              <WarningAmberIcon sx={{ color: '#fd853c', filter: 'drop-shadow(0px 0px 3px rgb(0 0 0 / 0.8))', fontSize: 25 }} />
-            </Tooltip>}
-          </Stack>
-        </MenuItem>
+        <FormControl component="fieldset" variant="standard">
+          <FormGroup>
+              <FormControlLabel
+                sx={{ alignItems: 'start', pointerEvents: 'none', py: 1 }}
+                labelPlacement='top'
+                control={
+                  <LocaleSelector sx={{ pointerEvents: 'all' }} currentLocale={locale} options={context.localeOptions} />
+                }
+                label={t('localeSelectorLabel')}
+              />
+              <FormControlLabel
+                sx={{ alignItems: 'start', pointerEvents: 'none', py: 1 }}
+                labelPlacement='top'
+                control={
+                  <ThemeSelector sx={{ pointerEvents: 'all' }}/>
+                }
+                label={t('themeSelectorLabel')}
+              />
+            </FormGroup>
+        </FormControl>
       </Menu>
     </>
   );

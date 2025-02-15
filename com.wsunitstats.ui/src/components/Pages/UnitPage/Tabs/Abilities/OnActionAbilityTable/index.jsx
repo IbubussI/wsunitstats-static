@@ -9,12 +9,14 @@ import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
 import { useParams } from "react-router-dom";
 import { ClassicTable } from "components/Layout/ClassicTable";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
+import { useTranslation } from "react-i18next";
 
 const ABILITY_COLUMNS = 1;
 const FLEX_TABLE_RIGHT_WIDTH = '67%';
 const FLEX_TABLE_LEFT_WIDTH = '33%';
 
 export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
   const ability = abilityContainer.ability;
   const abilityData = [
@@ -22,12 +24,12 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Target',
+        label: t('unitOnActionAbilityTargetCell'),
         value: {
           values: [
             ability.entityInfo && {
-              primary: ability.entityInfo.entityName,
-              secondary: ability.entityInfo.entityNation && ability.entityInfo.entityNation.name,
+              primary: t(ability.entityInfo.entityName),
+              secondary: ability.entityInfo.entityNation && t(ability.entityInfo.entityNation.name),
               image: {
                 path: ability.entityInfo.entityImage,
                 width: 35,
@@ -51,7 +53,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Count',
+        label: t('unitAbilitiesCountCell'),
         value: ability.count,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
@@ -61,8 +63,8 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Duration',
-        value: ability.duration && ability.duration + Constants.SECONDS_END_MARKER,
+        label: t('unitAbilitiesDurationCell'),
+        value: ability.duration && ability.duration + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
@@ -71,8 +73,8 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
-        label: 'Life time',
-        value: ability.lifeTime && ability.lifeTime + Constants.SECONDS_END_MARKER,
+        label: t('unitAbilitiesLifeTimeCell'),
+        value: ability.lifeTime && ability.lifeTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
@@ -81,7 +83,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
 
   
   const actionData = {
-    label: 'Action data',
+    label: t('unitOnActionAbilityActionLabel'),
     variant: 'popper',
     tableLayout: 'fixed',
     width: 'max-content',
@@ -92,39 +94,39 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
     },
     content: [
       {
-        label: 'Distance',
+        label: t('weaponRangeCell'),
         renderer: SubValue,
         value: {
           primaryValue: abilityContainer.distance.min ? abilityContainer.distance.min + '...' + abilityContainer.distance.max : abilityContainer.distance.max,
           subValues: [
             {
-              label: 'stop',
+              label: t('weaponRangeCellStop'),
               value: abilityContainer.distance.stop
             }
           ]
         },
       },
       {
-        label: 'On agro',
+        label: t('unitOnActionAbilityActionAgroCell'),
         renderer: Text,
-        value: '' + abilityContainer.onAgro,
+        value: t('' + abilityContainer.onAgro),
       },
       {
-        label: 'Recharge Time',
+        label: t('unitOnActionAbilityActionRechargeCell'),
         renderer: Text,
-        value: abilityContainer.rechargeTime && abilityContainer.rechargeTime + Constants.SECONDS_END_MARKER,
+        value: abilityContainer.rechargeTime && abilityContainer.rechargeTime + t(Constants.SECONDS_END_MARKER),
       },
-    ].filter(element => element.value !== undefined)
+    ].filter(element => element.value !== undefined || element.value.length !== 0)
   }
 
-  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, locale);
+  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, locale, t);
 
   const disabled = abilityContainer.enabled === false && 'disabled';
   const labelData = {
     value: {
-      tooltip: "Ability ID #" + ability.abilityId,
+      tooltip: t('unitAbilitiesTooltipID', { value: ability.abilityId }),
       id: ability.abilityId,
-      label: ability.abilityName,
+      label: t(ability.abilityName),
       disabled: disabled,
       disabledLabel: true
     },

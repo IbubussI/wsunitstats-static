@@ -35,15 +35,15 @@ public class Constants {
     public static final String FILE_PATH_DELIMITER = SLASH;
     public static final String CLOSING_ANGLE_BRACKET = ">";
 
-    public static final String BASIC_DAMAGE_TYPE = "Base";
-    public static final String GENERIC_UNIT_TAG = "Unit";
+    public static final String BASIC_DAMAGE_TYPE = "damageTypeBase";
+    public static final String GENERIC_UNIT_TAG = "genericUnitTag";
     public static final String NIL = "nil";
     public static final String JSON_EXTENSION = ".json";
 
     public enum TagGroupName {
-        UNIT_SEARCH_TAGS("Unit search tags"),
-        UNIT_TAGS("Unit tags"),
-        ENV_SEARCH_TAGS("Env search tags");
+        UNIT_SEARCH_TAGS("tagGroupUnitSearch"),
+        UNIT_TAGS("tagGroupUnit"),
+        ENV_SEARCH_TAGS("tagGroupEnvSearch");
 
         private final String groupName;
 
@@ -58,13 +58,13 @@ public class Constants {
 
     public enum AbilityType {
         UNDEFINED(-1, UNDEF),
-        CREATE_UNIT(0, "Create unit"),
-        RESEARCH(1, "Research"),
-        TRANSFORM(2, "Transform"),
-        CREATE_ENV(3, "Create env"),
-        SELF_BUFF(4, "Self buff"),
-        //SELF_STUN(5, "Dance"),
-        DAMAGE(6, "Damage");
+        CREATE_UNIT(0, "abilityCreateUnit"),
+        RESEARCH(1, "abilityResearch"),
+        TRANSFORM(2, "abilityTransform"),
+        CREATE_ENV(3, "abilityCreateEnv"),
+        SELF_BUFF(4, "abilitySelfBuff"),
+        //SELF_STUN(5, "abilityDance"),
+        DAMAGE(6, "abilityDamage");
 
         private final int type;
         private final String name;
@@ -94,10 +94,10 @@ public class Constants {
 
     public enum AbilityContainerType {
         UNDEFINED(-1, UNDEF),
-        SELF(0, "Self abilities"),
-        WORK(1, "Work abilities"),
-        ZONE_EVENT(2, "Environment zone events"),
-        DEATH(3, "Ability on death");
+        SELF(0, "abilityContainerSelf"),
+        WORK(1, "abilityContainerWork"),
+        ZONE_EVENT(2, "abilityContainerZone"),
+        DEATH(3, "abilityContainerDeath");
 
         private final int type;
         private final String name;
@@ -126,12 +126,13 @@ public class Constants {
     }
 
     public enum DamageAreaType {
-        // TODO: add (sessions/localization) file
-        // TODO: replace this enum with list of <*damageArea> keys in LocalizationKeyModel
+        // can add (sessions/localization) file and replace this enum
+        // with list of <*damageArea> keys in LocalizationKeyModel,
+        // but adding the whole file just for 3 keys will cost extra localization json size
         UNDEFINED(-1, UNDEF),
-        SINGLE(0, "Single target"),
-        AREA(1, "Area"),
-        FRONTAL(2, "In frontal area");
+        SINGLE(0, "damageAreaSingle"),
+        AREA(1, "damageAreaArea"),
+        FRONTAL(2, "damageAreaFrontal");
 
         private final int type;
         private final String name;
@@ -196,11 +197,11 @@ public class Constants {
     }
 
     public enum WeaponType {
-        TURRET("Turret"),
-        RANGE("Range"),
-        MELEE("Melee"),
-        AERIAL_BOMB("Aerial bomb"),
-        SUICIDE("Suicide");
+        TURRET("weaponTypeTurret"),
+        RANGE("weaponTypeRange"),
+        MELEE("weaponTypeMelee"),
+        AERIAL_BOMB("weaponTypeAerialBomb"),
+        SUICIDE("weaponTypeSuicide");
 
         private final String name;
 
@@ -231,9 +232,9 @@ public class Constants {
     }
 
     public enum QuantityType {
-        FROM_TO("%s...%s"),
-        NOT_MORE_THAN("Not more than %s"),
-        NOT_LESS_THAN("Not less than %s");
+        FROM_TO("quantityTypeFromTo"),
+        NOT_MORE_THAN("quantityTypeNotMore"),
+        NOT_LESS_THAN("quantityTypeNotLess");
 
         private final String name;
 

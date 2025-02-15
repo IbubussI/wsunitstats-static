@@ -3,11 +3,13 @@ import { WorkAbilityTable } from "components/Pages/UnitPage/Tabs/Abilities/WorkA
 import { OnActionAbilityTable } from "components/Pages/UnitPage/Tabs/Abilities/OnActionAbilityTable";
 import { ZoneEventAbilityTable } from "components/Pages/UnitPage/Tabs/Abilities/ZoneEventAbilityTable";
 import { DeathAbilityTable } from "components/Pages/UnitPage/Tabs/Abilities/DeathAbilityTable";
+import { useTranslation } from "react-i18next";
 
 const MIN_WIDTH = 280;
 const COLUMN_WIDTH = 480;
 
 export const AbilitiesTab = ({ entity: unit }) => {
+  const { t } = useTranslation();
   const onActionAbilities = unit.abilities.filter(element => element.containerType === 0);
   const workAbilities = unit.abilities.filter(element => element.containerType === 1);
   const zoneEventAbilities = unit.abilities.filter(element => element.containerType === 2);
@@ -15,7 +17,7 @@ export const AbilitiesTab = ({ entity: unit }) => {
 
   return (
     <>
-      <h3>Abilities</h3>
+      <h3>{t('unitAbilitiesTabTitle')}</h3>
       <ResizableGrid minWidth={MIN_WIDTH} paddingTop={0}>
         <GridGroup heading={workAbilities[0]?.containerName} columnWidth={COLUMN_WIDTH}>
           {getTables(WorkAbilityTable, workAbilities)}

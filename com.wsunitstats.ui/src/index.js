@@ -18,6 +18,7 @@ import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFil
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
 import { DocsPage } from 'components/Pages/DocsPage';
 import i18n from './i18n';
+import { ThemeContext } from 'themeContext';
 
 const lightTheme = createTheme({
   palette: {
@@ -56,25 +57,59 @@ const darkTheme = createTheme({
   },
 });
 
+const themes = {
+  dark: {
+    localKey: 'dark',
+    theme: darkTheme
+  },
+  light: {
+    localKey: 'light',
+    theme: lightTheme
+  }
+}
+
+const changeLocalTheme = (isDark) => {
+  localStorage.setItem(Constants.LOCAL_THEME_MODE, isDark);
+};
+
+const getClientIsDark = () => {
+  const isDark = localStorage.getItem(Constants.LOCAL_THEME_MODE);
+  if (isDark != null) {
+    return isDark === 'true';
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+    return false;
+  } else {
+    return true;
+  }
+};
+
 const Root = () => {
   const params = useParams();
   const context = useLoaderData();
-  const isLocale = context.localeOptions.includes(params.locale);
+  const [isDark, setIsDark] = React.useState(() => getClientIsDark());
 
+  const isLocale = context.localeOptions.includes(params.locale);
   if (!isLocale && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
     return <Navigate
       to={`/${Constants.DEFAULT_LOCALE_OPTION}/${Constants.ERROR_PAGE_PATH}`}
       state={{ msg: "Requested locale not found", code: 404 }} replace={true} />;
   }
 
+  const updateTheme = (isDark) => {
+    changeLocalTheme(isDark);
+    setIsDark(isDark);
+  }
+
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <Header context={context} />
-      <div className="body-root">
-        <Outlet context={context} />
-      </div>
-      <Footer />
+    <ThemeProvider theme={isDark ? themes.dark.theme : themes.light.theme}>
+      <ThemeContext.Provider value={{ isDark: isDark, updateTheme: updateTheme }}>
+        <CssBaseline />
+        <Header context={context} />
+        <div className="body-root">
+          <Outlet context={context} />
+        </div>
+        <Footer />
+      </ThemeContext.Provider>
     </ThemeProvider>
   );
 };
@@ -98,7 +133,7 @@ const contextLoader = (route) => Promise.all([
 ]).then(result => result[0]);
 
 const unitSelectorOptions = {
-  title: 'WS Units',
+  title: 'entityPageTitleUnits',
   Card: UnitCard,
   getEntityPath: (id) => Utils.getUrlWithPathParams([
     { param: Constants.UNIT_PAGE_PATH, pos: 2 },
@@ -120,7 +155,7 @@ const filterUnitSelectorOptions = (context, searchParams) => {
 };
 
 const researchSelectorOptions = {
-  title: 'WS Researches',
+  title: 'entityPageTitleResearches',
   Card: ResearchCard,
   getEntityPath: (id) => Utils.getUrlWithPathParams([
     { param: Constants.RESEARCH_PAGE_PATH, pos: 2 },

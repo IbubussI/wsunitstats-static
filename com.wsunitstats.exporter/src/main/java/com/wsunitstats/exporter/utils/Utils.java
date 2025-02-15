@@ -189,24 +189,6 @@ public class Utils {
     }
 
     /**
-     * Returns string representation of min...max values, depending on the given input
-     */
-    public static String getQuantityString(Integer min, Integer max) {
-        if (min == null && max == null) {
-            return String.format(Constants.QuantityType.NOT_LESS_THAN.getName(), 1);
-        }
-        if (min != null && max == null) {
-            return String.format(Constants.QuantityType.NOT_LESS_THAN.getName(), min);
-        }
-        // min == null && max != null
-        if (min == null) {
-            return String.format(Constants.QuantityType.NOT_MORE_THAN.getName(), max);
-        }
-        // min != null && max != null
-        return String.format(Constants.QuantityType.FROM_TO.getName(), min, max);
-    }
-
-    /**
      * Returns given boolean or false if it is not present
      */
     public static boolean getDirectBoolean(Boolean bool) {

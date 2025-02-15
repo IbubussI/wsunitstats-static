@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as Data from "data";
 import { Stack } from '@mui/material';
 import { FlexibleTable } from 'components/Layout/FlexibleTable';
 import { HeaderChip } from 'components/Atoms/Renderer';
@@ -6,7 +7,7 @@ import { DoubleColumnTable } from 'components/Layout/DoubleColumnTable';
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
 import { DoubleColumnFrame } from 'components/Layout/DoubleColumnFrame';
 import { useParams } from 'react-router-dom';
-import { getAttackData, getBuffData, getDamagesData, getEnvData, getWeaponData } from 'data';
+import { useTranslation } from 'react-i18next';
 
 const STATS_COLUMNS = 2;
 const STATS_ROWS = 5;
@@ -14,15 +15,16 @@ const FLEX_TABLE_RIGHT_WIDTH = '52%';
 const FLEX_TABLE_LEFT_WIDTH = '48%';
  
 export const WeaponTable = ({ item, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
   const weapon = item.weapon;
   
   const attacksNumber = weapon.damage.damagesCount * weapon.attacksPerAttack * weapon.attacksPerAction;
-  const damagesData = getDamagesData(weapon.damage.damages, attacksNumber);
-  const attackData = getAttackData(weapon);
-  const buffData = getBuffData(weapon.damage.buff, locale);
-  const envData = getEnvData(weapon.damage);
-  const weaponData = getWeaponData(weapon, item.turretRotationSpeed, FLEX_TABLE_RIGHT_WIDTH, FLEX_TABLE_LEFT_WIDTH);
+  const damagesData = Data.getDamagesData(weapon.damage.damages, attacksNumber, t);
+  const attackData = Data.getAttackData(weapon, t);
+  const buffData = Data.getBuffData(weapon.damage.buff, locale, t);
+  const envData = Data.getEnvData(weapon.damage, t);
+  const weaponData = Data.getWeaponData(weapon, item.turretRotationSpeed, FLEX_TABLE_RIGHT_WIDTH, FLEX_TABLE_LEFT_WIDTH, t);
 
   const disabled = weapon.enabled === false && 'disabled';
   const labelData = {

@@ -57,7 +57,7 @@ export const ActionAreaCard = ({ id, size, image, imageSize, name, onClick, chil
             height: `${imageSize}px`
           }}
         />
-        <StyledCardHeader title={name} titleTypographyProps={{ variant: 'h6' }} />
+        <StyledCardHeader title={name} titleTypographyProps={{ variant: 'h6', lineHeight: 1.3 }} />
         <StyledCardContent sx={{ mt: 'auto' }}>
           {children}
         </StyledCardContent>

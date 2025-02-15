@@ -1,4 +1,7 @@
 {
+  "true": "да",
+  "false": "нет",
+  "secondsMarker": " сек",
   "headerUnits": "Юниты",
   "headerResearches": "Исследования",
   "headerModding": "Создание модов",
@@ -6,6 +9,9 @@
   "headerGameVersion": "Версия игры: {{value}}",
   "localeSelectorLabel": "Язык",
   "localeSelectorWarn": "Перевод на данный язык не полный и может содержать текст на английском.",
+  "themeSelectorLabel": "Тема",
+  "themeSelectorLight": "Светлая",
+  "themeSelectorDark": "Темная",
   "entityPickerUnits": "Юниты",
   "entityPickerResearches": "Исследования",
   "entityPickerSearch": "Поиск...",
@@ -20,5 +26,17 @@
   "unitTabSubmarine": "Подводная лодка",
   "moddingPropsName": "Имя",
   "moddingPropsType": "Тип",
-  "moddingPropsValue": "Значение"
+  "moddingPropsValue": "Значение",
+  "entityPageTitleUnits": "Юниты War Selection",
+  "entityPageFiltersUnits": "Фильтры",
+  "entityPageTitleResearches": "Исследования War Selection",
+  "filtersUnitTags": "Юнит Теги",
+  "filtersSearchTags": "Поисковые Теги",
+  "filtersNations": "Нации",
+  "filtersApply": "Применить",
+  "filtersClear": "Сбросить",
+  "researchPageTitle": "Исследование",
+  "researchPageGameIDLabel": "ID в игре: {{value}}",
+  "researchPageAffectedUnits": "Затрагиваемые юниты",
+  "unitAbilitiesTabTitle": "Возможности"
 }

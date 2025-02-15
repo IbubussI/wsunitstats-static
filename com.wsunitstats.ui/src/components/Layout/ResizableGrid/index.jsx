@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as Constants from 'utils/constants'
 import { Box, Grid, Paper, Stack, debounce } from "@mui/material";
 import { ResizableBox } from 'react-resizable';
+import { useTranslation } from 'react-i18next';
 
 const MAX_COLUMNS = 12;
 
@@ -154,9 +155,10 @@ const getArray = (object) => {
 }
 
 export const GridGroup = ({ columnWidth, children, heading }) => {
+  const { t } = useTranslation();
   return (
     <Stack>
-      {heading && <h4 style={{ textAlign: 'center' }}>{heading}</h4>}
+      {heading && <h4 style={{ textAlign: 'center' }}>{t(heading)}</h4>}
       <GridLayout columnWidth={columnWidth}>
         {children}
       </GridLayout>

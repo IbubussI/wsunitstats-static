@@ -12,6 +12,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { getTagData } from 'data';
 import { DoubleColumnTable } from 'components/Layout/DoubleColumnTable';
+import { useTranslation } from 'react-i18next';
 
 export const ButtonPopper = ({
   children,
@@ -114,9 +115,10 @@ const TagChip = styled(Chip)(() => ({
 }));
 
 export const PopperTag = ({ tag, placement }) => {
+  const { t } = useTranslation();
   const Tag = ({ onClick }) => {
     return (
-      <TagChip onClick={onClick} label={tag.name}/>
+      <TagChip onClick={onClick} label={t(tag.name)}/>
     );
   }
 
@@ -126,7 +128,7 @@ export const PopperTag = ({ tag, placement }) => {
       placement={placement}
       padding='8px'
     >
-      <DoubleColumnTable data={getTagData(tag)} />
+      <DoubleColumnTable data={getTagData(tag, t)} />
     </ButtonPopper>
   );
 }

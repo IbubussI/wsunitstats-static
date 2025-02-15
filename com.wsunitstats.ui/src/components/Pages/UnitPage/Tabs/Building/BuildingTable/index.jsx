@@ -6,12 +6,14 @@ import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 import { Resource } from "components/Atoms/Renderer";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const BUILD_COLUMNS = 1;
 const FLEX_TABLE_RIGHT_WIDTH = '65%';
 const FLEX_TABLE_LEFT_WIDTH = '35%';
 
 export const BuildingTable = ({ build, overflowMinWidth }) => {
+  const { t } = useTranslation();
   const { locale } = useParams();
 
   const buildData = [
@@ -91,7 +93,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
     },
   ].filter(element => element.childData.value);
 
-  const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, locale);
+  const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, locale, t);
 
   return (
     <DoubleColumnFrame childrenProps={[ { width: '100%' }, null ]} column>
