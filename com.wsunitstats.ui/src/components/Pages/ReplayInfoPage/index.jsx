@@ -4,6 +4,7 @@ import * as Constants from 'utils/constants';
 import {
   Box,
   Container,
+  Paper,
   Stack,
   styled,
   TextField,
@@ -15,6 +16,7 @@ import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStr
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { PlayerTable } from 'components/Pages/ReplayInfoPage/PlayerTable';
 import { GeneralTable } from 'components/Pages/ReplayInfoPage/GeneralTable';
+import { useTranslation } from 'react-i18next';
 
 const FormContainer = styled(Stack)(({ theme }) => ({
   flexDirection: 'row',
@@ -48,12 +50,15 @@ export const ReplayInfoPage = () => {
       );
     } else if (replayCodeParam) {
       setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
+    } else {
+      // if no code in the URL - clear to keep states consistent
+      setReplayInfo({});
     }
   }, [searchParams, context]);
 
   const isSuccess = replayInfo && replayInfo.error === 0;
   return (
-    <Container maxWidth="md">
+    <Container maxWidth="md" component={Paper} sx={{ m: 4, p: '24px' }}>
       <ReplayForm
         onSubmit={(event) => {
           // prevent page reload
@@ -82,16 +87,17 @@ export const ReplayInfoPage = () => {
 };
 
 const ReplayForm = ({ onSubmit, onInputChange, inputValue }) => {
+  const { t } = useTranslation();
   return (
     <FormContainer component='form'
       onSubmit={onSubmit} >
       <TextField
-        label="Enter replay code"
+        label={t('replayFormLabel')}
         variant="standard"
         value={inputValue}
         onChange={onInputChange} />
       <FormButton type='submit'>
-        LOAD
+        {t('replayFormLoad')}
       </FormButton>
     </FormContainer>
   );

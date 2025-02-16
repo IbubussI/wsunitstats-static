@@ -1,10 +1,8 @@
 import * as Constants from "utils/constants";
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import timezone from 'dayjs/plugin/timezone';
 
 dayjs.extend(duration);
-dayjs.extend(timezone);
 
 export const LOCALIZATION_REGEX = new RegExp("<\\*[a-zA-Z0-9/]+>", "g");
 
@@ -182,5 +180,5 @@ export const formatDuration = (durationMillis) => {
 }
 
 export const formatTimeLong = (timeSec) => {
-  return dayjs.unix(timeSec).format('ddd, D MMM YYYY, HH:mm:ss z');
+  return dayjs.unix(timeSec).format('DD/MM/YYYY HH:mm:ss');
 }

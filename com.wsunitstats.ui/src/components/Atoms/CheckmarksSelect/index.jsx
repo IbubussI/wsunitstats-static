@@ -5,11 +5,8 @@ import { Image } from "components/Atoms/Renderer";
 import { useTranslation } from 'react-i18next';
 
 const StyledAutocomplete = styled(Autocomplete)(() => ({
-  [`& .${autocompleteClasses.inputRoot} .${autocompleteClasses.input}`]: {
-    minWidth: 0,
-    cursor: 'pointer',
-    paddingRight: 0,
-    paddingLeft: 0
+  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}`]: {
+    cursor: 'pointer'
   }
 }));
 

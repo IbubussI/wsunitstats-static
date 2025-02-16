@@ -1,20 +1,18 @@
 import * as Utils from 'utils/utils';
 import {
-  alpha,
   Paper,
   Stack,
   styled,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
-  TableRow,
-  useTheme
+  TableContainer
 } from "@mui/material";
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
-
+import { useTranslation } from 'react-i18next';
+import { NoBottomBorderRow } from 'components/Atoms/Table';
 
 dayjs.extend(duration);
 dayjs.extend(advancedFormat);
@@ -25,24 +23,29 @@ const GeneralTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 export const GeneralTable = ({ replayInfo }) => {
-  const theme = useTheme();
+  const { t } = useTranslation();
 
   const match = replayInfo.match;
+  const winType = match.isWonderWin
+    ? t('replayVictoryWonder')
+    : t('replayVictoryPlayers');
   const rowsLeft = [
-    ["Replay code", "rep-" + match.replayCode],
-    ["Mode", match.mode],
-    ["Match start", Utils.formatTimeLong(match.startTime)],
-    ["Duration", Utils.formatDuration(match.duration)],
-    ["Victory", match.isWonderWin ? "Wonder timeout" : "Players defeated"],
-  ]
+    [t('replayRepCodeCell'), "rep-" + match.replayCode],
+    [t('replayModeCell'), t(match.mode)],
+    [t('replayMatchStartCell'), Utils.formatTimeLong(match.startTime)],
+    [t('replayDurationCell'), Utils.formatDuration(match.duration)],
+    [t('replayVictoryCell'), match.isComplete ? winType : t('replayVictoryNotComplete')],
+    [t('replayPlayersCell'), match.playersCount]
+  ];
 
   const rowsRight = [
-    ["Players", match.playersCount],
-    ["Region", match.region],
-    ["Game version", match.gameVersion],
-    ["Match initiator",  match.isMatchmaking ? "Matchmaking" : match.creator],
-    ["Dev mode", match.isDevMode ? "On" : "Off"]
-  ]
+    [t('replayRegionCell'), match.region],
+    [t('replayGameVersionCell'), match.gameVersion],
+    [t('replayInitiatorCell'), match.isMatchmaking ? t('replayInitiatorMatchmaking') : match.creator],
+    [t('replayMapCodeCell'), !match.isMapGen && match.isMapReleased ? `map-${match.mapCode}` : '-'],
+    [t('replayMapSymmetryCell'), t(match.mapSymmetry)],
+    [t('replayDevModeCell'), match.isDevMode ? t('conditionOn') : t('conditionOff')]
+  ];
 
   return (
     <Stack direction="row" sx={{ gap: 2, paddingTop: 1, paddingBottom: 1 }}>
@@ -50,15 +53,10 @@ export const GeneralTable = ({ replayInfo }) => {
         <Table>
           <TableBody>
             {rowsLeft.map((row, id) => (
-              <TableRow key={id} sx={{
-                backgroundColor: alpha(theme.palette.secondary.light, '0.7'),
-                '&:hover': {
-                  backgroundColor: theme.palette.secondary.light
-                },
-              }}>
+              <NoBottomBorderRow key={id}>
                 <GeneralTableCell align="left">{row[0]}</GeneralTableCell>
                 <GeneralTableCell align="right">{row[1]}</GeneralTableCell>
-              </TableRow>
+              </NoBottomBorderRow>
             ))}
           </TableBody>
         </Table>
@@ -68,15 +66,10 @@ export const GeneralTable = ({ replayInfo }) => {
         <Table>
           <TableBody>
             {rowsRight.map((row, id) => (
-              <TableRow key={id} sx={{
-                backgroundColor: theme.palette.secondary.light,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.secondary.light, '0.7')
-                },
-              }}>
+              <NoBottomBorderRow key={id}>
                 <GeneralTableCell align="left">{row[0]}</GeneralTableCell>
                 <GeneralTableCell align="right">{row[1]}</GeneralTableCell>
-              </TableRow>
+              </NoBottomBorderRow>
             ))}
           </TableBody>
         </Table>

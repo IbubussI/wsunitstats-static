@@ -3,7 +3,6 @@ import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import {
   autocompleteClasses,
-  inputBaseClasses,
   Stack,
   styled,
   Tooltip
@@ -14,9 +13,8 @@ import { useTranslation } from 'react-i18next';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 const StyledDynamicSelect = styled(DynamicSelect)({
-  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}, .${inputBaseClasses.root}`]: {
-    cursor: 'pointer',
-    userSelect: 'none'
+  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}`]: {
+    cursor: 'pointer'
   },
 });
 

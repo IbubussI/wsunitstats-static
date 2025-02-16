@@ -19,6 +19,12 @@ export class ReplayInfoParser {
   #winnerSurvivalTime; // optional
   #isWonderWin;
 
+  #isMatchDataOn;
+  #isPlayersLostOn;
+  #isTimelineOn;
+  #isStatsOn;
+  #isResearchesOn;
+
   constructor(context, replayCode) {
     this.#context = context;
     this.#replayCode = replayCode;
@@ -58,10 +64,23 @@ export class ReplayInfoParser {
       this.#version = replayApiResponseData.version;
       this.#start = replayApiResponseData.start;
 
+      this.#isMatchDataOn = this.#matchData != null;
+      this.#isPlayersLostOn = this.#playersLost != null;
+      this.#isTimelineOn = this.#timeLine != null;
+      this.#isStatsOn = this.#stats != null;
+      this.#isResearchesOn = this.#researches != null;
+
+      if (!this.#isMatchDataOn) {
+        return {
+          error: 255,
+          message: "Cannot parse replay data. Match data is absent in WS Games API response."
+        };
+      }
+
       this.#factionTeams = this.#generateTeamsMap();
-      this.#playerSurvival = this.#generateSurvivalMap();
+      this.#playerSurvival = this.#isPlayersLostOn && this.#generateSurvivalMap();
       this.#addWinnersData();
-      this.#isWonderWin = this.#getIsWonderWin();
+      this.#isWonderWin = this.#isPlayersLostOn && this.#getIsWonderWin();
 
       const players = this.#parsePlayers();
       const teams = this.#parseTeams();
@@ -96,8 +115,13 @@ export class ReplayInfoParser {
     match.isMatchmaking = this.#scriptParameters.matchmaking;
     match.creator = match.isMatchmaking ? 0 : this.#matchData.players[this.#scriptParameters.creator][0];
     match.isDevMode = this.#scriptParameters.devMode;
+    match.isComplete = this.#matchData.winners > 0;
     match.isWonderWin = this.#isWonderWin;
     match.replayCode = this.#replayCode;
+    match.isMapGen = this.#initData.generatorData;
+    match.isMapReleased = this.#initData.loadData?.releaseData !== "false";
+    match.mapCode = this.#initData.loadData?.mapCode.split("_")[0];
+    match.mapSymmetry = SymmetryType.fromId(this.#initData.generatorData?.mapParameters?.generatorParameters?.symmetry).type;
     return match;
   }
 
@@ -113,7 +137,7 @@ export class ReplayInfoParser {
       team.players = teamFactions.map((factionId) => this.#getFactionPlayer(factionId)).filter(e => e !== null);
       team.isWinner = this.#teamWinners.has(teamId);
       team.isPlayerTeam = team.players.some(playerId => playerId !== null);
-      team.color = TEAM_COLORS[teamId % 2];
+      team.color = teamId % 2;
     });
     return teamList;
   }
@@ -136,18 +160,28 @@ export class ReplayInfoParser {
       player.rating = playerScriptEntry.rating;
       player.team = this.#factionTeams.get(factionId);
       player.group = this.#getPlayerGroup(playerScriptEntry, playerGroups);
-      player.survivalTime = this.#playerSurvival.get(playerId);
-      player.isWinner = this.#playerWinners.has(playerId);
-      player.isDead = this.#winnerSurvivalTime > player.survivalTime;
       player.color = FACTION_COLORS[factionId];
-      const researchResult = this.#parsePlayerResearches(factionId);
-      player.researches = researchResult.researches;
-      player.isWonderBuilt = researchResult.wonderTime ? true : false;
-      if (player.isWonderBuilt && player.isWinner && this.#isWonderWin) {
-        wonderLeaderCandidates.push({ playerId: playerId, researchTime: researchResult.wonderTime });
+      player.isWinner = this.#playerWinners.has(playerId);
+
+      if (this.#isPlayersLostOn) {
+        player.survivalAvailable = true;
+        player.survivalTime = this.#playerSurvival.get(playerId);
+        player.isDead = this.#winnerSurvivalTime > player.survivalTime;
       }
-      player.lastAgeResearch = researchResult.lastAgeResearch || this.#context.localizedUnits[0].image;
-      player.isWonderWin = false;
+
+      if (this.#isResearchesOn) {
+        player.researchAvailable = true;
+        const researchResult = this.#parsePlayerResearches(factionId);
+        player.researches = researchResult.researches;
+        player.isWonderBuilt = researchResult.wonderTime ? true : false;
+        if (player.isWonderBuilt && player.isWinner && this.#isWonderWin) {
+          wonderLeaderCandidates.push({ playerId: playerId, researchTime: researchResult.wonderTime });
+        }
+        player.lastAge = researchResult.lastAgeResearch
+          ? { name: researchResult.lastAgeResearch.researchContext.name, image: researchResult.lastAgeResearch.researchContext.image }
+          : { name: this.#context.units[0].nation, image: this.#context.units[0].image };
+        player.isWonderWin = false;
+      }
     });
 
     this.#addWonderLeaders(wonderLeaderCandidates, playerList);
@@ -164,10 +198,12 @@ export class ReplayInfoParser {
       if ((winnersBitset & (1 << i)) !== 0) {
         const faction = this.#getPlayerFaction(i);
         const team = this.#factionTeams.get(faction);
-        const survTime = this.#playerSurvival.get(i) || -1;
-        this.#winnerSurvivalTime = Math.max(this.#winnerSurvivalTime, survTime);
-        this.#playerWinners.add(i);
         this.#teamWinners.add(team);
+        this.#playerWinners.add(i);
+        if (this.#isPlayersLostOn) {
+          const survTime = this.#playerSurvival.get(i) || -1;
+          this.#winnerSurvivalTime = Math.max(this.#winnerSurvivalTime, survTime);
+        }
       }
     }
   }
@@ -175,14 +211,11 @@ export class ReplayInfoParser {
   #generateSurvivalMap() {
     const result = new Map();
     const survList = this.#playersLost;
-    // check for incomplete replay data
-    if (survList) {
-      for (let i = 0; i < survList.length; i++) {
-        const playerSurvEntry = survList[i];
-        const playerId = playerSurvEntry[0];
-        const survTime = playerSurvEntry[1];
-        result.set(playerId, survTime);
-      }
+    for (let i = 0; i < survList.length; i++) {
+      const playerSurvEntry = survList[i];
+      const playerId = playerSurvEntry[0];
+      const survTime = playerSurvEntry[1];
+      result.set(playerId, survTime);
     }
     return result;
   }
@@ -273,7 +306,7 @@ export class ReplayInfoParser {
     researchTimeline.forEach((researchEntry) => {
       const time = researchEntry[0];
       const id = researchEntry[1];
-      const research = this.#context.localizedResearches[id];
+      const research = this.#context.researches[id];
 
       const playerResearch = new PlayerResearch();
       playerResearch.id = id;
@@ -330,10 +363,16 @@ class Match {
   region;
   gameVersion;
   matchSeed;
-  symmetry;
-  creator;
   isMatchmaking;
+  creator;
   isDevMode;
+  isComplete;
+  isWonderWin;
+  replayCode;
+  isMapGen;
+  isMapReleased;
+  mapCode;
+  mapSymmetry;
 }
 
 class MatchType {
@@ -346,23 +385,50 @@ class MatchType {
   }
 
   static #values = new Map([
-    [0, "FFA"],
-    [1, "Team match"],
-    [2, "Armageddon"],
-    [3, "Survival"],
-    [4, "Ranked 1v1"],
-    [5, "Ranked 2v2"],
-    [6, "Sandbox"],
-    [7, "Tug Of War"],
-    [8, "Custom Map"],
-    [9, "Mafia"],
-    [255, "Undefined"]
+    [0, "replayMatchTypeFFA"],
+    [1, "replayMatchTypeTeamMatch"],
+    [2, "replayMatchTypeArmageddon"],
+    [3, "replayMatchTypeSurvival"],
+    [4, "replayMatchTypeRank1"],
+    [5, "replayMatchTypeRank2"],
+    [6, "replayMatchTypeSandbox"],
+    [7, "replayMatchTypeTOW"],
+    [8, "replayMatchTypeCustom"],
+    [9, "replayMatchTypeMafia"],
+    [255, "replayMatchTypeUndef"]
   ]);
 
   static fromId(id) {
     const actualId = MatchType.#values.has(id) ? id : 255;
     const type = MatchType.#values.get(actualId);
     return new MatchType(actualId, type);
+  }
+}
+
+class SymmetryType {
+  id;
+  type;
+
+  constructor(id, type) {
+    this.id = id;
+    this.type = type;
+  }
+
+  static #values = new Map([
+    [0, "replaySymmetryTypeNo"],
+    [1, "replaySymmetryTypeVertical"],
+    [2, "replaySymmetryTypeVerticalFlipped"],
+    [3, "replaySymmetryTypeHorizontal"],
+    [4, "replaySymmetryTypeHorizontalFlipped"],
+    [5, "replaySymmetryTypeDiagonal"],
+    [6, "replaySymmetryTypeDiagonalReverse"],
+    [7, "replaySymmetryTypeRandom"],
+  ]);
+
+  static fromId(id) {
+    const actualId = SymmetryType.#values.has(id) ? id : 0;
+    const type = SymmetryType.#values.get(actualId);
+    return new SymmetryType(actualId, type);
   }
 }
 
@@ -393,6 +459,9 @@ class Player {
   isWonderBuilt;
   isWonderWin;
   lastAgeResearch;
+
+  researchAvailable = false;
+  survivalAvailable = false;
 }
 
 class PlayerResearch {
@@ -478,9 +547,4 @@ const FACTION_COLORS = [
   "#7f007f",
   "#0000b3",
   "#bfbfbf"
-];
-
-const TEAM_COLORS = [
-  "#d97070f7",
-  "#69b0dbf7"
 ];

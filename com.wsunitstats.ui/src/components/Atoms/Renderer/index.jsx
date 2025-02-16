@@ -6,7 +6,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { PopperTag } from "components/Atoms/ButtonPopper";
 import { useTranslation } from 'react-i18next';
 
-export const Image = (props) => {
+export const Image = React.forwardRef((props, ref) => {
   const {
     height,
     width,
@@ -15,7 +15,7 @@ export const Image = (props) => {
     ...other
    } = props;
   return (
-    <Box
+    <Box ref={ref}
       {...other}
       component="img"
       height={height}
@@ -25,7 +25,7 @@ export const Image = (props) => {
       src={isStatic ? path : Utils.resolveImage(path) }
     />
   );
-}
+})
 
 export const Text = ({ data }) => {
   return (

@@ -8,13 +8,16 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableRow,
+  Tooltip,
 } from '@mui/material';
 import { WinnerIcon } from 'components/Pages/ReplayInfoPage/svg';
 import { TagChip } from 'components/Atoms/TagChip';
 import { Image } from 'components/Atoms/Renderer';
+import { useTranslation } from 'react-i18next';
+import { NoBottomBorderRow } from 'components/Atoms/Table';
 
 const PlayerTableCell = styled(TableCell)(({ theme }) => ({
+  borderColor: alpha(theme.palette.grey[700], 0.6),
   fontSize: theme.typography.body2.fontSize,
   padding: theme.spacing(0.8)
 }));
@@ -28,7 +31,33 @@ const RatingTag = styled(TagChip)(() => ({
   }
 }));
 
-export const PlayerTable = ({ replayInfo, defaultAgeImage }) => {
+const TEAM_COLORS = {
+  dark: [
+    "#5a3d3d",
+    "#3b5158"
+  ],
+  light: [
+    "#ffa2a2",
+    "#a2d8ff"
+  ]
+}
+
+const ColoredTableRow = styled(NoBottomBorderRow, {
+  shouldForwardProp: (prop) => prop !== "teamColor"
+})(({ theme, teamColor }) => {
+  const color = theme.palette.mode === 'dark'
+    ? TEAM_COLORS.dark[teamColor]
+    : TEAM_COLORS.light[teamColor];
+  return {
+    backgroundColor: color,
+    '&:hover': {
+      backgroundColor: alpha(color, '0.8')
+    }
+  }
+});
+
+export const PlayerTable = ({ replayInfo }) => {
+  const { t } = useTranslation();
   return (
     <TableContainer component={Paper} >
       <Table>
@@ -36,25 +65,17 @@ export const PlayerTable = ({ replayInfo, defaultAgeImage }) => {
           {replayInfo.teams.filter(team => team.isPlayerTeam).map((team) => {
             return team.players.map((playerId) => {
               const player = replayInfo.players[playerId];
-              const lastAgeResearch = player.lastAgeResearch
-                ? player.lastAgeResearch.researchContext.image
-                : defaultAgeImage; // take altar in case there are no units
               return (
-                <TableRow key={player.id} sx={{
-                  backgroundColor: team.color,
-                  '&:hover': {
-                    backgroundColor: alpha(team.color, '0.8')
-                  },
-                }}>
+                <ColoredTableRow key={player.id} teamColor={team.color}>
                   {/* Color */}
-                  <PlayerTableCell align="center" sx={{ width: 0 }}>
-                    <Box sx={{
+                  <PlayerTableCell align="center" sx={{ width: '31px' }}>
+                  {replayInfo.match.isMapGen && <Box sx={{
                       backgroundColor: player.color,
                       height: '18px',
                       width: '18px',
                       borderRadius: '15%',
                       boxShadow: '0 0 3px #0000008a'
-                    }} />
+                    }} />}
                   </PlayerTableCell>
 
                   {/* Nickname */}
@@ -71,7 +92,7 @@ export const PlayerTable = ({ replayInfo, defaultAgeImage }) => {
 
                   {/* Squad */}
                   <PlayerTableCell align="right" sx={{ width: '80px' }}>
-                    {player.group && `Squad-${player.group}`}
+                    {player.group && t('replaySquad', { value: player.group })}
                   </PlayerTableCell>
 
                   {/* Lastest Age Reached */}
@@ -81,9 +102,26 @@ export const PlayerTable = ({ replayInfo, defaultAgeImage }) => {
                     paddingTop: 0,
                     paddingBottom: 0
                   }}>
-                    <Image path={lastAgeResearch}
-                      width={25}
-                      height={25} />
+                    {player.lastAge &&
+                      <Tooltip title={t(player.lastAge.name)}
+                        arrow
+                        placement="right"
+                        slotProps={{
+                          popper: {
+                            modifiers: [
+                              {
+                                name: 'offset',
+                                options: {
+                                  offset: [0, -8],
+                                },
+                              },
+                            ],
+                          },
+                        }}>
+                        <Image path={player.lastAge.image}
+                          width={25}
+                          height={25} />
+                      </Tooltip>}
                   </PlayerTableCell>
 
                   {/* Survival Time */}
@@ -100,7 +138,12 @@ export const PlayerTable = ({ replayInfo, defaultAgeImage }) => {
                     {player.isDead &&
                       <i className="fa-solid fa-skull fa-lg" style={{ color: '#dd1d1dd4' }}></i>}
                     {player.isWinner &&
-                      <WinnerIcon sx={{ width: '20px', height: '20px', display: 'block' }} />}
+                      <WinnerIcon sx={{
+                        width: '20px',
+                        height: '20px',
+                        display: 'block',
+                        color: '#f27800'
+                      }} />}
                   </PlayerTableCell>
 
                   {/* Wonder */}
@@ -122,7 +165,7 @@ export const PlayerTable = ({ replayInfo, defaultAgeImage }) => {
                     {player.rating != null &&
                       <RatingTag label={player.rating} />}
                   </PlayerTableCell>
-                </TableRow>
+                </ColoredTableRow>
               );
             });
           })}
