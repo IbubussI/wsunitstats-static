@@ -69,7 +69,7 @@ export const getUrlWithPathParams = (params, keepSearch = true, removeFrom = 0) 
   return keepSearch ? pathItems.join('/') + search : pathItems.join('/');
 };
 
-export const navigateToError = (navHook, msg, code, keepLocale) => {
+export const navigateToError = (navHook, msg, code, keepLocale, newLocale) => {
   const path = window.location.pathname;
   const pathItems = path.split('/');
   pathItems.length = 3;
@@ -158,4 +158,3 @@ export const localize = (target, localeData) => {
   }
   return result;
 };
-

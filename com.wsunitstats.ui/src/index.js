@@ -1,7 +1,15 @@
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import { Footer } from 'components/Footer';
-import { Navigate, Outlet, createBrowserRouter, RouterProvider, useLoaderData, useParams } from 'react-router-dom';
+import {
+  Navigate,
+  Outlet,
+  createBrowserRouter,
+  RouterProvider,
+  useLoaderData,
+  useParams,
+  useNavigate
+} from 'react-router-dom';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import * as React from 'react';
@@ -83,17 +91,22 @@ const getClientIsDark = () => {
   }
 };
 
+const localePreference = localStorage.getItem(Constants.LOCAL_LAST_LOCALE) || Constants.DEFAULT_LOCALE_OPTION;
+
 const Root = () => {
   const params = useParams();
   const context = useLoaderData();
+  const navigate = useNavigate();
   const [isDark, setIsDark] = React.useState(() => getClientIsDark());
 
-  const isLocale = context.localeOptions.includes(params.locale);
-  if (!isLocale && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
-    return <Navigate
-      to={`/${Constants.DEFAULT_LOCALE_OPTION}/${Constants.ERROR_PAGE_PATH}`}
-      state={{ msg: "Requested locale not found", code: 404 }} replace={true} />;
-  }
+  React.useEffect(() => {
+    const isLocale = context.localeOptions.includes(params.locale);
+    if (!isLocale && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
+      Utils.navigateToError(navigate, "Requested locale not found", 404, false);
+    } else {
+      localStorage.setItem(Constants.LOCAL_LAST_LOCALE, params.locale);
+    }
+  }, [params.locale, context.localeOptions, navigate]);
 
   const updateTheme = (isDark) => {
     changeLocalTheme(isDark);
@@ -171,7 +184,7 @@ const researchSelectorOptions = {
 const router = createBrowserRouter([
   {
     index: true,
-    element: <Navigate to={Constants.DEFAULT_LOCALE_OPTION} replace />
+    element: <Navigate to={localePreference} replace />
   },
   {
     path: `/${Constants.PARAM_LOCALE}`,

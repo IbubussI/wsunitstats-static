@@ -53,6 +53,7 @@ export const NO_LINK_INDICATOR = 'no-link';
 export const DEFAULT_LOCALE_OPTION = 'en';
 export const LOCAL_RESIZABLE_WIDTH = 'resizable-width';
 export const LOCAL_THEME_MODE = 'theme-provider-mode-is-dark';
+export const LOCAL_LAST_LOCALE = 'locale-last-selected';
 export const LOCAL_MODS_TREE_CONENT_RESIZABLE_ID = 'mods-page-resizable-tree-content-horizontal';
 export const LOCAL_MODS_CONENT_PROPS_RESIZABLE_ID = 'mods-page-resizable-content-props-vertical';
 export const LOCAL_MODS_PROPS_TABLE_COLUMNS_RESIZABLE_ID = 'mods-page-resizable-props-table-columns';
