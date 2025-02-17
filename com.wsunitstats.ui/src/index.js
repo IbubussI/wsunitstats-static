@@ -222,14 +222,22 @@ const router = createBrowserRouter([
         element: <ReplayPage />,
         children: [
           {
-            index: true,
-            path: Constants.REPLAY_INFO_PAGE_PATH,
-            element: <ReplayInfoPage />,
-          },
-          {
-            path: `${Constants.REPLAY_PLAYER_INFO_PAGE_PATH}/${Constants.PARAM_PLAYER}`,
-            element: <PlayerInfo />
-          },
+            path: Constants.PARAM_REPLAY_CODE,
+            children: [
+              {
+                index: true,
+                element: <Navigate to={Constants.REPLAY_INFO_PAGE_PATH} replace />
+              },
+              {
+                path: `${Constants.REPLAY_INFO_PAGE_PATH}`,
+                element: <ReplayInfoPage />,
+              },
+              {
+                path: `${Constants.REPLAY_PLAYER_INFO_PAGE_PATH}/${Constants.PARAM_PLAYER}`,
+                element: <PlayerInfo />
+              },
+            ]
+          }
         ]
       },
       {

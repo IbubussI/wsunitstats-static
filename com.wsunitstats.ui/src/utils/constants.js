@@ -56,12 +56,12 @@ export const PARAM_LOCALE = ':locale';
 export const PARAM_GAME_ID = ':gameId';
 export const PARAM_TAB = ':tab';
 export const PARAM_PLAYER = ':player';
+export const PARAM_REPLAY_CODE = ':replayCode';
 export const PARAM_RESEARCH_IDS = 'researchIds';
 export const PARAM_NATIONS = 'nations';
 export const PARAM_UNIT_TAGS = 'unitTags';
 export const PARAM_SEARCH_TAGS = 'searchTags';
 export const PARAM_PATH = 'path';
-export const PARAM_REPLAY_CODE = "replayCode";
 export const NO_LINK_INDICATOR = 'no-link';
 
 export const DEFAULT_LOCALE_OPTION = 'en';

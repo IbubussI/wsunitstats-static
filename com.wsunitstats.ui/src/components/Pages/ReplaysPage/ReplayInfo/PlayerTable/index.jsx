@@ -67,8 +67,8 @@ export const PlayerTable = ({ replayInfo }) => {
 
   const onPlayerInfo = React.useCallback((playerId) => {
     navigate(Utils.getUrlWithPathParams([
-      { param: Constants.REPLAY_PLAYER_INFO_PAGE_PATH, pos: 3 },
-      { param: playerId, pos: 4 }
+      { param: Constants.REPLAY_PLAYER_INFO_PAGE_PATH, pos: 4 },
+      { param: playerId, pos: 5 }
     ]), { replace: false });
   }, [navigate]);
 
@@ -82,8 +82,8 @@ export const PlayerTable = ({ replayInfo }) => {
               return (
                 <ColoredTableRow key={player.id} teamColor={team.color}>
                   {/* Link */}
-                  <PlayerTableCell align="left" sx={{ width: '30px', p: 0 }}>
-                    <Button onClick={() => onPlayerInfo(player.id)} sx={{ p: 0.5, minWidth: '0px' }}>
+                  <PlayerTableCell align="left" sx={{ width: '36px', height: '36px', py: 0.3, px: 0.4 }}>
+                    <Button onClick={() => onPlayerInfo(player.id)} sx={{ p: 0.3, minWidth: '0px' }}>
                       <OpenInNewIcon />
                     </Button>
                   </PlayerTableCell>

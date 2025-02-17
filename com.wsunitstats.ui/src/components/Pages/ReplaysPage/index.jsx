@@ -12,8 +12,7 @@ import {
 } from '@mui/material';
 import { FormButton } from 'components/Atoms/FormButton';
 import { ReplayInfoParser } from 'components/Pages/ReplaysPage/ReplayInfo/replayInfoParser';
-import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
-import { Outlet, useOutletContext, useSearchParams } from 'react-router-dom';
+import { Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const FormContainer = styled(Stack)(({ theme }) => ({
@@ -27,13 +26,24 @@ const FormContainer = styled(Stack)(({ theme }) => ({
 
 export const ReplayPage = () => {
   const context = useOutletContext();
-  const { sync, clear } = useValuesToQueryStringSync();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const params = useParams();
   const [replayCodeInput, setReplayCodeInput] = React.useState('');
   const [replayInfo, setReplayInfo] = React.useState({});
 
+  const openReplay = (replayCode) => {
+    navigate(Utils.getUrlWithPathParams([
+      { param: replayCode, pos: 3 },
+      { param: Constants.REPLAY_INFO_PAGE_PATH, pos: 4 }
+    ]), { replace: false });
+  };
+
+  const openClear = () => {
+    navigate('.');
+  }
+
   React.useEffect(() => {
-    const replayCodeParam = searchParams.get(Constants.PARAM_REPLAY_CODE);
+    const replayCodeParam = params.replayCode;
     const replayCode = parseReplayCode(replayCodeParam);
     if (replayCode) {
       setReplayCodeInput(replayCode);
@@ -52,7 +62,7 @@ export const ReplayPage = () => {
       // if no code in the URL - clear to keep states consistent
       setReplayInfo({});
     }
-  }, [searchParams, context]);
+  }, [params.replayCode, context]);
 
   const isSuccess = replayInfo && replayInfo.error === 0;
   return (
@@ -64,12 +74,10 @@ export const ReplayPage = () => {
           const replayCode = parseReplayCode(replayCodeInput);
           if (replayCode) {
             setReplayCodeInput(replayCode);
-            const map = new Map();
-            map.set(Constants.PARAM_REPLAY_CODE, [replayCode]);
-            sync(map);
+            openReplay(replayCode);
           } else if (replayCodeInput) {
             setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
-            clear([Constants.PARAM_REPLAY_CODE]);
+            openClear();
           }
         }}
         onInputChange={(event) => setReplayCodeInput(event.target.value)}
