@@ -81,12 +81,12 @@ export const PlayerTable = ({ replayInfo }) => {
               const player = replayInfo.players[playerId];
               return (
                 <ColoredTableRow key={player.id} teamColor={team.color}>
-                  {/* Link */}
-                  <PlayerTableCell align="left" sx={{ width: '36px', height: '36px', py: 0.3, px: 0.4 }}>
+                  {/* Link - temporary hidden until implementation is ready*/}
+                  {false && <PlayerTableCell align="left" sx={{ width: '36px', height: '36px', py: 0.3, px: 0.4 }}>
                     <Button onClick={() => onPlayerInfo(player.id)} sx={{ p: 0.3, minWidth: '0px' }}>
                       <OpenInNewIcon />
                     </Button>
-                  </PlayerTableCell>
+                  </PlayerTableCell>}
                   {/* Color */}
                   <PlayerTableCell align="center" sx={{ width: '31px' }}>
                   {replayInfo.match.isMapGen && <Box sx={{
