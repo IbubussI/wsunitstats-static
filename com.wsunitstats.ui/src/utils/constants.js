@@ -35,8 +35,9 @@ export const RESOURCE_PAGE_PATH = 'resource'; // not used
 export const HOME_PAGE_PATH = 'home';
 export const ERROR_PAGE_PATH = 'error';
 export const MODS_PAGE_PATH = 'modding';
-export const REPLAYS_PAGE_PATH = 'replays';
-export const REPLAY_INFO_PAGE_PATH = 'replay';
+export const REPLAY_PAGE_PATH = 'replay';
+export const REPLAY_INFO_PAGE_PATH = 'info';
+export const REPLAY_PLAYER_INFO_PAGE_PATH = 'player';
 
 export const INITIAL_TAB = 'index';
 
@@ -54,6 +55,7 @@ export const RESEARCH_UPGRADES_TAB = 'upgrades';
 export const PARAM_LOCALE = ':locale';
 export const PARAM_GAME_ID = ':gameId';
 export const PARAM_TAB = ':tab';
+export const PARAM_PLAYER = ':player';
 export const PARAM_RESEARCH_IDS = 'researchIds';
 export const PARAM_NATIONS = 'nations';
 export const PARAM_UNIT_TAGS = 'unitTags';

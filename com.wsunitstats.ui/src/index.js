@@ -25,9 +25,11 @@ import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
 import { DocsPage } from 'components/Pages/DocsPage';
-import { ReplayInfoPage } from 'components/Pages/ReplayInfoPage';
+import { ReplayInfoPage } from 'components/Pages/ReplaysPage/ReplayInfo';
 import i18n from './i18n';
 import { ThemeContext } from 'themeContext';
+import { PlayerInfo } from 'components/Pages/ReplaysPage/PlayerInfo';
+import { ReplayPage } from 'components/Pages/ReplaysPage';
 
 const lightTheme = createTheme({
   palette: {
@@ -216,8 +218,19 @@ const router = createBrowserRouter([
         shouldRevalidate: () => false,
       },
       {
-        path: Constants.REPLAY_INFO_PAGE_PATH,
-        element: <ReplayInfoPage />
+        path: Constants.REPLAY_PAGE_PATH,
+        element: <ReplayPage />,
+        children: [
+          {
+            index: true,
+            path: Constants.REPLAY_INFO_PAGE_PATH,
+            element: <ReplayInfoPage />,
+          },
+          {
+            path: `${Constants.REPLAY_PLAYER_INFO_PAGE_PATH}/${Constants.PARAM_PLAYER}`,
+            element: <PlayerInfo />
+          },
+        ]
       },
       {
         path: Constants.UNIT_SELECTOR_PAGE_PATH,

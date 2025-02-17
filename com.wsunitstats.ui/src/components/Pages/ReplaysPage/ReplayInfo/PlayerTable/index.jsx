@@ -1,7 +1,9 @@
 import * as Utils from 'utils/utils';
+import * as Constants from 'utils/constants';
 import {
   alpha,
   Box,
+  Button,
   Paper,
   styled,
   Table,
@@ -10,11 +12,14 @@ import {
   TableContainer,
   Tooltip,
 } from '@mui/material';
-import { WinnerIcon } from 'components/Pages/ReplayInfoPage/svg';
+import { WinnerIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
 import { TagChip } from 'components/Atoms/TagChip';
 import { Image } from 'components/Atoms/Renderer';
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
+import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 const PlayerTableCell = styled(TableCell)(({ theme }) => ({
   borderColor: alpha(theme.palette.grey[700], 0.6),
@@ -58,6 +63,15 @@ const ColoredTableRow = styled(NoBottomBorderRow, {
 
 export const PlayerTable = ({ replayInfo }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const onPlayerInfo = React.useCallback((playerId) => {
+    navigate(Utils.getUrlWithPathParams([
+      { param: Constants.REPLAY_PLAYER_INFO_PAGE_PATH, pos: 3 },
+      { param: playerId, pos: 4 }
+    ]), { replace: false });
+  }, [navigate]);
+
   return (
     <TableContainer component={Paper} >
       <Table>
@@ -67,6 +81,12 @@ export const PlayerTable = ({ replayInfo }) => {
               const player = replayInfo.players[playerId];
               return (
                 <ColoredTableRow key={player.id} teamColor={team.color}>
+                  {/* Link */}
+                  <PlayerTableCell align="left" sx={{ width: '30px', p: 0 }}>
+                    <Button onClick={() => onPlayerInfo(player.id)} sx={{ p: 0.5, minWidth: '0px' }}>
+                      <OpenInNewIcon />
+                    </Button>
+                  </PlayerTableCell>
                   {/* Color */}
                   <PlayerTableCell align="center" sx={{ width: '31px' }}>
                   {replayInfo.match.isMapGen && <Box sx={{

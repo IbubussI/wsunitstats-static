@@ -14,7 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { NavLink, useNavigate, useParams } from 'react-router-dom';
 import { EntityPicker } from 'components/Header/EntityPicker';
-import { FormControl, FormControlLabel, FormGroup, FormLabel, Stack, useMediaQuery } from '@mui/material';
+import { FormControl, FormControlLabel, FormGroup, Stack, useMediaQuery } from '@mui/material';
 import { LocaleSelector } from './LocaleSelector';
 import { useTranslation } from 'react-i18next';
 import { ThemeSelector } from './ThemeSelector';
@@ -37,7 +37,7 @@ export const Header = ({ context }) => {
       name: t('headerModding')
     },
     {
-      path: Constants.REPLAY_INFO_PAGE_PATH,
+      path: Constants.REPLAY_PAGE_PATH,
       name: t('headerReplay')
     },
   ];
