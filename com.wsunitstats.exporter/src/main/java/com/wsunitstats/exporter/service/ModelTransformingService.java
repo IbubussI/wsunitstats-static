@@ -21,9 +21,9 @@ import com.wsunitstats.exporter.model.exported.submodel.research.UpgradeModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.BuffModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageWrapperModel;
+import com.wsunitstats.exporter.model.exported.submodel.weapon.ExternalDataModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.ProjectileModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
-import com.wsunitstats.exporter.model.GroundAttackDataWrapper;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ArmorJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildingJsonModel;
@@ -100,7 +100,7 @@ public interface ModelTransformingService {
 
     ConstructionModel transformConstruction(int id, BuildingJsonModel buildingSource);
 
-    GroundAttackDataWrapper transformGroundAttack(String attackGroundString);
+    ExternalDataModel transformExternalData(String attackGroundString);
 
     UpgradeModel transformUpgrade(int id, UpgradeJsonModel upgradeSource);
 

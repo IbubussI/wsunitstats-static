@@ -7,6 +7,7 @@ import com.wsunitstats.exporter.model.exported.submodel.ability.CreateEnvAbility
 import com.wsunitstats.exporter.model.exported.submodel.ability.CreateUnitAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.DamageAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.GenericAbility;
+import com.wsunitstats.exporter.model.exported.submodel.ability.ParatrooperModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.ResearchAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.TransformAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.WorkModel;
@@ -109,7 +110,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private GenericAbilityContainer mapContainer(UnitJsonModel unitJsonModel, Integer abilityId) {
         Constants.AbilityType abilityType = getAbilityType(unitJsonModel.getAbility().getAbilities().get(abilityId));
         switch (abilityType) {
-            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV -> {
+            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV, PARATROOPER -> {
                 GenericAbilityContainer workAbility = mapWorkAbility(unitJsonModel, abilityId);
                 workAbility.setContainerName(Constants.AbilityContainerType.WORK.getName());
                 workAbility.setContainerType(Constants.AbilityContainerType.WORK.getType());
@@ -178,6 +179,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
             case TRANSFORM -> genericAbility = mapTransformAbility(abilityJsonModel);
             case CREATE_ENV -> genericAbility = mapCreateEnvAbility(abilityJsonModel, unitJsonModel);
             case CREATE_UNIT -> genericAbility = mapCreateUnitAbility(abilityJsonModel);
+            case PARATROOPER -> genericAbility = mapParatrooperAbility(abilityJsonModel);
             default -> {
                 return null;
             }
@@ -266,6 +268,22 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         abilityModel.setEntityInfo(entityInfoModel);
         abilityModel.setCount(abilityJsonModel.getData().getCount());
         abilityModel.setLifeTime(Utils.intToDoubleShift(abilityJsonModel.getData().getLifeTime()));
+        return abilityModel;
+    }
+
+    private GenericAbility mapParatrooperAbility(AbilityJsonModel abilityJsonModel) {
+        ParatrooperModel abilityModel = new ParatrooperModel();
+        EntityInfoModel entityInfoModel = new EntityInfoModel();
+        String parametersString = abilityJsonModel.getData().getParameters();
+        Map<String, String> params = modelTransformingService.transformParameters(parametersString);
+        int entityId = Integer.parseInt(params.get("pType"));
+        String entityType = Constants.EntityType.UNIT.getName();
+        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
+        entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
+        entityInfoModel.setEntityNation(nationResolver.getUnitNation(entityId));
+        entityInfoModel.setEntityId(entityId);
+        abilityModel.setEntityInfo(entityInfoModel);
+        abilityModel.setCount(Integer.parseInt(params.get("pCount")));
         return abilityModel;
     }
 

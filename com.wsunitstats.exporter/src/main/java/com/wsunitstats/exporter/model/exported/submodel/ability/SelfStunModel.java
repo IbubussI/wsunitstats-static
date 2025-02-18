@@ -5,12 +5,11 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * ability related to unit dance (e.g. spearman bravado etc)
+ * used only for dance in the game
  */
-//@Entity(name = "ability_5")
 @Getter
 @Setter
 @ToString
-public class Type5AbilityModel extends GenericAbility {
+public class SelfStunModel extends GenericAbility {
     private Double duration;
 }

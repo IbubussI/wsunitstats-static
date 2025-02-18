@@ -38,5 +38,5 @@ public class UnitJsonModel {
     private Integer viewRange;
     private ZoneEventJsonModel zoneEvent;
     private Object paths;
+    private Integer lifeTime;
 }
-

@@ -109,9 +109,8 @@ const BorderLabel = ({ data }) => {
   return (
     <Box sx={{
       position: 'absolute',
-      top: '-19px',
       left: data.shift,
-      transform: 'translateX(-50%)'
+      transform: 'translateX(-50%) translateY(-50%)'
     }}>
       <IDRenderer data={data.value} />
     </Box>

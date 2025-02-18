@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
@@ -24,9 +25,9 @@ import com.wsunitstats.exporter.model.exported.submodel.research.UpgradeModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.BuffModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageWrapperModel;
+import com.wsunitstats.exporter.model.exported.submodel.weapon.ExternalDataModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.ProjectileModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
-import com.wsunitstats.exporter.model.GroundAttackDataWrapper;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ArmorJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildJsonModel;
@@ -63,9 +64,9 @@ import com.wsunitstats.exporter.service.TagResolver;
 import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Utils;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -75,18 +76,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
+@Slf4j
 @Service
 public class ModelTransformingServiceImpl implements ModelTransformingService {
-    private static final Logger LOG = LoggerFactory.getLogger(ModelTransformingServiceImpl.class);
-
-    private static final Pattern ATTACK_GROUND_PATTERN = Pattern.compile("\"groundAttack\":\\[([0-9]+),([0-9]+)]");
+    private static final Pattern ATTACK_GROUND_PATTERN = Pattern.compile("\"groundAttack\":\\{}");
     private static final int PROBABILITY_MAX = 100;
 
     @Autowired
@@ -119,7 +118,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         ArmorModel armorModel = new ArmorModel();
         armorModel.setValue(Utils.intToDoubleShift(armorEntryJsonModel.getObject()));
         Optional.ofNullable(armorEntryJsonModel.getProbability()).ifPresentOrElse(
-                armorModel::setProbability,
+                (p) -> armorModel.setProbability(Range.between(0, 100).fit(p)),
                 () -> {
                     if (probabilitiesSum == 0) {
                         armorModel.setProbability(PROBABILITY_MAX);
@@ -529,18 +528,14 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
-    public GroundAttackDataWrapper transformGroundAttack(String attackGroundString) {
-        GroundAttackDataWrapper result = new GroundAttackDataWrapper();
-        if (attackGroundString != null) {
-            Matcher matcher = ATTACK_GROUND_PATTERN.matcher(attackGroundString);
-            if (matcher.find()) {
-                // as for now only one weapon can have ground attack
-                result.setAttackGround(true);
-                result.setWeaponTypeDescriptor(Integer.parseInt(matcher.group(1)));
-                result.setWeaponId(Integer.parseInt(matcher.group(2)) - 1);
-            }
+    public ExternalDataModel transformExternalData(String externalDataString) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(externalDataString, ExternalDataModel.class);
+        } catch (Exception e) {
+            log.error("Can't parse attackGroundString");
         }
-        return result;
+        return new ExternalDataModel();
     }
 
     @Override

@@ -64,7 +64,8 @@ public class Constants {
         CREATE_ENV(3, "abilityCreateEnv"),
         SELF_BUFF(4, "abilitySelfBuff"),
         //SELF_STUN(5, "abilityDance"),
-        DAMAGE(6, "abilityDamage");
+        DAMAGE(6, "abilityDamage"),
+        PARATROOPER(7, "abilityParatrooper");
 
         private final int type;
         private final String name;

@@ -10,8 +10,8 @@ import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchUpgrade;
 import com.wsunitstats.exporter.model.exported.submodel.research.UpgradeModel;
+import com.wsunitstats.exporter.model.exported.submodel.weapon.ExternalDataModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
-import com.wsunitstats.exporter.model.GroundAttackDataWrapper;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
 import com.wsunitstats.exporter.model.json.gameplay.GameplayFileJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.AbilityWrapperJsonModel;
@@ -48,9 +48,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.wsunitstats.exporter.model.exported.submodel.weapon.ExternalDataModel.*;
 import static com.wsunitstats.exporter.utils.Constants.LIVESTOCK_LIMIT;
 import static com.wsunitstats.exporter.utils.Constants.STORAGE_MULTIPLIER_DEFAULT;
 import static com.wsunitstats.exporter.utils.Constants.STORAGE_MULTIPLIER_MODIFIER;
@@ -115,6 +117,7 @@ public class ModelBuilderImpl implements ModelBuilder {
             unit.setHeal(transformingService.transformHeal(unitJsonModel.getHeal()));
             unit.setSize(Utils.intToDoubleShift(unitJsonModel.getSize()));
             unit.setSupply(transformingService.transformSupply(unitJsonModel.getSupply()));
+            unit.setLifetime(Utils.intToDoubleShift(unitJsonModel.getLifeTime()));
             Integer storageMultiplier = unitJsonModel.getStorageMultiplier();
             if (storageMultiplier == null) {
                 unit.setStorageMultiplier((int) (STORAGE_MULTIPLIER_MODIFIER * STORAGE_MULTIPLIER_DEFAULT));
@@ -133,16 +136,16 @@ public class ModelBuilderImpl implements ModelBuilder {
                 unit.setRegenerationSpeed(Utils.intToDoubleTick(deathability.getRegeneration()));
                 unit.setThreat(deathability.getThreat());
                 unit.setReceiveFriendlyDamage(Utils.getInvertedBoolean(deathability.getReceiveFriendlyDamage()));
-                unit.setLifetime(Utils.intToDoubleShift(deathability.getLifeTime()));
                 unit.setHealth(Utils.intToDoubleShift(deathability.getHealth()));
             }
 
             AttackJsonModel attack = unitJsonModel.getAttack();
-            String externalData = unitTypeMap.get(id).getExternalData();
+            String externalDataString = unitTypeMap.get(id).getExternalData();
+            ExternalDataModel externalData = transformingService.transformExternalData(externalDataString);
             if (attack != null) {
                 Integer onDeathId = attack.getWeaponUseOnDeath();
-                unit.setWeapons(getWeaponsList(attack.getWeapons(), externalData, false, onDeathId));
-                unit.setTurrets(getTurretList(attack.getTurrets(), externalData));
+                unit.setWeapons(getWeaponsList(attack.getWeapons(), externalData.getGroundAttack(), false, -1, onDeathId));
+                unit.setTurrets(getTurretList(attack.getTurrets(), externalData.getGroundAttack()));
                 unit.setWeaponOnDeath(onDeathId);
             }
 
@@ -283,26 +286,28 @@ public class ModelBuilderImpl implements ModelBuilder {
     }
 
     private List<WeaponModel> getWeaponsList(List<WeaponJsonModel> weaponList,
-                                             String attackGroundString,
+                                             GroundAttack attackGround,
                                              boolean isTurret,
+                                             int turretId,
                                              Integer onDeathId) {
         List<WeaponModel> result = new ArrayList<>();
         if (weaponList != null) {
-            GroundAttackDataWrapper attackGroundData = transformingService.transformGroundAttack(attackGroundString);
             result = IntStream.range(0, weaponList.size())
-                    .mapToObj(index -> transformingService.transformWeapon(index, weaponList.get(index), getAttackGround(attackGroundData, isTurret, index), isTurret, onDeathId))
+                    .mapToObj(weaponId -> transformingService.transformWeapon(weaponId, weaponList.get(weaponId),
+                            getAttackGround(attackGround, isTurret, turretId, weaponId), isTurret, onDeathId))
                     .toList();
         }
         return result;
     }
 
     private List<TurretModel> getTurretList(List<TurretJsonModel> turretList,
-                                            String attackGroundString) {
+                                            GroundAttack attackGround) {
         return turretList == null ? new ArrayList<>() :
                 IntStream.range(0, turretList.size())
-                        .mapToObj(index -> {
-                            TurretJsonModel turret = turretList.get(index);
-                            return transformingService.transformTurret(index, turret, getWeaponsList(turret.getWeapons(), attackGroundString, true, null));
+                        .mapToObj(turretId -> {
+                            TurretJsonModel turret = turretList.get(turretId);
+                            return transformingService.transformTurret(turretId, turret, getWeaponsList(turret.getWeapons(),
+                                    attackGround, true, turretId, null));
                         })
                         .toList();
     }
@@ -314,13 +319,20 @@ public class ModelBuilderImpl implements ModelBuilder {
                         .toList();
     }
 
-    private boolean getAttackGround(GroundAttackDataWrapper attackGroundData, boolean isTurret, int weaponId) {
+    private boolean getAttackGround(GroundAttack groundAttack, boolean isTurret, int turretId, int weaponId) {
         boolean attackGround = false;
-        if (attackGroundData.isAttackGround() && attackGroundData.getWeaponId() == weaponId) {
-            // if 'current-weapon-type' corresponds 'attack-ground-weapon-type'
-            if ((!isTurret && attackGroundData.getWeaponTypeDescriptor() == 0) ||
-                (isTurret && attackGroundData.getWeaponTypeDescriptor() == 1)) {
-                attackGround = true;
+        if (groundAttack != null) {
+            if (isTurret) {
+                List<List<Integer>> turrets = groundAttack.getTurrets();
+                if (turrets != null) {
+                    Map<Integer, Integer> turretMap = turrets.stream().collect(Collectors.toMap(e -> e.get(0), e -> e.get(1)));
+                    attackGround = Objects.equals(turretMap.get(turretId), weaponId);
+                }
+            } else {
+                Integer weapon = groundAttack.getWeapon();
+                if (weapon != null) {
+                    attackGround = weaponId == weapon;
+                }
             }
         }
         return attackGround;

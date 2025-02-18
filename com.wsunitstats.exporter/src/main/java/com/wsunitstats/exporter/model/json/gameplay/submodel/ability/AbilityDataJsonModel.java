@@ -30,4 +30,7 @@ public class AbilityDataJsonModel extends DamageJsonModel {
     private Integer lifeTime;
     private Boolean mustBeSent;
     private Boolean sendStrict;
+
+    //paratroopers
+    private String parameters;
 }

@@ -57,14 +57,20 @@ export const CommonTable = ({ unit, overflowMinWidth }) => {
     <Stack spacing={0.5}>
       <DoubleColumnFrame childrenProps={[null, { overflow: 'auto', width: '100%' }]}>
         <Stack alignItems='center'>
-          <h3 style={{ marginBlockStart: '0.4em', marginBlockEnd: '0.65em', maxWidth: '150px', textAlign: 'center' }}>{t(unit.name)}</h3>
+          <h4 style={{
+            marginBlockStart: '0.4em',
+            marginBlockEnd: '0.65em',
+            maxWidth: '150px',
+            textAlign: 'center',
+            wordBreak: 'break-word'
+          }}>{t(unit.name)}</h4>
           <EntityImage image={unit.image} width='150px' height='150px'/>
           <Typography variant='body2' align='center' sx={{maxWidth: '150px'}}>
             {t(unit.description)}
           </Typography>
           {unit.armor?.length > 0 &&
             <>
-              <h3>{t('commonArmorTitle')}</h3>
+              <h4>{t('commonArmorTitle')}</h4>
               <ArmorChart
                 content={unit.armor}
                 colors={[

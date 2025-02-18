@@ -18,7 +18,6 @@ public class DeathabilityJsonModel {
     private List<Object> corpses;
     private List<Integer> healMeCost;
     private Integer health;
-    private Integer lifeTime;
     private Boolean receiveFriendlyDamage;
     private Integer regeneration;
     private Integer threat;

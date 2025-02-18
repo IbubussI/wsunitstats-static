@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.utils;
 
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,7 +182,9 @@ public class Utils {
 
             String nationName = convertToLocalizationTag(ir1);
             if (ir2 != null) {
-                nationName = nationName + "/" + convertToLocalizationTag(ir2);
+                // temporarily disabled double names because they both can't form
+                // a single localization key in the current approach
+                //nationName = nationName + "/" + convertToLocalizationTag(ir2);
             }
             result.add(nationName);
         }

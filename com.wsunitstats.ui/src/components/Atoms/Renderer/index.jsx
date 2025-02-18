@@ -195,7 +195,7 @@ export const HeaderChip = ({ data }) => {
   const theme = useTheme();
   const color = data.disabled ? 'error.main' : 'text.secondary';
   const textColor = data.disabled ? 'error.main' : 'text.primary';
-  const borderColor = data.disabled ? 'error.main' : 'rgb(85, 120, 218)';
+  const borderColor = data.disabled ? 'error.main' : 'primary.dark';
   const isLabel = data.label || (data.disabledLabel && data.disabled);
   return (
     <Box sx={{
@@ -208,7 +208,6 @@ export const HeaderChip = ({ data }) => {
       fontWeight: '700',
       height: '32px',
       backgroundColor: theme.palette.background.paper,
-
     }}>
       <Tooltip title={data.tooltip}>
         <Avatar sx={{
