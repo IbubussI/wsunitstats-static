@@ -74,4 +74,4 @@ export const DeathAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
         rowHeight='max-content' />
     </DoubleColumnFrame>
   );
-}
+};

@@ -76,8 +76,7 @@ export const InfoButtonPopper = ({ children, label }) => {
         sx={{
           width: '100%',
           textTransform: 'none',
-          padding: '5px 24px',
-          '&:hover': { backgroundColor: 'rgb(195, 225, 255)' },
+          padding: '5px 24px'
         }}>
         {label}
         <Icon sx={{ position: "absolute", bottom: 5, right: 5 }} />
@@ -92,20 +91,11 @@ export const InfoButtonPopper = ({ children, label }) => {
   );
 }
 
-const InteractiveTagChip = styled(TagChip)(() => ({
-  '&:hover': {
-    backgroundColor: 'rgb(139, 195, 255)'
-  },
-  '&:hover span': {
-    color: 'rgb(1, 113, 212)'
-  },
-}));
-
 export const PopperTag = ({ tag, placement }) => {
   const { t } = useTranslation();
   const Tag = ({ onClick }) => {
     return (
-      <InteractiveTagChip onClick={onClick} label={t(tag.name)}/>
+      <TagChip onClick={onClick} label={t(tag.name)} color='primary' />
     );
   }
 
