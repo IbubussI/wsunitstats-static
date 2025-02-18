@@ -306,7 +306,7 @@ export const getBuffData = (buff, locale, t) => {
     },
     content: buff && [
       {
-        label: t('buffLabel'),
+        label: t('buffCell'),
         renderer: EntityInfo,
         value: buff.entityInfo && {
           values: [
