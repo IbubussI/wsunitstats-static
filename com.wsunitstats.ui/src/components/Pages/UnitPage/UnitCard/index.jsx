@@ -17,7 +17,7 @@ export const UnitCard = ({ option, onClick }) => {
       imageSize={CARD_IMAGE_SIZE}
       onClick={onClick}>
       <Typography variant="body2" color="text.secondary">
-        {t(option.nation)}
+        {Utils.localizeNation(t, option.nation)}
       </Typography>
     </ActionAreaCard>
   );

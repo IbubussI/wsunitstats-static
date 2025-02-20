@@ -48,6 +48,7 @@
   "damageTypeBase": "Базовый",
   "genericUnitTag": "Юнит",
   "gameID": "Game ID",
+  "nationNameUnknown": "Неизвестно",
   "disabledHeaderChip": "отключено",
   "tagGroupUnitSearch": "Поисковые теги юнитов",
   "tagGroupUnit": "Теги юнитов",

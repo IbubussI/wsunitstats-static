@@ -2,11 +2,11 @@ import * as React from 'react';
 import { CheckBox, CheckBoxOutlineBlank } from "@mui/icons-material";
 import { Autocomplete, Checkbox, Chip, Stack, TextField, Typography, autocompleteClasses, styled } from "@mui/material";
 import { Image } from "components/Atoms/Renderer";
-import { useTranslation } from 'react-i18next';
 
 const StyledAutocomplete = styled(Autocomplete)(() => ({
-  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}`]: {
-    cursor: 'pointer'
+  [`& .${autocompleteClasses.input}`]: {
+    cursor: 'pointer',
+    minWidth: '0 !important'
   }
 }));
 
@@ -18,9 +18,9 @@ export const CheckmarksSelect = (props) => {
     onChange,
     limitTags,
     getSecondaryText,
+    localizeFunc,
     ...forwardedProps
   } = props;
-  const { t } = useTranslation();
 
   return (
     <StyledAutocomplete
@@ -30,7 +30,7 @@ export const CheckmarksSelect = (props) => {
       onChange={(_, newValues) => onChange(newValues)}
       options={options}
       value={values}
-      getOptionLabel={(option) => t(option.name)}
+      getOptionLabel={(option) => localizeFunc(option.name)}
       renderOption={(props, option, { selected }) => {
         return (
           <li {...props}>
@@ -49,7 +49,7 @@ export const CheckmarksSelect = (props) => {
                 </Stack>}
               <Stack>
                 <Typography variant='body1' color='text.primary'>
-                  {t(option.name)}
+                  {localizeFunc(option.name)}
                 </Typography>
                 {getSecondaryText &&
                   <Typography variant='body2' color='text.secondary'>
@@ -76,7 +76,7 @@ export const CheckmarksSelect = (props) => {
               <Chip
                 {...getTagProps({ index })}
                 key={index}
-                label={t(option.name)}
+                label={localizeFunc(option.name)}
               />
             ))}
 

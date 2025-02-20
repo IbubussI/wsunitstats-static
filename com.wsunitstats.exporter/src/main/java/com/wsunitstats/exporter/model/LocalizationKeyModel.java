@@ -15,7 +15,7 @@ import java.util.Map;
 @Setter
 @ToString
 public class LocalizationKeyModel {
-    private List<String> nationNames;
+    private List<NationName> nationNames;
     private List<String> researchNames;
     private List<String> researchTexts;
     private List<String> unitNames;

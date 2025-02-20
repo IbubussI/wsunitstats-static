@@ -48,6 +48,7 @@
   "damageTypeBase": "Base",
   "genericUnitTag": "Unit",
   "gameID": "Game ID",
+  "nationNameUnknown": "Unknown",
   "disabledHeaderChip": "disabled",
   "tagGroupUnitSearch": "Unit search tags",
   "tagGroupUnit": "Unit tags",

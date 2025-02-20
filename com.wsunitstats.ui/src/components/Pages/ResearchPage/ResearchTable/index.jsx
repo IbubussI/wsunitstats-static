@@ -44,7 +44,7 @@ export const ResearchTable = ({ research }) => {
               values: [
                 {
                   primary: t(upgrade.unit.entityName),
-                  secondary: upgrade.unit.entityNation ? t(upgrade.unit.entityNation.name) + ', ID: ' + upgrade.unit.entityId : 'ID: ' + upgrade.unit.entityId,
+                  secondary: upgrade.unit.entityNation ? Utils.localizeNation(t, upgrade.unit.entityNation.name) : 'ID: ' + upgrade.unit.entityId,
                   image: {
                     path: upgrade.unit.entityImage,
                     width: 50,

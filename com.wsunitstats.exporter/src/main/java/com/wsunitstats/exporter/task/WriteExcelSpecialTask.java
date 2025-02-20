@@ -325,7 +325,7 @@ public class WriteExcelSpecialTask implements ExecutionTask {
             int counter = 0;
 
             if (unitModel.getNation() != null) {
-                addStringCell(row, counter, unitModel.getNation().getName(), localizationModel);
+                addStringCell(row, counter, unitModel.getNation().getName().getIr1(), localizationModel);
             }
             counter++;
 

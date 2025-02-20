@@ -132,7 +132,7 @@ export const fetchJson = (fetchURI, successCallback, failCallback) => {
     })
     .then(successCallback)
     .catch(failCallback ? failCallback : console.log);
-}
+};
 
 /**
  * Replaces found localization tokens with values provided in localeData
@@ -177,8 +177,17 @@ export const localize = (target, localeData) => {
 
 export const formatDuration = (durationMillis) => {
   return dayjs.duration(durationMillis).format('HH:mm:ss').replace(/^(00:00:)|^(00:)|^(0)/, "");
-}
+};
 
 export const formatTimeLong = (timeSec) => {
   return dayjs.unix(timeSec).format('DD/MM/YYYY HH:mm:ss');
-}
+};
+
+export const localizeNation = (t, nationName) => {
+  if (nationName) {
+    const ir1 = nationName.ir1;
+    const ir2 = nationName.ir2;
+    return ir2 ? `${t(ir1)}/${t(ir2)}` : t(ir1);
+  }
+  return "";
+};

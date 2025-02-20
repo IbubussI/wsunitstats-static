@@ -179,7 +179,7 @@ export class ReplayInfoParser {
         }
         player.lastAge = researchResult.lastAgeResearch
           ? { name: researchResult.lastAgeResearch.researchContext.name, image: researchResult.lastAgeResearch.researchContext.image }
-          : { name: this.#context.units[0].nation, image: this.#context.units[0].image };
+          : { name: this.#context.units[0].nation.ir1, image: this.#context.units[0].image };
         player.isWonderWin = false;
       }
     });

@@ -556,6 +556,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             unitInfo.setEntityId(unitId);
             unitInfo.setEntityName(localization.getUnitNames().get(unitId));
             unitInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UNIT.getName(), unitId));
+            unitInfo.setEntityNation(nationResolver.getUnitNation(unitId));
             upgradeModel.setUnit(unitInfo);
         }
 

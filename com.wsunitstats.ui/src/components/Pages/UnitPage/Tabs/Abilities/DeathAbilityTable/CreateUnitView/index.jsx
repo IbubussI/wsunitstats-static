@@ -7,7 +7,6 @@ import { useParams } from "react-router-dom";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
 import { ClassicTable } from "components/Layout/ClassicTable";
-import { Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 const ABILITY_COLUMNS = 1;
@@ -27,7 +26,7 @@ export const CreateUnitView = ({ ability, overflowMinWidth }) => {
           values: [
             ability.entityInfo && {
               primary: t(ability.entityInfo.entityName),
-              secondary: ability.entityInfo.entityNation && t(ability.entityInfo.entityNation.name),
+              secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
               image: {
                 path: ability.entityInfo.entityImage,
                 width: 35,

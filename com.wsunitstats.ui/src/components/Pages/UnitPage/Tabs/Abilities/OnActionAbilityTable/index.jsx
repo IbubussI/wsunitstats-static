@@ -29,7 +29,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
           values: [
             ability.entityInfo && {
               primary: t(ability.entityInfo.entityName),
-              secondary: ability.entityInfo.entityNation && t(ability.entityInfo.entityNation.name),
+              secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
               image: {
                 path: ability.entityInfo.entityImage,
                 width: 35,

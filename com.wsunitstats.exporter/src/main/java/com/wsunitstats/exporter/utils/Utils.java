@@ -1,6 +1,6 @@
 package com.wsunitstats.exporter.utils;
 
-import org.apache.commons.lang3.Range;
+import com.wsunitstats.exporter.model.NationName;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,8 +170,8 @@ public class Utils {
         throw new IllegalStateException("Localization Tag expected");
     }
 
-    public static List<String> convertToNationNames(List<String> rawNationNames) {
-        List<String> result = new ArrayList<>();
+    public static List<NationName> convertToNationNames(List<String> rawNationNames) {
+        List<NationName> result = new ArrayList<>();
         for (int i = 0; i < rawNationNames.size(); ++i) {
             String ir1 = rawNationNames.get(i);
             String ir2 = null;
@@ -180,11 +180,10 @@ public class Utils {
                 ir2 = rawNationNames.get(i);
             }
 
-            String nationName = convertToLocalizationTag(ir1);
+            NationName nationName = new NationName();
+            nationName.setIr1(convertToLocalizationTag(ir1));
             if (ir2 != null) {
-                // temporarily disabled double names because they both can't form
-                // a single localization key in the current approach
-                //nationName = nationName + "/" + convertToLocalizationTag(ir2);
+                nationName.setIr2(convertToLocalizationTag(ir2));
             }
             result.add(nationName);
         }

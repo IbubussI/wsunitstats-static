@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported.option;
 
+import com.wsunitstats.exporter.model.NationName;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -10,7 +11,7 @@ import java.util.Objects;
 @Setter
 @ToString
 public class NationOption implements Comparable<NationOption> {
-    private String name;
+    private NationName name;
     private int gameId;
 
     @Override

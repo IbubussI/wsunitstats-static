@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
+import * as Utils from 'utils/utils';
 import { Box, styled } from "@mui/material";
 import { CheckmarksSelect } from 'components/Atoms/CheckmarksSelect';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
@@ -42,29 +43,32 @@ export const UnitFilters = ({ filterOptions }) => {
   return (
     <FilterPanel>
       <CheckmarksSelect
-        sx={{ width: '300px' }}
+        sx={{ width: '350px' }}
         label={t('filtersUnitTags')}
         values={unitTagOptionsController.values}
         options={unitTagOptionsController.options}
         onChange={unitTagOptionsController.setValues}
         limitTags={1}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
+        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
+        localizeFunc={t} />
       <CheckmarksSelect
-        sx={{ width: '300px' }}
+        sx={{ width: '350px' }}
         label={t('filtersSearchTags')}
         values={searchTagOptionsController.values}
         options={searchTagOptionsController.options}
         onChange={searchTagOptionsController.setValues}
         limitTags={1}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
+        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
+        localizeFunc={t} />
       <CheckmarksSelect
-        sx={{ width: '300px' }}
+        sx={{ width: '350px' }}
         label={t('filtersNations')}
         values={nationOptionsController.values}
         options={nationOptionsController.options}
         onChange={nationOptionsController.setValues}
         limitTags={1}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
+        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
+        localizeFunc={(key) => Utils.localizeNation(t, key)} />
       <FilterButtonGroup>
         <FormButton
           onClick={() => {

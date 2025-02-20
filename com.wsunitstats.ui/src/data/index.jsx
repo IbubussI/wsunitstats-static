@@ -19,7 +19,7 @@ export const getRequirementsData = (requirements, locale, t) => {
           values: [
             {
               primary: t(unit.unitName),
-              secondary: t(unit.unitNation?.name),
+              secondary: unit.unitNation && Utils.localizeNation(t, unit.unitNation.name),
               image: {
                 path: unit.unitImage,
                 width: 35,

@@ -91,7 +91,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
     },
-  ].filter(element => element.childData.value);
+  ].filter(element => element.childData.value != null);
 
   const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, locale, t);
 

@@ -1,6 +1,7 @@
 package com.wsunitstats.exporter.model.exported.option;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.wsunitstats.exporter.model.NationName;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,7 +12,7 @@ import java.util.List;
 @Setter
 @ToString
 public class UnitOption {
-    private String nation;
+    private NationName nation;
     private String name;
     private String image;
     private int gameId;

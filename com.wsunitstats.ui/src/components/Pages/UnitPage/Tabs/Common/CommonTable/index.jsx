@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as Utils from "utils/utils";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from 'components/Layout/FlexibleTable';
 import { Stack, Typography } from '@mui/material';
 import { DoubleColumnFrame } from 'components/Layout/DoubleColumnFrame';
@@ -15,7 +16,7 @@ export const CommonTable = ({ unit, overflowMinWidth }) => {
   const { t } = useTranslation();
   const commonData = [
     createRowData(t('gameID'), unit.gameId),
-    createRowData(t('commonNationCell'), t(unit.nation.name)),
+    createRowData(t('commonNationCell'), Utils.localizeNation(t, unit.nation.name)),
     createRowData(t('commonHealthCell'), unit.health),
     createRowData(t('commonViewRangeCell'), unit.viewRange),
     createRowData(t('commonSizeCell'), unit.size),

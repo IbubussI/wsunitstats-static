@@ -58,7 +58,7 @@ export const ReplayPage = () => {
       );
     } else if (replayCodeParam) {
       setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
-    } else {
+    } else if (replayInfo?.error === 0) {
       // if no code in the URL - clear to keep states consistent
       setReplayInfo({});
     }
@@ -71,7 +71,7 @@ export const ReplayPage = () => {
         onSubmit={(event) => {
           // prevent page reload
           event.preventDefault();
-          const replayCode = parseReplayCode(replayCodeInput);
+          const replayCode = parseReplayCode(replayCodeInput.trim());
           if (replayCode) {
             setReplayCodeInput(replayCode);
             openReplay(replayCode);

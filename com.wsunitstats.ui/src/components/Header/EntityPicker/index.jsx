@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as Constants from 'utils/constants';
+import * as Utils from 'utils/utils';
 import parse from 'autosuggest-highlight/parse';
 import match from 'autosuggest-highlight/match';
 import SearchIcon from '@mui/icons-material/Search';
@@ -135,7 +136,7 @@ export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
         renderOption={(props, option) => {
           const matches = match(t(option.name), inputValue, { insideWords: true });
           const parts = parse(t(option.name), matches);
-          const secondary = option.nation ? `${t(option.nation)}, ID: ${option.gameId}` : `ID: ${option.gameId}`;
+          const secondary = option.nation ? `${Utils.localizeNation(t, option.nation)}, ID: ${option.gameId}` : `ID: ${option.gameId}`;
           return (
             <Box component='li' {...props} key={option.gameId}>
               <Grid container alignItems="center">
