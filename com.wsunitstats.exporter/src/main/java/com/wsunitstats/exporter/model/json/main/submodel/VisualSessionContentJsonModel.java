@@ -35,4 +35,5 @@ public class VisualSessionContentJsonModel {
     @JsonDeserialize(using = TextureJsonModelDeserializer.class)
     @JsonSerialize(using = IndexedArrayDataModelSerializer.class)
     private Map<Integer, TextureJsonModel> textures;
+    private Object skeletons;
 }

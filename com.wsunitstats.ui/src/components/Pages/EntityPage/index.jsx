@@ -1,6 +1,5 @@
 import * as React from 'react';
-import * as Utils from 'utils/utils';
-import { Navigate, Outlet, useLoaderData, useOutletContext, useParams } from 'react-router-dom';
+import { Navigate, Outlet, useLoaderData, useParams } from 'react-router-dom';
 import { Box, styled } from '@mui/material';
 import { useResearches } from 'components/Hooks/useResearches';
 

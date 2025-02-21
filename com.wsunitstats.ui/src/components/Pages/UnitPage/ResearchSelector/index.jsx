@@ -24,6 +24,7 @@ export const ResearchSelector = ({ researches }) => {
         limitTags={3}
         getSecondaryText={(option) => 'ID: ' + option.gameId}
         isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
+        localizeFunc={t}
       />
       <FormButton
         onClick={() => {
