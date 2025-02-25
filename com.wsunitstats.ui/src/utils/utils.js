@@ -10,14 +10,14 @@ export const resolveImage = (name) => {
   return `/files/images/${name}`;
 };
 
-export const makeEntityLink = (link) => {
+export const makeEntityLink = (locale, link) => {
   if (link.path === Constants.NO_LINK_INDICATOR) {
     return Constants.NO_LINK_INDICATOR;
   }
   if (link.id === undefined) {
-    return `/${link.locale}/${link.path}`;
+    return `/${locale}/${link.path}`;
   }
-  return `/${link.locale}/${link.path}/${link.id}/${Constants.INITIAL_TAB}`;
+  return `/${locale}/${link.path}/${link.id}/${Constants.INITIAL_TAB}`;
 };
 
 /**
@@ -124,10 +124,10 @@ export const fetchJson = (fetchURI, successCallback, failCallback) => {
         if (response.ok) {
           return response.json();
         } else {
-          return response.json().then((json) => Promise.reject('Received response is not sucesseful:' + json));
+          return response.json().then((json) => Promise.reject('Received response is not sucesseful: ' + json));
         }
       } else {
-        return response.text().then((text) => Promise.reject('Received response is not JSON type:' + text));
+        return response.text().then((text) => Promise.reject('Received response is not JSON type: ' + text));
       }
     })
     .then(successCallback)

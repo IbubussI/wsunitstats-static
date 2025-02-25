@@ -10,10 +10,11 @@ import { GatheringTab } from 'components/Pages/UnitPage/Tabs/Gathering';
 import { HealTab } from 'components/Pages/UnitPage/Tabs/Heal';
 import { AirplaneTab } from 'components/Pages/UnitPage/Tabs/Airplane';
 import { SubmarineTab } from 'components/Pages/UnitPage/Tabs/Submarine';
-import { TabsUnitWrapper } from 'components/Pages/UnitPage/TabsUnitWrapper';
 import { EntityTabsView } from 'components/Pages/EntityPage/EntityTabsView';
 import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Box } from '@mui/material';
+import { ResearchSelector } from "components/Pages/UnitPage/ResearchSelector";
 
 export const UnitPage = () => {
   const { t } = useTranslation();
@@ -75,7 +76,13 @@ export const UnitPage = () => {
     },
   ].filter(element => element.isShow);
 
+  const researches = unit.applicableResearches;
   return (
-    <EntityTabsView entity={unit} tabsData={tabsData} tabsView={TabsUnitWrapper} />
+    <>
+      {researches && <Box display="flex" justifyContent="center" width="100%">
+        <ResearchSelector researches={researches} />
+      </Box>}
+      <EntityTabsView entity={unit} tabsData={tabsData} />
+    </>
   );
 }

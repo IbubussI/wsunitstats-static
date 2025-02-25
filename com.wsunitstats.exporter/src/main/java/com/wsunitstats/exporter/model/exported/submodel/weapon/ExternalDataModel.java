@@ -9,6 +9,8 @@ import java.util.List;
 @Setter
 public class ExternalDataModel {
     private GroundAttack groundAttack;
+    private Object work;
+    private Object disableMindButton;
 
     @Getter
     @Setter

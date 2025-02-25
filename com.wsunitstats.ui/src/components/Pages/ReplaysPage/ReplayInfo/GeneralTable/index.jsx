@@ -8,14 +8,8 @@ import {
   TableCell,
   TableContainer
 } from "@mui/material";
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import advancedFormat from 'dayjs/plugin/advancedFormat';
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
-
-dayjs.extend(duration);
-dayjs.extend(advancedFormat);
 
 const GeneralTableCell = styled(TableCell)(({ theme }) => ({
   fontSize: theme.typography.body2.fontSize,
@@ -48,7 +42,7 @@ export const GeneralTable = ({ replayInfo }) => {
   ];
 
   return (
-    <Stack direction="row" sx={{ gap: 2, paddingTop: 1, paddingBottom: 1 }}>
+    <Stack direction="row" gap={2} sx={{ py: 1 }}>
       <TableContainer component={Paper}>
         <Table>
           <TableBody>

@@ -2,7 +2,6 @@ import * as Utils from "utils/utils";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 import { EntityInfo, HeaderChip } from "components/Atoms/Renderer";
-import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const BUILD_COLUMNS = 1;
@@ -11,7 +10,6 @@ const FLEX_TABLE_LEFT_WIDTH = '35%';
 
 export const ConstructionTable = ({ construction, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
 
   const constructionData = [
     {
@@ -19,24 +17,19 @@ export const ConstructionTable = ({ construction, overflowMinWidth }) => {
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: t('abilitiesTargetCell'),
-        value: {
-          values: [
-            construction.entityInfo && {
-              primary: t(construction.entityInfo.entityName),
-              secondary: construction.entityInfo.entityNation && Utils.localizeNation(t, construction.entityInfo.entityNation.name),
-              image: {
-                path: construction.entityInfo.entityImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: construction.entityInfo.entityId,
-                locale: locale,
-                path: Utils.getEntityRoute('unit')
-              },
-              overflow: true
-            },
-          ].filter(element => element),
+        value: construction.entityInfo && {
+          primary: t(construction.entityInfo.entityName),
+          secondary: construction.entityInfo.entityNation && Utils.localizeNation(t, construction.entityInfo.entityNation.name),
+          image: {
+            path: construction.entityInfo.entityImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: construction.entityInfo.entityId,
+            path: Utils.getEntityRoute('unit')
+          },
+          overflow: true
         },
         valueRenderer: EntityInfo,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -63,7 +56,7 @@ export const ConstructionTable = ({ construction, overflowMinWidth }) => {
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
     },
-  ].filter(element => element.childData.value);
+  ].filter(element => element.childData.value != null);
 
   const labelData = {
     value: {

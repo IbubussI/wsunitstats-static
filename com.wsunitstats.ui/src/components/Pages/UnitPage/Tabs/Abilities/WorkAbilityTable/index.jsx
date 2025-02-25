@@ -4,7 +4,6 @@ import * as Data from "data";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 import { EntityInfo, HeaderChip } from 'components/Atoms/Renderer';
 import { DoubleColumnTable } from "components/Layout/DoubleColumnTable";
-import { useParams } from "react-router-dom";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
 import { ClassicTable } from "components/Layout/ClassicTable";
@@ -17,7 +16,6 @@ const FLEX_TABLE_LEFT_WIDTH = '33%';
 
 export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
   const ability = abilityContainer.ability;
   const work = abilityContainer.work;
   const abilityData = [
@@ -26,24 +24,19 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: t('abilitiesTargetCell'),
-        value: {
-          values: [
-            ability.entityInfo && {
-              primary: t(ability.entityInfo.entityName),
-              secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
-              image: {
-                path: ability.entityInfo.entityImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: ability.entityInfo.entityId,
-                locale: locale,
-                path: Utils.getAbilityRoute(ability.abilityType)
-              },
-              overflow: true
-            },
-          ].filter(element => element),
+        value: ability.entityInfo && {
+          primary: t(ability.entityInfo.entityName),
+          secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
+          image: {
+            path: ability.entityInfo.entityImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: ability.entityInfo.entityId,
+            path: Utils.getAbilityRoute(ability.abilityType)
+          },
+          overflow: true
         },
         valueRenderer: EntityInfo,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -120,9 +113,9 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
     },
-  ].filter(x => (x.childData.value || x.childData.value === 0) && (!x.childData.value.values || x.childData.value.values.length > 0));
+  ].filter(x => x.childData.value != null);
 
-  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, locale, t);
+  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, t);
 
   const costTableData = {
     label: t('workAbilityCostLabel'),

@@ -530,8 +530,10 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     @Override
     public ExternalDataModel transformExternalData(String externalDataString) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(externalDataString, ExternalDataModel.class);
+            if (externalDataString != null) {
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(externalDataString, ExternalDataModel.class);
+            }
         } catch (Exception e) {
             log.error("Can't parse attackGroundString");
         }

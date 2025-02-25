@@ -17,9 +17,12 @@ import { TagChip } from 'components/Atoms/TagChip';
 import { Image } from 'components/Atoms/Renderer';
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import React from 'react';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { useContext } from 'react';
+import { GameDataContext } from 'gameDataContext';
+import { ColorIndicator } from 'components/Atoms/ColorIndicator';
 
 const PlayerTableCell = styled(TableCell)(({ theme }) => ({
   borderColor: alpha(theme.palette.grey[700], 0.6),
@@ -63,14 +66,7 @@ const ColoredTableRow = styled(NoBottomBorderRow, {
 
 export const PlayerTable = ({ replayInfo }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  const onPlayerInfo = React.useCallback((playerId) => {
-    navigate(Utils.getUrlWithPathParams([
-      { param: Constants.REPLAY_PLAYER_INFO_PAGE_PATH, pos: 4 },
-      { param: playerId, pos: 5 }
-    ]), { replace: false });
-  }, [navigate]);
+  const gameContext = useContext(GameDataContext);
 
   return (
     <TableContainer component={Paper} >
@@ -79,22 +75,26 @@ export const PlayerTable = ({ replayInfo }) => {
           {replayInfo.teams.filter(team => team.isPlayerTeam).map((team) => {
             return team.players.map((playerId) => {
               const player = replayInfo.players[playerId];
+              const lastAgeResearch = player.lastAgeResearch
+                ? { name: gameContext.researches[player.lastAgeResearch].name, image: gameContext.researches[player.lastAgeResearch].image }
+                : { name: gameContext.units[0].nation.ir1, image: gameContext.units[0].image };
               return (
                 <ColoredTableRow key={player.id} teamColor={team.color}>
-                  {/* Link - temporary hidden until implementation is ready*/}
-                  {false && <PlayerTableCell align="left" sx={{ width: '36px', height: '36px', py: 0.3, px: 0.4 }}>
-                    <Button onClick={() => onPlayerInfo(player.id)} sx={{ p: 0.3, minWidth: '0px' }}>
+                  {/* Link */}
+                  {<PlayerTableCell align="left" sx={{ width: '36px', height: '36px', py: 0.3, px: 0.4 }}>
+                    <Button component={Link} to={Utils.getUrlWithPathParams([
+                      { param: Constants.REPLAY_PLAYER_INFO_PAGE_PATH, pos: 4 },
+                      { param: player.id, pos: 5 }
+                    ])} sx={{ p: 0.3, minWidth: '0px' }}>
                       <OpenInNewIcon />
                     </Button>
                   </PlayerTableCell>}
+
                   {/* Color */}
                   <PlayerTableCell align="center" sx={{ width: '31px' }}>
-                  {replayInfo.match.isMapGen && <Box sx={{
-                      backgroundColor: player.color,
+                  {replayInfo.match.isMapGen && <ColorIndicator color={player.color} sx={{
                       height: '18px',
-                      width: '18px',
-                      borderRadius: '15%',
-                      boxShadow: '0 0 3px #0000008a'
+                      width: '18px'
                     }} />}
                   </PlayerTableCell>
 
@@ -122,8 +122,8 @@ export const PlayerTable = ({ replayInfo }) => {
                     paddingTop: 0,
                     paddingBottom: 0
                   }}>
-                    {player.lastAge &&
-                      <Tooltip title={t(player.lastAge.name)}
+                    {player.researchAvailable &&
+                      <Tooltip title={t(lastAgeResearch.name)}
                         arrow
                         placement="right"
                         slotProps={{
@@ -138,7 +138,7 @@ export const PlayerTable = ({ replayInfo }) => {
                             ],
                           },
                         }}>
-                        <Image path={player.lastAge.image}
+                        <Image path={lastAgeResearch.image}
                           width={25}
                           height={25} />
                       </Tooltip>}

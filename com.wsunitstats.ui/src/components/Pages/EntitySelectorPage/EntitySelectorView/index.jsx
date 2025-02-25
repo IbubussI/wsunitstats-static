@@ -3,7 +3,6 @@ import { styled, useTheme } from '@mui/material/styles';
 import Drawer from '@mui/material/Drawer';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { Button, Grid, Toolbar, Typography, Container } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroller';
 import { useTranslation } from 'react-i18next';
 
@@ -21,7 +20,6 @@ const FlexFilterDrawer = styled(Drawer)(({ theme }) => ({
 export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, options, selectorContext, viewSize }) => {
   const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
-  const navigate = useNavigate();
   const theme = useTheme();
   const [loadedOptions, setLoadedOptions] = React.useState([]);
   const [hasMore, setHasMore] = React.useState(true);
@@ -60,12 +58,6 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
     open ? setOpen(false) : setOpen(true);
   };
 
-  const onSelect = (newGameId) => {
-    if (newGameId !== null) {
-      navigate(getEntityPath(newGameId));
-    }
-  };
-
   return (
     <Container maxWidth='xl'>
       {Filters && <FlexFilterDrawer
@@ -98,7 +90,7 @@ export const EntitySelectorView = ({ title, Card, getEntityPath, Filters, option
           <Grid container spacing={4}>
             {loadedOptions.map((option) =>
               <Grid key={option.gameId} item sx={{ display: 'flex' }}>
-                <Card option={option} onClick={() => onSelect(option.gameId)} />
+                <Card option={option} link={getEntityPath(option.gameId)} />
               </Grid>
             )}
           </Grid>

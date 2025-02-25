@@ -1,10 +1,10 @@
 import * as Utils from "utils/utils";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
-import { EntityInfo, HeaderChip, TransformInfo } from "components/Atoms/Renderer";
-import { useParams } from "react-router-dom";
+import { EntityInfo, HeaderChip } from "components/Atoms/Renderer";
 import { TagBox } from "components/Atoms/TagBox";
 import { useTranslation } from "react-i18next";
+import { Box, Stack } from "@mui/material";
 
 const GATHER_COLUMNS = 2;
 const GATHER_ROWS = 4;
@@ -13,47 +13,6 @@ const FLEX_TABLE_LEFT_WIDTH = '55%';
 
 export const GatheringTable = ({ gather, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
-
-  const transformData = {
-    from: {
-      direction: 'column',
-      values: gather.envTags.map((envTag) => {
-        return ({
-          primary: t(envTag.envName),
-          image: {
-            path: envTag.envImage,
-            width: 35,
-            height: 35,
-          },
-          link: {
-            id: envTag.envId,
-            locale: locale,
-            path: Utils.getEntityRoute('env')
-          },
-          overflow: true
-        });
-      }),
-    },
-    to: {
-      values: [{
-        primary: t(gather.resource.resourceName),
-        image: {
-          path: gather.resource.image,
-          width: 35,
-          height: 35,
-        },
-        link: {
-          id: gather.resource.resourceId,
-          locale: locale,
-          path: Utils.getEntityRoute('resource')
-        },
-        overflow: true
-      }],
-    },
-    fromRenderer: EntityInfo,
-    toRenderer: EntityInfo,
-  }
 
   const gatherData = [
     {
@@ -149,7 +108,7 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
 
   return (
     <DoubleColumnFrame childrenProps={[{ paddingTop: '10px' }, { width: '100%' }]} borderLabel={labelData} column>
-      <TransformInfo data={transformData} />
+      <TransformInfo fromEnvs={gather.envTags} toResource={gather.resource} />
       <FlexibleTable
         columns={GATHER_COLUMNS}
         rows={GATHER_ROWS}
@@ -162,4 +121,69 @@ export const GatheringTable = ({ gather, overflowMinWidth }) => {
       </>
     </DoubleColumnFrame>
   );
-}
+};
+
+const TransformInfo = ({ fromEnvs, toResource }) => {
+  const { t } = useTranslation();
+  return (
+    <Stack direction='row' sx={{
+      justifyContent: 'center',
+      alignContent: 'center',
+      alignItems: 'center',
+      padding: '10px',
+
+    }}>
+      <Box sx={{ flexGrow: 1, flexBasis: 0 }} >
+        <Box sx={{
+          maxWidth: 'max-content',
+          margin: 'auto'
+        }}>
+          <Stack direction="column" gap={1}>
+            {fromEnvs.map((fromEnv) =>
+              <EntityInfo data={{
+                primary: t(fromEnv.envName),
+                image: {
+                  path: fromEnv.envImage,
+                  width: 35,
+                  height: 35,
+                },
+                link: {
+                  id: fromEnv.envId,
+                  path: Utils.getEntityRoute('env')
+                },
+                overflow: true
+              }} />
+            )}
+          </Stack>
+        </Box>
+      </Box>
+      <Box sx={{
+        fontSize: '40px',
+        lineHeight: '40px',
+        color: 'primary.dark'
+      }}>
+        <i className="fa-solid fa-right-long"></i>
+      </Box>
+      <Box sx={{ flexGrow: 1, flexBasis: 0 }} >
+        <Box sx={{
+          maxWidth: 'max-content',
+          margin: 'auto'
+        }}>
+          <EntityInfo data={{
+            primary: t(toResource.resourceName),
+            image: {
+              path: toResource.image,
+              width: 35,
+              height: 35,
+            },
+            link: {
+              id: toResource.resourceId,
+              path: Utils.getEntityRoute('resource')
+            },
+            overflow: true
+          }} />
+        </Box>
+      </Box>
+    </Stack>
+  );
+};

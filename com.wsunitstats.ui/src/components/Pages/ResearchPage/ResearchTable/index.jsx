@@ -3,7 +3,6 @@ import { Box, Stack, Typography } from "@mui/material";
 import { EntityImage } from "components/Atoms/EntityImage";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { EntityInfo } from "components/Atoms/Renderer";
-import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const GRID_ITEM_WIDTH = 170;
@@ -11,7 +10,6 @@ const GRID_ITEM_GAP = 4;
 
 export const ResearchTable = ({ research }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
 
   // get only unique upgrades to form affected unit list
   const upgrades = research.upgrades?.filter(element => element.unit)
@@ -39,30 +37,22 @@ export const ResearchTable = ({ research }) => {
           width: '100%',
           maxWidth: `${GRID_ITEM_WIDTH * upgrades.length + GRID_ITEM_GAP * (upgrades.length - 1)}px`
         }}>
-          {upgrades.map((upgrade, index) => {
-            const upgradeData = {
-              values: [
-                {
-                  primary: t(upgrade.unit.entityName),
-                  secondary: upgrade.unit.entityNation ? Utils.localizeNation(t, upgrade.unit.entityNation.name) : 'ID: ' + upgrade.unit.entityId,
-                  image: {
-                    path: upgrade.unit.entityImage,
-                    width: 50,
-                    height: 50,
-                  },
-                  link: {
-                    id: upgrade.unit.entityId,
-                    locale: locale,
-                    path: Utils.getEntityRoute("unit")
-                  },
-                  overflow: false
-                },
-              ].filter(element => element),
-            }
-            return (
-              <EntityInfo key={index} data={upgradeData} />
-            );
-          })}
+          {upgrades.map((upgrade, index) =>
+            <EntityInfo key={index} data={{
+              primary: t(upgrade.unit.entityName),
+              secondary: upgrade.unit.entityNation ? Utils.localizeNation(t, upgrade.unit.entityNation.name) : 'ID: ' + upgrade.unit.entityId,
+              image: {
+                path: upgrade.unit.entityImage,
+                width: 50,
+                height: 50,
+              },
+              link: {
+                id: upgrade.unit.entityId,
+                path: Utils.getEntityRoute("unit")
+              },
+              overflow: false
+            }} />
+          )}
         </Box>
       </Stack>}
     </DoubleColumnFrame>
