@@ -2,7 +2,7 @@ export class ReplayInfoParser {
   #matchData;
   #playersLost; // optional
   #timeLine; // optional //TBD
-  #stats; // optional //TBD
+  #stats; // optional
   #researches; // optional
   #initData;
   #start;
@@ -177,10 +177,13 @@ export class ReplayInfoParser {
         if (player.isWonderBuilt && player.isWinner && this.#isWonderWin) {
           wonderLeaderCandidates.push({ playerId: playerId, researchTime: researchResult.wonderTime });
         }
-        player.lastAge = researchResult.lastAgeResearch
-          ? { name: researchResult.lastAgeResearch.researchContext.name, image: researchResult.lastAgeResearch.researchContext.image }
-          : { name: this.#context.units[0].nation.ir1, image: this.#context.units[0].image };
+        player.lastAgeResearch = researchResult.lastAgeResearch;
         player.isWonderWin = false;
+      }
+
+      if (this.#isStatsOn) {
+        player.unitsAvailable = true;
+        player.unitsCreated = this.#parsePlayerUnits(factionId);
       }
     });
 
@@ -311,11 +314,11 @@ export class ReplayInfoParser {
       const playerResearch = new PlayerResearch();
       playerResearch.id = id;
       playerResearch.takenTime = time;
-      playerResearch.researchContext = research;
       researches.push(playerResearch);
 
+      // list is sorted by time in WS API
       if (research.type === "ageTransition") {
-        lastAgeResearch = playerResearch;
+        lastAgeResearch = id;
       }
 
       if (research.type === "wonderTransition") {
@@ -328,6 +331,24 @@ export class ReplayInfoParser {
       lastAgeResearch: lastAgeResearch,
       wonderTime: wonderTime
     };
+  }
+
+  #parsePlayerUnits(factionId) {
+    const statsEntry = this.#stats[factionId].unitsCreated;
+    const units = new Map();
+    for (const [unitTypeId, number] of Object.entries(statsEntry)) {
+      const unitCreated = new PlayerUnitCreated();
+      unitCreated.id = unitTypeId;
+      unitCreated.number = number;
+      const unitCategory = this.#context.units[unitTypeId].category;
+      const unitEntry = units.get(unitCategory);
+      if (unitEntry != null) {
+        unitEntry.push(unitCreated)
+      } else {
+        units.set(unitCategory, [unitCreated]);
+      }
+    }
+    return units;
   }
 
   #addWonderLeaders(wonderLeaderCandidates, playerList) {
@@ -402,15 +423,22 @@ class Player {
   isWonderBuilt;
   isWonderWin;
   lastAgeResearch;
+  unitsCreated;
 
   researchAvailable = false;
   survivalAvailable = false;
+  unitsAvailable = false;
 }
 
 class PlayerResearch {
   id;
   takenTime;
   researchContext;
+}
+
+class PlayerUnitCreated {
+  id;
+  number;
 }
 
 class MatchType {

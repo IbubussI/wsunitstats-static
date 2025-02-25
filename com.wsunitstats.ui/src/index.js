@@ -25,11 +25,12 @@ import { UnitCard } from 'components/Pages/UnitPage/UnitCard';
 import { UnitFilters } from 'components/Pages/EntitySelectorPage/Filters/UnitFilters';
 import { EntitySelectorPage } from 'components/Pages/EntitySelectorPage';
 import { DocsPage } from 'components/Pages/DocsPage';
-import { ReplayInfoPage } from 'components/Pages/ReplaysPage/ReplayInfo';
+import { ReplayInfo } from 'components/Pages/ReplaysPage/ReplayInfo';
 import i18n from './i18n';
 import { ThemeContext } from 'themeContext';
 import { PlayerInfo } from 'components/Pages/ReplaysPage/PlayerInfo';
 import { ReplayPage } from 'components/Pages/ReplaysPage';
+import { GameDataContext } from 'gameDataContext';
 
 const lightTheme = createTheme({
   palette: {
@@ -98,18 +99,18 @@ const localePreference = localStorage.getItem(Constants.LOCAL_LAST_LOCALE) || Co
 
 const Root = () => {
   const params = useParams();
-  const context = useLoaderData();
+  const gameContext = useLoaderData();
   const navigate = useNavigate();
   const [isDark, setIsDark] = React.useState(() => getClientIsDark());
 
   React.useEffect(() => {
-    const isLocale = context.localeOptions.includes(params.locale);
+    const isLocale = gameContext.localeOptions.includes(params.locale);
     if (!isLocale && params.locale !== Constants.DEFAULT_LOCALE_OPTION) {
       Utils.navigateToError(navigate, "Requested locale not found", 404, false);
     } else {
       localStorage.setItem(Constants.LOCAL_LAST_LOCALE, params.locale);
     }
-  }, [params.locale, context.localeOptions, navigate]);
+  }, [params.locale, gameContext.localeOptions, navigate]);
 
   const updateTheme = (isDark) => {
     changeLocalTheme(isDark);
@@ -119,12 +120,14 @@ const Root = () => {
   return (
     <ThemeProvider theme={isDark ? themes.dark.theme : themes.light.theme}>
       <ThemeContext.Provider value={{ isDark: isDark, updateTheme: updateTheme }}>
-        <CssBaseline />
-        <Header context={context} />
-        <div className="body-root">
-          <Outlet context={context} />
-        </div>
-        <Footer />
+        <GameDataContext.Provider value={gameContext}>
+          <CssBaseline />
+          <Header />
+          <div className="body-root">
+            <Outlet />
+          </div>
+          <Footer />
+        </GameDataContext.Provider>
       </ThemeContext.Provider>
     </ThemeProvider>
   );
@@ -230,7 +233,7 @@ const router = createBrowserRouter([
               },
               {
                 path: `${Constants.REPLAY_INFO_PAGE_PATH}`,
-                element: <ReplayInfoPage />,
+                element: <ReplayInfo />,
               },
               {
                 path: `${Constants.REPLAY_PLAYER_INFO_PAGE_PATH}/${Constants.PARAM_PLAYER}`,

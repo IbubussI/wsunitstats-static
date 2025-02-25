@@ -10,6 +10,8 @@ import com.wsunitstats.exporter.model.exported.option.UnitOption;
 import com.wsunitstats.exporter.model.exported.submodel.NationModel;
 import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.service.OptionsBuilder;
+import com.wsunitstats.exporter.service.UnitCategoryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -19,6 +21,9 @@ import java.util.TreeSet;
 
 @Service
 public class OptionsBuilderImpl implements OptionsBuilder {
+    @Autowired
+    private UnitCategoryService unitCategoryService;
+
     public Collection<UnitOption> buildUnitOptions(List<UnitModel> unitModels) {
         return unitModels.stream().map(unit -> {
             UnitOption unitOption = new UnitOption();
@@ -29,6 +34,7 @@ public class OptionsBuilderImpl implements OptionsBuilder {
             unitOption.setNationId(unit.getNation().getNationId());
             unitOption.setSearchTags(unit.getSearchTags().stream().map(TagModel::getGameId).toList());
             unitOption.setUnitTags(unit.getTags().stream().map(TagModel::getGameId).toList());
+            unitOption.setCategory(unitCategoryService.getUnitCategory(unit).getName());
             return unitOption;
         }).toList();
     }

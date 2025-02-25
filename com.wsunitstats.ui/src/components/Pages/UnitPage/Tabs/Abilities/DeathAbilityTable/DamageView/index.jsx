@@ -3,7 +3,6 @@ import { FlexibleTable } from "components/Layout/FlexibleTable";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { HeaderChip } from "components/Atoms/Renderer";
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
-import { useParams } from "react-router-dom";
 import { DoubleColumnTable } from "components/Layout/DoubleColumnTable";
 import { Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -14,10 +13,9 @@ const FLEX_TABLE_LEFT_WIDTH = '48%';
 
 export const DamageView = ({ ability, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
   const attacksNumber = ability.damage.damagesCount;
   const damagesData = Data.getDamagesData(ability.damage.damages, attacksNumber, t);
-  const buffData =  Data.getBuffData(ability.damage.buff, locale, t);
+  const buffData =  Data.getBuffData(ability.damage.buff, t);
   const envData =  Data.getEnvData(ability.damage, t);
   const damageData =  Data.getDamageData(ability.damage, FLEX_TABLE_RIGHT_WIDTH, FLEX_TABLE_LEFT_WIDTH, t);
 

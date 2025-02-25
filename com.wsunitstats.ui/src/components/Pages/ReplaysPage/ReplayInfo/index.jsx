@@ -3,7 +3,7 @@ import { PlayerTable } from 'components/Pages/ReplaysPage/ReplayInfo/PlayerTable
 import { GeneralTable } from 'components/Pages/ReplaysPage/ReplayInfo/GeneralTable';
 import { useOutletContext } from 'react-router-dom';
 
-export const ReplayInfoPage = () => {
+export const ReplayInfo = () => {
   const replayInfo = useOutletContext();
 
   return (

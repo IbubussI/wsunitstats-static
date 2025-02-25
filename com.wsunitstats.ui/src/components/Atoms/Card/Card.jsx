@@ -3,6 +3,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import { CardActionArea, CardHeader, Typography, styled } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 const StyledCardId = styled(Typography)(({ theme }) => ({
   position: 'absolute',
@@ -42,10 +43,10 @@ const StyledCard = styled(Card)(() => ({
   }
 }));
 
-export const ActionAreaCard = ({ id, size, image, imageSize, name, onClick, children }) => {
+export const ActionAreaCard = ({ id, size, image, imageSize, name, link, children }) => {
   return (
     <StyledCard raised={true} sx={{ width: `${size}px` }}>
-      <StyledCardActionArea onClick={onClick}>
+      <StyledCardActionArea component={Link} to={link}>
         <StyledCardId variant="body2" color="text.secondary">
           {id}
         </StyledCardId>

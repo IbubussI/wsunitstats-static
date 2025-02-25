@@ -3,7 +3,7 @@ import * as Constants from "utils/constants";
 import { EntityInfo, SubValue, TagList, Text } from 'components/Atoms/Renderer';
 import { FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 
-export const getRequirementsData = (requirements, locale, t) => {
+export const getRequirementsData = (requirements, t) => {
   const unitsAll = requirements.unitsAll ? t('requirementsAll') : t('requirementsOne');
   const researchesAll = requirements.researchesAll ? t('requirementsAll') : t('requirementsOne');
   const unitRequirements = requirements.units?.map((unit) => {
@@ -16,23 +16,18 @@ export const getRequirementsData = (requirements, locale, t) => {
       {
         renderer: EntityInfo,
         data: {
-          values: [
-            {
-              primary: t(unit.unitName),
-              secondary: unit.unitNation && Utils.localizeNation(t, unit.unitNation.name),
-              image: {
-                path: unit.unitImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: unit.unitId,
-                locale: locale,
-                path: Utils.getEntityRoute('unit')
-              },
-              overflow: true
-            }
-          ]
+          primary: t(unit.unitName),
+          secondary: unit.unitNation && Utils.localizeNation(t, unit.unitNation.name),
+          image: {
+            path: unit.unitImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: unit.unitId,
+            path: Utils.getEntityRoute('unit')
+          },
+          overflow: true
         }
       },
       {
@@ -52,22 +47,17 @@ export const getRequirementsData = (requirements, locale, t) => {
       {
         renderer: EntityInfo,
         data: {
-          values: [
-            {
-              primary: t(research.researchName),
-              image: {
-                path: research.researchImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: research.researchId,
-                locale: locale,
-                path: Utils.getEntityRoute('research')
-              },
-              overflow: true
-            }
-          ]
+          primary: t(research.researchName),
+          image: {
+            path: research.researchImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: research.researchId,
+            path: Utils.getEntityRoute('research')
+          },
+          overflow: true
         }
       },
     ]
@@ -293,7 +283,7 @@ export const getWeaponData = (weapon, rotationSpeed, rightWidth, leftWidth, t) =
   ].filter(element => element.childData.type !== undefined || (element.childData.value !== undefined && (!Array.isArray(element.childData.value) || element.childData.value.length > 0)));
 }
 
-export const getBuffData = (buff, locale, t) => {
+export const getBuffData = (buff, t) => {
   return {
     label: t('buffInfoLabel'),
     variant: 'popper',
@@ -309,22 +299,17 @@ export const getBuffData = (buff, locale, t) => {
         label: t('buffCell'),
         renderer: EntityInfo,
         value: buff.entityInfo && {
-          values: [
-            {
-              primary: t(buff.entityInfo.entityName),
-              image: {
-                path: buff.entityInfo.entityImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: buff.entityInfo.entityId,
-                locale: locale,
-                path: Utils.getEntityRoute("research")
-              },
-              overflow: true
-            },
-          ].filter(element => element),
+          primary: t(buff.entityInfo.entityName),
+          image: {
+            path: buff.entityInfo.entityImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: buff.entityInfo.entityId,
+            path: Utils.getEntityRoute("research")
+          },
+          overflow: true
         },  
       },
       {
@@ -340,7 +325,7 @@ export const getBuffData = (buff, locale, t) => {
           tags: buff.affectedUnits
         }
       }
-    ].filter(element => element.value !== undefined)
+    ].filter(element => element.value != null)
   }
 }
 

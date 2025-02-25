@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 const CARD_WIDTH = 210
 const CARD_IMAGE_SIZE = 50
 
-export const ResearchCard = ({ option, onClick }) => {
+export const ResearchCard = ({ option, link }) => {
   const { t } = useTranslation();
   return (
     <ActionAreaCard
@@ -15,7 +15,7 @@ export const ResearchCard = ({ option, onClick }) => {
       name={t(option.name)}
       image={Utils.resolveImage(option.image)}
       imageSize={CARD_IMAGE_SIZE}
-      onClick={onClick}>
+      link={link}>
       <Typography variant="body2" color="text.secondary">
         {t(option.description)}
       </Typography>

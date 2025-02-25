@@ -6,7 +6,6 @@ import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/Fle
 import { EntityInfo, HeaderChip, SubValue, Text } from 'components/Atoms/Renderer';
 import { DoubleColumnTable } from "components/Layout/DoubleColumnTable";
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
-import { useParams } from "react-router-dom";
 import { ClassicTable } from "components/Layout/ClassicTable";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { useTranslation } from "react-i18next";
@@ -17,7 +16,6 @@ const FLEX_TABLE_LEFT_WIDTH = '33%';
 
 export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
   const ability = abilityContainer.ability;
   const abilityData = [
     {
@@ -25,24 +23,19 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: t('abilitiesTargetCell'),
-        value: {
-          values: [
-            ability.entityInfo && {
-              primary: t(ability.entityInfo.entityName),
-              secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
-              image: {
-                path: ability.entityInfo.entityImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: ability.entityInfo.entityId,
-                locale: locale,
-                path: Utils.getAbilityRoute(ability.abilityType)
-              },
-              overflow: true
-            },
-          ].filter(element => element),
+        value: ability.entityInfo && {
+          primary: t(ability.entityInfo.entityName),
+          secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
+          image: {
+            path: ability.entityInfo.entityImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: ability.entityInfo.entityId,
+            path: Utils.getAbilityRoute(ability.abilityType)
+          },
+          overflow: true
         },
         valueRenderer: EntityInfo,
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
@@ -79,7 +72,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
     }
-  ].filter(x => x.childData.value && (!x.childData.value.values || x.childData.value.values.length > 0));
+  ].filter(x => x.childData.value != null);
 
   
   const actionData = {
@@ -119,7 +112,7 @@ export const OnActionAbilityTable = ({ abilityContainer, overflowMinWidth }) => 
     ].filter(element => element.value !== undefined || element.value.length !== 0)
   }
 
-  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, locale, t);
+  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, t);
 
   const disabled = abilityContainer.enabled === false && 'disabled';
   const labelData = {

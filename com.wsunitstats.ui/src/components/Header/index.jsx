@@ -18,8 +18,10 @@ import { FormControl, FormControlLabel, FormGroup, Stack, useMediaQuery } from '
 import { LocaleSelector } from './LocaleSelector';
 import { useTranslation } from 'react-i18next';
 import { ThemeSelector } from './ThemeSelector';
+import { GameDataContext } from 'gameDataContext';
+import { useContext } from 'react';
 
-export const Header = ({ context }) => {
+export const Header = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -67,8 +69,8 @@ export const Header = ({ context }) => {
             </Typography>
           </Stack>
           <NavigationMenu pages={pages} />
-          <EntityPicker onSelect={onEntityChange} unitOptions={context.units} researchOptions={context.researches} />
-          <SettingsMenu context={context} />
+          <EntityPicker onSelect={onEntityChange} />
+          <SettingsMenu />
         </Toolbar>
       </Container>
     </AppBar>
@@ -133,10 +135,11 @@ const NavigationMenu = ({ pages }) => {
   );
 };
 
-const SettingsMenu = ({ context }) => {
+const SettingsMenu = () => {
   const { t } = useTranslation();
-  const { locale } = useParams();
+
   const [anchorElNav, setAnchorElNav] = React.useState(null);
+  const gameContext = useContext(GameDataContext);
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -172,7 +175,7 @@ const SettingsMenu = ({ context }) => {
                 sx={{ alignItems: 'start', pointerEvents: 'none', py: 1 }}
                 labelPlacement='top'
                 control={
-                  <LocaleSelector sx={{ pointerEvents: 'all' }} currentLocale={locale} options={context.localeOptions} />
+                  <LocaleSelector sx={{ pointerEvents: 'all' }} options={gameContext.localeOptions} />
                 }
                 label={t('localeSelectorLabel')}
               />

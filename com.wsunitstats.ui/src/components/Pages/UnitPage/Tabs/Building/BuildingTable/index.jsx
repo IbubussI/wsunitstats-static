@@ -5,7 +5,6 @@ import { ClassicTable } from "components/Layout/ClassicTable";
 import { DoubleColumnFrame } from "components/Layout/DoubleColumnFrame";
 import { FlexibleTable, FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 import { Resource } from "components/Atoms/Renderer";
-import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const BUILD_COLUMNS = 1;
@@ -14,7 +13,6 @@ const FLEX_TABLE_LEFT_WIDTH = '35%';
 
 export const BuildingTable = ({ build, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
 
   const buildData = [
     {
@@ -66,7 +64,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: t('buildIncomePeriodCell'),
-        value: build.income?.period && build.income.period + Constants.SECONDS_END_MARKER,
+        value: build.income?.period && build.income.period + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,
         widthLeft: FLEX_TABLE_LEFT_WIDTH
       }
@@ -93,7 +91,7 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
     },
   ].filter(element => element.childData.value != null);
 
-  const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, locale, t);
+  const requirementsData = build.requirements && Data.getRequirementsData(build.requirements, t);
 
   return (
     <DoubleColumnFrame childrenProps={[ { width: '100%' }, null ]} column>

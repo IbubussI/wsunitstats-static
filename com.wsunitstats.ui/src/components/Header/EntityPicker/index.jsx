@@ -23,6 +23,8 @@ import {
   styled
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { GameDataContext } from 'gameDataContext';
+import { useContext } from 'react';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -60,10 +62,13 @@ const StyledPopper = styled(Popper)(({ theme }) => ({
   },
 }));
 
-export const EntityPicker = ({ onSelect, unitOptions, researchOptions }) => {
+export const EntityPicker = ({ onSelect }) => {
   const { t } = useTranslation();
   const [value, setValue] = React.useState(null);
   const [inputValue, setInputValue] = React.useState('');
+  const gameContext = useContext(GameDataContext);
+  const unitOptions = gameContext.units;
+  const researchOptions = gameContext.researches;
 
   const addOptionMetadata = (array, entityRoute, optionGroupName) => {
     array.forEach((element) => {

@@ -6,7 +6,6 @@ import { HeaderChip } from 'components/Atoms/Renderer';
 import { DoubleColumnTable } from 'components/Layout/DoubleColumnTable';
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
 import { DoubleColumnFrame } from 'components/Layout/DoubleColumnFrame';
-import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const STATS_COLUMNS = 2;
@@ -16,13 +15,12 @@ const FLEX_TABLE_LEFT_WIDTH = '48%';
  
 export const WeaponTable = ({ item, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
   const weapon = item.weapon;
   
   const attacksNumber = weapon.damage.damagesCount * weapon.attacksPerAttack * weapon.attacksPerAction;
   const damagesData = Data.getDamagesData(weapon.damage.damages, attacksNumber, t);
   const attackData = Data.getAttackData(weapon, t);
-  const buffData = Data.getBuffData(weapon.damage.buff, locale, t);
+  const buffData = Data.getBuffData(weapon.damage.buff, t);
   const envData = Data.getEnvData(weapon.damage, t);
   const weaponData = Data.getWeaponData(weapon, item.turretRotationSpeed, FLEX_TABLE_RIGHT_WIDTH, FLEX_TABLE_LEFT_WIDTH, t);
 

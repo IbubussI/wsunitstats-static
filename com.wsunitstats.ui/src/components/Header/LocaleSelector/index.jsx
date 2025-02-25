@@ -8,7 +8,7 @@ import {
   Tooltip
 } from "@mui/material";
 import { DynamicSelect } from "components/Atoms/DynamicSelect";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
@@ -20,10 +20,10 @@ const StyledDynamicSelect = styled(DynamicSelect)({
 
 export const LocaleSelector = (props) => {
   const {
-    currentLocale,
     options,
     ...otherProps
   } = props;
+  const { locale } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [value, setValue] = React.useState(null);
@@ -34,14 +34,14 @@ export const LocaleSelector = (props) => {
 
   React.useEffect(() => {
     if (options.length > 0) {
-      let actualOption = currentLocale;
-      if (!options.includes(currentLocale)) {
+      let actualOption = locale;
+      if (!options.includes(locale)) {
         actualOption = Constants.DEFAULT_LOCALE_OPTION;
         onLocaleChange(actualOption, false);
       }
       setValue(actualOption);
     }
-  }, [currentLocale, options, onLocaleChange]);
+  }, [locale, options, onLocaleChange]);
 
   return (
     <Stack {...otherProps} style={{ gap: 1, alignItems: 'center', flexDirection: 'row', py: 1 }}>
@@ -51,10 +51,10 @@ export const LocaleSelector = (props) => {
         value={value}
         options={options}
       />
-      {currentLocale !== Constants.DEFAULT_LOCALE_OPTION &&
+      {locale !== Constants.DEFAULT_LOCALE_OPTION &&
         <Tooltip arrow title={t('localeSelectorWarn')}>
           <WarningAmberIcon style={{ color: '#fd853c', filter: 'drop-shadow(0px 0px 3px rgb(0 0 0 / 0.8))', fontSize: 25 }} />
         </Tooltip>}
     </Stack>
   );
-}
+};

@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.utils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,12 @@ public class Constants {
     public static final String GENERIC_UNIT_TAG = "genericUnitTag";
     public static final String NIL = "nil";
     public static final String JSON_EXTENSION = ".json";
+
+    public static final List<Integer> WALL_UNITS = Arrays.asList(
+            182, 183, 184, 185, 186, 187, 188, 189,
+            211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
+            232, 375
+    );
 
     public enum TagGroupName {
         UNIT_SEARCH_TAGS("tagGroupUnitSearch"),
@@ -240,6 +247,28 @@ public class Constants {
         private final String name;
 
         QuantityType(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    public enum UnitCategory {
+        WORKER("unitCategoryWorker"),
+        LAND("unitCategoryLand"),
+        AIR("unitCategoryAir"),
+        FLEET("unitCategoryFleet"),
+        PRODUCTION_BUILDING("unitCategoryProdBuild"),
+        DEFENCE_BUILDING("unitCategoryDefBuild"),
+        ECO_BUILDING("unitCategoryEcoBuild"),
+        GAMEPLAY_BUILDING("unitCategoryGameplayBuild"),
+        OTHER("unitCategoryOther");
+
+        private final String name;
+
+        UnitCategory(String name) {
             this.name = name;
         }
 

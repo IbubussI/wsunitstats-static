@@ -7,7 +7,6 @@ import { EntityInfo, HeaderChip } from "components/Atoms/Renderer";
 import { ClassicTable } from "components/Layout/ClassicTable";
 import { InfoButtonPopper } from "components/Atoms/ButtonPopper";
 import { TagBox } from "components/Atoms/TagBox";
-import { useParams } from "react-router-dom";
 import { DoubleColumnTable } from "components/Layout/DoubleColumnTable";
 import { Box, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -21,7 +20,6 @@ const FLEX_TABLE_DAMAGE_LEFT_WIDTH = '48%';
 
 export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
   const { t } = useTranslation();
-  const { locale } = useParams();
   const abilities = abilityContainer.abilities;
 
   const zoneEventData = [
@@ -68,8 +66,8 @@ export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) =>
           return (
             <Box key={index} sx={{ width: '100%' }}>
               {ability.abilityType === Constants.ABILITY_TYPE_DAMAGE
-                ? <DamageAbilitySubtable ability={ability} locale={locale} overflowMinWidth={overflowMinWidth} />
-                : <AbilitySubtable ability={ability} locale={locale} overflowMinWidth={overflowMinWidth} />
+                ? <DamageAbilitySubtable ability={ability} overflowMinWidth={overflowMinWidth} />
+                : <AbilitySubtable ability={ability} overflowMinWidth={overflowMinWidth} />
               }
             </Box>
           )
@@ -79,7 +77,7 @@ export const ZoneEventAbilityTable = ({ abilityContainer, overflowMinWidth }) =>
   );
 }
 
-const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
+const AbilitySubtable = ({ ability, overflowMinWidth }) => {
   const { t } = useTranslation();
   const abilityData = [
     {
@@ -87,24 +85,19 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
       renderer: FlexibleTableDoubleCellRow,
       childData: {
         label: t('abilitiesTargetCell'),
-        value: {
-          values: [
-            ability.entityInfo && {
-              primary: t(ability.entityInfo.entityName),
-              secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
-              image: {
-                path: ability.entityInfo.entityImage,
-                width: 35,
-                height: 35,
-              },
-              link: {
-                id: ability.entityInfo.entityId,
-                locale: locale,
-                path: Utils.getAbilityRoute(ability.abilityType)
-              },
-              overflow: true
-            },
-          ].filter(element => element),
+        value: ability.entityInfo && {
+          primary: t(ability.entityInfo.entityName),
+          secondary: ability.entityInfo.entityNation && Utils.localizeNation(t, ability.entityInfo.entityNation.name),
+          image: {
+            path: ability.entityInfo.entityImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: ability.entityInfo.entityId,
+            path: Utils.getAbilityRoute(ability.abilityType)
+          },
+          overflow: true
         },
         valueRenderer: EntityInfo,
         widthRight: FLEX_TABLE_ABILITY_RIGHT_WIDTH,
@@ -141,9 +134,9 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
         widthLeft: FLEX_TABLE_ABILITY_LEFT_WIDTH
       }
     }
-  ].filter(x => x.childData.value && (!x.childData.value.values || x.childData.value.values.length > 0));
+  ].filter(x => x.childData.value != null);
 
-  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, locale, t);
+  const requirementsData = ability.requirements && Data.getRequirementsData(ability.requirements, t);
 
   const labelData = {
     value: {
@@ -175,11 +168,11 @@ const AbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
   );
 }
 
-const DamageAbilitySubtable = ({ ability, locale, overflowMinWidth }) => {
+const DamageAbilitySubtable = ({ ability, overflowMinWidth }) => {
   const { t } = useTranslation();
   const attacksNumber = ability.damage.damagesCount;
   const damagesData = Data.getDamagesData(ability.damage.damages, attacksNumber, t);
-  const buffData = Data.getBuffData(ability.damage.buff, locale, t);
+  const buffData = Data.getBuffData(ability.damage.buff, t);
   const envData = Data.getEnvData(ability.damage, t);
   const damageData = Data.getDamageData(ability.damage, FLEX_TABLE_DAMAGE_RIGHT_WIDTH, FLEX_TABLE_DAMAGE_LEFT_WIDTH, t);
 

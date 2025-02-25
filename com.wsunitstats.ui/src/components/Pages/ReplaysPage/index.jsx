@@ -12,8 +12,10 @@ import {
 } from '@mui/material';
 import { FormButton } from 'components/Atoms/FormButton';
 import { ReplayInfoParser } from 'components/Pages/ReplaysPage/ReplayInfo/replayInfoParser';
-import { Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
+import { GameDataContext } from 'gameDataContext';
 
 const FormContainer = styled(Stack)(({ theme }) => ({
   flexDirection: 'row',
@@ -25,7 +27,7 @@ const FormContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export const ReplayPage = () => {
-  const context = useOutletContext();
+  const gameContext = useContext(GameDataContext);
   const navigate = useNavigate();
   const params = useParams();
   const [replayCodeInput, setReplayCodeInput] = React.useState('');
@@ -35,12 +37,12 @@ export const ReplayPage = () => {
     navigate(Utils.getUrlWithPathParams([
       { param: replayCode, pos: 3 },
       { param: Constants.REPLAY_INFO_PAGE_PATH, pos: 4 }
-    ]), { replace: false });
+    ], false, 5), { replace: false });
   };
 
-  const openClear = () => {
-    navigate('.');
-  }
+  const clear = () => {
+    navigate(Utils.getUrlWithPathParams([], false, 3), { replace: true });
+  };
 
   React.useEffect(() => {
     const replayCodeParam = params.replayCode;
@@ -49,7 +51,7 @@ export const ReplayPage = () => {
       setReplayCodeInput(replayCode);
       Utils.fetchJson(Constants.WS_GAMES_API_REPLAY_BY_CODE + replayCode,
         (responseJson) => {
-          const parser = new ReplayInfoParser(context, replayCode);
+          const parser = new ReplayInfoParser(gameContext, replayCode);
           setReplayInfo(parser.parse(responseJson));
         },
         (errorResponse) => {
@@ -58,11 +60,8 @@ export const ReplayPage = () => {
       );
     } else if (replayCodeParam) {
       setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
-    } else if (replayInfo?.error === 0) {
-      // if no code in the URL - clear to keep states consistent
-      setReplayInfo({});
     }
-  }, [params.replayCode, context]);
+  }, [params.replayCode, gameContext]);
 
   const isSuccess = replayInfo && replayInfo.error === 0;
   return (
@@ -77,7 +76,7 @@ export const ReplayPage = () => {
             openReplay(replayCode);
           } else if (replayCodeInput) {
             setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
-            openClear();
+            clear();
           }
         }}
         onInputChange={(event) => setReplayCodeInput(event.target.value)}
