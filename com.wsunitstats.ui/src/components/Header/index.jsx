@@ -12,7 +12,7 @@ import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { NavLink, useNavigate, useParams } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { EntityPicker } from 'components/Header/EntityPicker';
 import { FormControl, FormControlLabel, FormGroup, Stack, useMediaQuery } from '@mui/material';
 import { LocaleSelector } from './LocaleSelector';
