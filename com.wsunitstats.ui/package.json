@@ -12,6 +12,7 @@
     "@testing-library/user-event": "^13.5.0",
     "autosuggest-highlight": "^3.3.4",
     "chart.js": "^4.2.1",
+    "chartjs-plugin-zoom": "^2.2.0",
     "dayjs": "^1.11.13",
     "i18next": "^24.2.2",
     "i18next-http-backend": "^3.0.2",

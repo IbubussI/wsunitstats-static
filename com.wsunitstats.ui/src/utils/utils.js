@@ -179,6 +179,17 @@ export const formatDuration = (durationMillis) => {
   return dayjs.duration(durationMillis).format('HH:mm:ss').replace(/^(00:00:)|^(00:)|^(0)/, "");
 };
 
+export const formatDurationChartShort = (durationMillis) => {
+  const x = dayjs.duration(durationMillis).format('HH[h]mm[m]')
+  return x.replace(/^(00h0)|^(00h)|^(0)/, "");
+};
+
+export const formatDurationChartLong = (durationMillis) => {
+  const x = dayjs.duration(durationMillis).format('HH[h] mm[m] ss[s]')
+  return x.replace(/^(00h 00m 0)|^(00h 00m )|^(00h 0)|^(00h )|^(0)/, "");
+};
+
+
 export const formatTimeLong = (timeSec) => {
   return dayjs.unix(timeSec).format('DD/MM/YYYY HH:mm:ss');
 };

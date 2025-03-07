@@ -65,7 +65,7 @@ export const ReplayPage = () => {
 
   const isSuccess = replayInfo && replayInfo.error === 0;
   return (
-    <Container maxWidth="md" component={Paper} sx={{ m: 4, p: '24px' }}>
+    <Container maxWidth="md" component={Paper} sx={{ my: 4, p: '24px' }}>
       <ReplayForm
         onSubmit={(event) => {
           // prevent page reload

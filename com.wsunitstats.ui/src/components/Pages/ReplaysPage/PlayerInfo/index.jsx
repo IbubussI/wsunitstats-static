@@ -11,6 +11,7 @@ import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { UnitsInfo } from './UnitsInfo';
 import { useTranslation } from 'react-i18next';
 import { GeneralTable } from './GeneralTable';
+import { ChartTabs } from './ChartTabs';
 
 export const PlayerInfo = () => {
   const { t } = useTranslation();
@@ -38,6 +39,7 @@ export const PlayerInfo = () => {
         </Typography>
         <UnitsInfo player={player} />
       </Box>
+      <ChartTabs playerCharts={player.timeLine} playerNickname={player.nickname} playerColor={player.color} />
     </Stack>
   );
 };

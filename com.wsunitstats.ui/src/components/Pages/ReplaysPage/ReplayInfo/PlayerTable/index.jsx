@@ -48,7 +48,7 @@ const TEAM_COLORS = {
     "#ffa2a2",
     "#a2d8ff"
   ]
-}
+};
 
 const ColoredTableRow = styled(NoBottomBorderRow, {
   shouldForwardProp: (prop) => prop !== "teamColor"
@@ -108,6 +108,12 @@ export const PlayerTable = ({ replayInfo }) => {
                     }}>
                       {player.nickname}
                     </Box>
+                  </PlayerTableCell>
+
+                  {/* MVP */}
+                  <PlayerTableCell align="right" sx={{ width: '30px' }}>
+                    {player.mvpScore != null &&
+                      <RatingTag bgColor="#bb6911" label={Number(player.mvpScore).toFixed(0)} />}
                   </PlayerTableCell>
 
                   {/* Squad */}

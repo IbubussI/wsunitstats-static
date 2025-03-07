@@ -1,0 +1,5 @@
+com.wsunitstats.ui\src\components\Pages\ReplaysPage\ReplayInfo\replayInfoParser.js - colors, start age workers in parser
+com.wsunitstats.ui\src\components\Pages\ReplaysPage\ReplayInfo\ageNationFinder.js - game mod content (see getAgeNation func docs)
+com.wsunitstats.ui\src\components\Pages\ReplaysPage\ReplayInfo\scoreCalculator.js - nation/warehouse-efficiency table
+
+com.wsunitstats.exporter/src/main/java/com/wsunitstats/exporter/utils/Constants.java - various game entities (see file to get more info)

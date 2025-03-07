@@ -103,7 +103,7 @@ function createRowData(name, valueObject, units) {
   if (valueObject != null) {
     let value = "";
     if (units) {
-      value = `${valueObject} ${units}`;
+      value = `${valueObject}${units}`;
     } else {
       value = valueObject.toString();
     }

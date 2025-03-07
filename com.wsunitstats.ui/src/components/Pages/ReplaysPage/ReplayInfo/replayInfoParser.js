@@ -1,9 +1,14 @@
+import getAgeNation from "./ageNationFinder";
+import { calcEcoMetrics } from "./scoreCalculator";
+
 export class ReplayInfoParser {
+  static timeLinePeriod = 30000; //ms
+
   #matchData;
   #playersLost; // optional
-  #timeLine; // optional //TBD
+  #timeLine; // optional
   #stats; // optional
-  #researches; // optional
+  #researches; // optional, undef for players who didn't take anything
   #initData;
   #start;
   #version;
@@ -12,12 +17,15 @@ export class ReplayInfoParser {
   #replayCode;
 
   // generated structures
+  #playerResearchTimeLine;
   #factionTeams;
   #playerSurvival; // optional
   #playerWinners; // optional
   #teamWinners; // optional
   #winnerSurvivalTime; // optional
   #isWonderWin;
+
+  #timeLinePlayerData;
 
   #isMatchDataOn;
   #isPlayersLostOn;
@@ -77,11 +85,13 @@ export class ReplayInfoParser {
         };
       }
 
+      this.#playerResearchTimeLine = this.#generatePlayerResearchTimeLine();
       this.#factionTeams = this.#generateTeamsMap();
       this.#playerSurvival = this.#isPlayersLostOn && this.#generateSurvivalMap();
       this.#addWinnersData();
       this.#isWonderWin = this.#isPlayersLostOn && this.#getIsWonderWin();
 
+      this.#timeLinePlayerData = this.#generateTimeLineData();
       const players = this.#parsePlayers();
       const teams = this.#parseTeams();
       const match = this.#parseMatch();
@@ -171,7 +181,7 @@ export class ReplayInfoParser {
 
       if (this.#isResearchesOn) {
         player.researchAvailable = true;
-        const researchResult = this.#parsePlayerResearches(factionId);
+        const researchResult = this.#parsePlayerResearches(playerId);
         player.researches = researchResult.researches;
         player.isWonderBuilt = researchResult.wonderTime ? true : false;
         if (player.isWonderBuilt && player.isWinner && this.#isWonderWin) {
@@ -185,10 +195,109 @@ export class ReplayInfoParser {
         player.unitsAvailable = true;
         player.unitsCreated = this.#parsePlayerUnits(factionId);
       }
+
+      if (this.#isTimelineOn && this.#isStatsOn && this.#isResearchesOn && this.#isPlayersLostOn) {
+        player.mvpScore = this.#calculateMVPScore(playerId); // todo remove this or add some logic
+        player.timeLine = this.#timeLinePlayerData[playerId];
+      }
     });
 
     this.#addWonderLeaders(wonderLeaderCandidates, playerList);
     return playerList;
+  }
+
+  #generateTimeLineData() {
+    const timeLinePlayerData = [];
+    if (this.#isTimelineOn) {
+      const metadata = [];
+      const playersCount = this.#initData.players.length;
+      // prefill entries
+      for (let i = 0; i < playersCount; i++) {
+        timeLinePlayerData.push(new PlayerTimeLine(ReplayInfoParser.timeLinePeriod));
+        metadata.push({
+          factionId: this.#getPlayerFaction(i),
+          ecoScore: 0,
+          managementScore: 0,
+          combatScore: 0,
+          prevAgeNation: [0, 0], // pre-stone age abstract entry,
+          prevWorkers: {
+            worker: 10, // to fit standard matchmaking match count
+            boat: 0,
+            tractor: 0
+          }
+        });
+      }
+
+      for (let i = 0; i < this.#timeLine.length; i++) {
+        const time = (i + 1) * ReplayInfoParser.timeLinePeriod;
+        const tlEntry = this.#timeLine[i];
+        const unitCreateInfo = tlEntry[0];
+        const unitKillInfo = tlEntry[1];
+        const landInfo = tlEntry[2];
+        const workerInfo = tlEntry[3];
+        const resourceInfo = tlEntry[4];
+        for (let playerId = 0; playerId < playersCount; playerId++) {
+          const factionId = metadata[playerId].factionId;
+          const unitCreatePoints = unitCreateInfo[factionId];
+          const unitKillPoints = unitKillInfo[factionId];
+          const landPoints = landInfo[factionId];
+          const workerPoints = workerInfo[factionId][0];
+
+          const workerNum = workerInfo[factionId][1];
+          const boatNum = workerInfo[factionId][2];
+          const tractorNum = workerInfo[factionId][3];
+
+          const foodDelta = resourceInfo[factionId][0];
+          const woodDelta = resourceInfo[factionId][1];
+          const ironDelta = resourceInfo[factionId][2];
+
+          const foodCollected = resourceInfo[factionId][3];
+          const woodCollected = resourceInfo[factionId][4];
+          const ironCollected = resourceInfo[factionId][5];
+
+          const foodNow = resourceInfo[factionId][6];
+          const woodNow = resourceInfo[factionId][7];
+          const ironNow = resourceInfo[factionId][8];
+
+          const playerEntry = timeLinePlayerData[playerId];
+          playerEntry.unitCreatePoints.push(unitCreatePoints);
+          playerEntry.unitKillPoints.push(unitKillPoints);
+          playerEntry.landPoints.push(landPoints);
+          playerEntry.workerPoints.push(workerPoints);
+
+          if (this.#isAlive(playerId, time)) {
+            const playerMetadata = metadata[playerId];
+
+            // Gather efficiency and score
+            const currAgeNation = getAgeNation(time, this.#playerResearchTimeLine[playerId]);
+
+            // update metadata values for next timeline
+            const prevAgeNation = playerMetadata.prevAgeNation;
+            const prevWorkers = playerMetadata.prevWorkers;
+            const currWorkers = { worker: workerNum, boat: boatNum, tractor: tractorNum };
+            playerMetadata.prevAgeNation = currAgeNation;
+            playerMetadata.prevWorkers = currWorkers;
+            const timeSinceLastAgeUp = this.#findPrevAgeResearchPassedTime(time, playerId);
+            const ecoMetrics = calcEcoMetrics(prevAgeNation, currAgeNation, prevWorkers, [foodDelta, woodDelta, ironDelta],
+              currWorkers, timeSinceLastAgeUp, ReplayInfoParser.timeLinePeriod, time);
+
+            // TODO army/kill points ratio
+            const combatScore = 0;
+            // TODO collected/spent resources ratio
+            const managementScore = 0;
+            // TODO wonder, land capture, win/loose
+            const activityScore = 0;
+            const score = ecoMetrics.ecoScore + combatScore + managementScore + activityScore;
+
+            playerEntry.ecoEfficiency.push(ecoMetrics.ecoEfficiency);
+            playerEntry.ecoScore.push(ecoMetrics.ecoScore);
+            playerEntry.totalScore.push(score);
+            playerEntry.totalScoreSum += score;
+          }
+        }
+      }
+    }
+    return timeLinePlayerData;
   }
 
   #addWinnersData() {
@@ -209,6 +318,20 @@ export class ReplayInfoParser {
         }
       }
     }
+  }
+
+  #generatePlayerResearchTimeLine() {
+    const playerResearchesList = [];
+    // check for incomplete replay data
+    if (this.#researches) {
+      const playersCount = this.#initData.players.length;
+      for (let i = 0; i < playersCount; i++) {
+        const factionId = this.#getPlayerFaction(i);
+        const playerResearches = this.#researches[factionId];
+        playerResearchesList.push(playerResearches || []);
+      }
+    }
+    return playerResearchesList;
   }
 
   #generateSurvivalMap() {
@@ -295,14 +418,8 @@ export class ReplayInfoParser {
     return result;
   }
 
-  #parsePlayerResearches(factionId) {
-    const researchTimeline = this.#researches?.[factionId];
-
-    // check for incomplete replay data
-    if (!researchTimeline) {
-      return [];
-    }
-
+  #parsePlayerResearches(playerId) {
+    const researchTimeline = this.#playerResearchTimeLine[playerId];
     const researches = [];
     let lastAgeResearch;
     let wonderTime;
@@ -372,6 +489,37 @@ export class ReplayInfoParser {
       });
     }
   }
+
+  #calculateMVPScore(playerId) {
+    // todo: remove or add something here
+    const playerEntry = this.#timeLinePlayerData[playerId];
+    return playerEntry.totalScoreSum;
+  }
+
+  #isAlive(playerId, time) {
+    if (!this.#isPlayersLostOn) {
+      return true;
+    }
+
+    return time < this.#playerSurvival.get(playerId);
+  }
+
+  #findPrevAgeResearchPassedTime(time, playerId) {
+    const researchTimeline = this.#playerResearchTimeLine[playerId];
+
+    for (let i = researchTimeline.length - 1; i >= 0; i--) {
+      const researchEntry = researchTimeline[i];
+      const rTime = researchEntry[0];
+      const id = researchEntry[1];
+      const research = this.#context.researches[id];
+      const timeDiff = time - rTime;
+      if (research.type === "ageTransition" && timeDiff > 0) {
+        return timeDiff;
+      }
+    }
+
+    return time;
+  }
 }
 
 class Match {
@@ -424,6 +572,8 @@ class Player {
   isWonderWin;
   lastAgeResearch;
   unitsCreated;
+  mvpScore;
+  timeLine;
 
   researchAvailable = false;
   survivalAvailable = false;
@@ -439,6 +589,33 @@ class PlayerResearch {
 class PlayerUnitCreated {
   id;
   number;
+}
+
+class PlayerTimeLine {
+  unitCreatePoints;
+  unitKillPoints;
+  landPoints;
+  workerPoints;
+  ecoEfficiency;
+  ecoScore;
+  totalScore;
+
+  totalScoreSum;
+  timeLinePeriod;
+
+  constructor(period) {
+    // init 0 point, since timeline starts with 30 sec
+    this.unitCreatePoints = [0];
+    this.unitKillPoints = [0];
+    this.landPoints = [0];
+    this.workerPoints = [0];
+    this.ecoEfficiency = [0];
+    this.ecoScore = [0];
+    this.totalScore = [0];
+
+    this.totalScoreSum = 0;
+    this.timeLinePeriod = period;
+  }
 }
 
 class MatchType {
@@ -506,6 +683,10 @@ function getSetBitPositions(bitset) {
     }
   }
   return result;
+}
+
+function expDecay(Q, rate, time) {
+  return Q*(Math.exp(-time/rate));
 }
 
 // taken from WS

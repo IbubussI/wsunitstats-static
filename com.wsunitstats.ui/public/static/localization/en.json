@@ -276,5 +276,11 @@
   "playerInfoWonderWin": "Wonder win",
   "playerInfoWonderBuilt": "Wonder built",
   "playerInfoDead": "Death",
-  "playerInfoWinner": "Win"
+  "playerInfoWinner": "Win",
+  "chartResetZoom": "Reset zoom",
+  "chartProcessorDefault": "Raw",
+  "chartProcessorSavGolSmooth": "Smooth",
+  "chartActionsDescription": "Chart actions:\n1. Zoom In. Hold LMB and drag to select the region for zoom.\n2. Zoom Out. Press 'Reset Zoom' button.\n3. Panning. Hold CTRL and drag to move along X axis.\n4. Smoothness. You can select either interpolated or precise variant of chart by 'Smooth' and 'Raw buttons respectively, if this feature is available for this chart.",
+  "playerEcoEfficiencyChartTitle": "Extraction Efficiency",
+  "playerEcoEfficiencyChartDescription": "Extraction Efficiency chart shows how much your workers gathered compared to how much they could potentially gather in particular time during the match, if their efficiency was 100%.\n Note: any passive income (mines) can't be separated from global one, so mines can significantly boost the efficiency value even more than 100%."
 }

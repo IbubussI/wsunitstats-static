@@ -58,7 +58,7 @@ export const UnitsInfo = ({ player }) => {
   const gameplayBuildings = player.unitsCreated.get(gameplayBuildKey);
   const other = player.unitsCreated.get(otherKey);
   return (
-    <Stack direction="row" gap={1} sx={{ justifyContent: "stretch" }}>
+    <Stack direction="row" gap={1} sx={{ overflowX: 'auto', p: 0.5 }}>
       <Stack sx={{ flex: 1 }} gap={1}>
         <UnitsTable unitsCreated={ecoBuildings} category={ecoBuildKey} />
         <UnitsTable unitsCreated={workers} category={workerKey} />
