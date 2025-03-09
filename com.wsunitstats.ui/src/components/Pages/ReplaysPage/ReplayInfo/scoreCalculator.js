@@ -276,7 +276,10 @@ const gatherEfficiencyLookupTable = {
   }
 };
 
-export function calcEcoMetrics(prevAgeNation, currAgeNation, prevWorkers, res, currWorkers, timeSinceLastAgeUp, timeLinePeriod, time) {
+/**
+ * Returns an object that describes gathering speed for the given time/age/nation
+ */
+export function getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp, timeLinePeriod, time) {
   function getOrDefaultNationEntry(ageNation) {
     const ageEntry = gatherEfficiencyLookupTable[ageNation[0]];
     const nationEntry = ageEntry[ageNation[1]] || ageEntry.default;
@@ -314,7 +317,8 @@ export function calcEcoMetrics(prevAgeNation, currAgeNation, prevWorkers, res, c
       return prevVal;
     }
   }
-  const gatherEntry = {
+
+  return {
     worker: [
       getValueCountingTime(currNationEntry.worker.upTime, currNationEntry.worker.value[0], prevNationEntry.worker.value[0]),
       getValueCountingTime(currNationEntry.worker.upTime, currNationEntry.worker.value[1], prevNationEntry.worker.value[1]),
@@ -332,7 +336,9 @@ export function calcEcoMetrics(prevAgeNation, currAgeNation, prevWorkers, res, c
     ],
     whEff: getValueCountingTime(currNationEntry.whEff.upTime, currNationEntry.whEff.value, prevNationEntry.whEff.value)
   };
+}
 
+export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, res, timeLinePeriod) {
   // avg workers per current timeline interval
   const avgWorkerNum = (prevWorkers.worker + currWorkers.worker) / 2;
   const avgBoatNum = (prevWorkers.boat + currWorkers.boat) / 2;
@@ -383,7 +389,27 @@ export function calcEcoMetrics(prevAgeNation, currAgeNation, prevWorkers, res, c
 
   // possible improvement: add correction coefficient to compensate mines in IR
   return {
-    ecoEfficiency: gatherEff,
-    ecoScore: gatherScore
+    gatherEfficiency: gatherEff,
+    gatherScore: gatherScore
+  };
+}
+
+export function calcResourceMetrics(resNow, resWas, resGathered) {
+  const resExpected = [
+    resWas[0] + resGathered[0],
+    resWas[1] + resGathered[1],
+    resWas[2] + resGathered[2]
+  ];
+
+  const resSpent = [
+    resExpected[0] - resNow[0],
+    resExpected[1] - resNow[1],
+    resExpected[2] - resNow[2]
+  ];
+
+  return {
+    resStored: resNow,
+    resSpent: resSpent,
+    resGathered: resGathered
   };
 }

@@ -47,16 +47,16 @@ const NumberTag = styled(TagChip)(() => ({
   }
 }));
 
-export const UnitsInfo = ({ player }) => {
-  const workers = player.unitsCreated.get(workerKey);
-  const land = player.unitsCreated.get(landKey);
-  const air = player.unitsCreated.get(airKey);
-  const fleet = player.unitsCreated.get(fleetKey);
-  const prodBuildings = player.unitsCreated.get(prodBuildKey);
-  const defBuildings = player.unitsCreated.get(defBuildKey);
-  const ecoBuildings = player.unitsCreated.get(ecoBuildKey);
-  const gameplayBuildings = player.unitsCreated.get(gameplayBuildKey);
-  const other = player.unitsCreated.get(otherKey);
+export const UnitsInfo = ({ unitsCreated }) => {
+  const workers = unitsCreated.get(workerKey);
+  const land = unitsCreated.get(landKey);
+  const air = unitsCreated.get(airKey);
+  const fleet = unitsCreated.get(fleetKey);
+  const prodBuildings = unitsCreated.get(prodBuildKey);
+  const defBuildings = unitsCreated.get(defBuildKey);
+  const ecoBuildings = unitsCreated.get(ecoBuildKey);
+  const gameplayBuildings = unitsCreated.get(gameplayBuildKey);
+  const other = unitsCreated.get(otherKey);
   return (
     <Stack direction="row" gap={1} sx={{ overflowX: 'auto', p: 0.5 }}>
       <Stack sx={{ flex: 1 }} gap={1}>

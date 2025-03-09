@@ -1,28 +1,34 @@
 import * as React from 'react';
-import { Autocomplete, TextField } from '@mui/material';
+import { Autocomplete, autocompleteClasses, styled, TextField } from '@mui/material';
 
-export const DynamicSelect = (props) => {
+const StyledAutocomplete = styled(Autocomplete)({
+  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}`]: {
+    cursor: 'pointer'
+  },
+});
+
+export const SingleSelect = (props) => {
   const {
-    onSelect,
-    getOptionLabel,
+    onChange,
     value,
     options,
     label,
+    getOptionLabel = option => option.name,
     ...forwardedProps
   } = props;
 
   return (
-    <Autocomplete
+    <StyledAutocomplete
       {...forwardedProps}
-      options={options}
       getOptionLabel={getOptionLabel}
-      sx={{ width: 100 }}
+      options={options}
       value={value}
       disableClearable
+      selectOnFocus={false}
       onChange={(_, newValue) => {
-        onSelect(newValue);
+        onChange(newValue);
       }}
-      componentsProps={{
+      slotProps={{
         paper: {
           elevation: 3
         }

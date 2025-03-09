@@ -11,14 +11,15 @@ import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { UnitsInfo } from './UnitsInfo';
 import { useTranslation } from 'react-i18next';
 import { GeneralTable } from './GeneralTable';
-import { ChartTabs } from './ChartTabs';
+import { PlayerChartViewer } from './PlayerChartViewer';
 
 export const PlayerInfo = () => {
   const { t } = useTranslation();
   const replayInfo = useOutletContext();
   const params = useParams();
 
-  const player = replayInfo.players[params.player];
+  const playerIndex = Number(params.player);
+  const player = replayInfo.players[playerIndex];
   return (
     <Stack gap={1}>
       <Box sx={{ py: 2 }}>
@@ -33,13 +34,20 @@ export const PlayerInfo = () => {
         </Box>
       </Box>
       <GeneralTable player={player} />
-      <Box>
-        <Typography variant="h6">
-          {t('playerInfoUnitsCreatedTitle')}
-        </Typography>
-        <UnitsInfo player={player} />
-      </Box>
-      <ChartTabs playerCharts={player.timeLine} playerNickname={player.nickname} playerColor={player.color} />
+      {player.unitsCreated &&
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            {t('playerInfoUnitsCreatedTitle')}
+          </Typography>
+          <UnitsInfo unitsCreated={player.unitsCreated} />
+        </Box>}
+      {replayInfo.timeLine &&
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            {t('playerInfoChartsTitle')}
+          </Typography>
+          <PlayerChartViewer timeLine={replayInfo.timeLine} timeLinePeriod={replayInfo.timeLinePeriod} playerId={playerIndex} />
+        </Box>}
     </Stack>
   );
 };

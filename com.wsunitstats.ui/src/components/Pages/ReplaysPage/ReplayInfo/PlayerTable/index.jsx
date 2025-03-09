@@ -12,7 +12,7 @@ import {
   TableContainer,
   Tooltip,
 } from '@mui/material';
-import { WinnerIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
+import { DeadIcon, WinIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
 import { TagChip } from 'components/Atoms/TagChip';
 import { Image } from 'components/Atoms/Renderer';
 import { useTranslation } from 'react-i18next';
@@ -39,23 +39,12 @@ const RatingTag = styled(TagChip)(() => ({
   }
 }));
 
-const TEAM_COLORS = {
-  dark: [
-    "#5a3d3d",
-    "#3b5158"
-  ],
-  light: [
-    "#ffa2a2",
-    "#a2d8ff"
-  ]
-};
-
 const ColoredTableRow = styled(NoBottomBorderRow, {
   shouldForwardProp: (prop) => prop !== "teamColor"
 })(({ theme, teamColor }) => {
   const color = theme.palette.mode === 'dark'
-    ? TEAM_COLORS.dark[teamColor]
-    : TEAM_COLORS.light[teamColor];
+    ? teamColor.dark
+    : teamColor.light;
   return {
     backgroundColor: color,
     '&:hover': {
@@ -118,7 +107,7 @@ export const PlayerTable = ({ replayInfo }) => {
 
                   {/* Squad */}
                   <PlayerTableCell align="right" sx={{ width: '80px' }}>
-                    {player.group && t('replaySquad', { value: player.group })}
+                    {player.group != null && t('replaySquad', { value: player.group + 1 })}
                   </PlayerTableCell>
 
                   {/* Lastest Age Reached */}
@@ -162,9 +151,11 @@ export const PlayerTable = ({ replayInfo }) => {
                     paddingLeft: 0
                   }}>
                     {player.isDead &&
-                      <i className="fa-solid fa-skull fa-lg" style={{ color: '#dd1d1dd4' }}></i>}
+                      <DeadIcon style={{
+                        color: '#dd1d1dd4'
+                      }} />}
                     {player.isWinner &&
-                      <WinnerIcon sx={{
+                      <WinIcon sx={{
                         width: '20px',
                         height: '20px',
                         display: 'block',

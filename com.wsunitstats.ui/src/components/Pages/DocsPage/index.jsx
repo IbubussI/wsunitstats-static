@@ -30,7 +30,7 @@ const PageRoot = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   gap: PANEL_GAP,
   padding: 8,
-  backgroundColor: theme.palette.docs.main,
+  backgroundColor: theme.palette.mode === 'dark' ? 'initial' : theme.palette.docs.main,
   // possible variant for more compact font
   //font: 'normal 11px arial, tahoma, helvetica, sans-serif'
 }));

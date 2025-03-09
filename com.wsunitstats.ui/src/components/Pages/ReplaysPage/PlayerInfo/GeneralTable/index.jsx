@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
 import { ColorIndicator } from 'components/Atoms/ColorIndicator';
 import { TagChip } from "components/Atoms/TagChip";
-import { WinnerIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
+import { WinIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
 import { GameDataContext } from 'gameDataContext';
 import { useContext } from 'react';
 import { Image } from 'components/Atoms/Renderer';
@@ -74,7 +74,7 @@ export const GeneralTable = ({ player }) => {
           {t('playerInfoWinner')}
         </CellText>}
       {player.isWinner &&
-        <WinnerIcon sx={{
+        <WinIcon sx={{
           display: 'inline-block',
           verticalAlign: 'middle',
           width: '18px',

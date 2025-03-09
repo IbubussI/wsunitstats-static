@@ -31,7 +31,7 @@ function getAgeFactionIndustrial(researchesState, default_) {
 /**
  * taken from game mod 6gqH17D5rDl_3-66b5429af54002fc.lua
  * @param time ms from match start
- * @param researchTimeLine list of player research timeline
+ * @param researchTimeLine player research timeline
  * @returns array: [age, nation]
  */
 export default function getAgeNation(time, researchTimeLine) {

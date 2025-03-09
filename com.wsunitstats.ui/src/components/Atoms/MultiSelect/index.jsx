@@ -1,36 +1,61 @@
 import * as React from 'react';
 import { CheckBox, CheckBoxOutlineBlank } from "@mui/icons-material";
-import { Autocomplete, Checkbox, Chip, Stack, TextField, Typography, autocompleteClasses, styled } from "@mui/material";
+import { Autocomplete, Checkbox, Chip, Stack, TextField, Typography, autocompleteClasses, createFilterOptions, styled } from "@mui/material";
 import { Image } from "components/Atoms/Renderer";
+import { useTranslation } from 'react-i18next';
 
 const StyledAutocomplete = styled(Autocomplete)(() => ({
-  [`& .${autocompleteClasses.input}`]: {
+  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}`]: {
     cursor: 'pointer',
     minWidth: '0 !important'
   }
 }));
 
-export const CheckmarksSelect = (props) => {
+export const MultiSelect = (props) => {
   const {
     label,
     values,
     options,
     onChange,
     limitTags,
+    selectAll,
     getSecondaryText,
-    localizeFunc,
+    size,
+    primaryFontSize = 'body1',
+    getOptionLabel = (option) => option.name,
     ...forwardedProps
   } = props;
+  const { t } = useTranslation();
+  const isAllSelected = values.length === options.length;
+  const selectValues = (newValues) => {
+    if (newValues.find(newValue => newValue.selectAll === true)) {
+      if (isAllSelected) {
+        onChange([]);
+      } else {
+        onChange(options);
+      }
+    } else {
+      onChange(newValues);
+    }
+  };
 
+  const filterOptions = createFilterOptions();
   return (
     <StyledAutocomplete
       {...forwardedProps}
+      size={size}
       multiple
       disableCloseOnSelect
-      onChange={(_, newValues) => onChange(newValues)}
+      onChange={(_, newValues) => selectValues(newValues)}
       options={options}
       value={values}
-      getOptionLabel={(option) => localizeFunc(option.name)}
+      getOptionLabel={getOptionLabel}
+      filterOptions={(options, params) => {
+        return selectAll ? [
+          { name: t('multiSelectAllOption'), selectAll: true },
+          ...filterOptions(options, params)
+        ] : filterOptions(options, params);
+      }}
       renderOption={(props, option, { selected }) => {
         return (
           <li {...props}>
@@ -38,7 +63,7 @@ export const CheckmarksSelect = (props) => {
               icon={<CheckBoxOutlineBlank fontSize="small" />}
               checkedIcon={<CheckBox fontSize="small" />}
               style={{ marginRight: 8 }}
-              checked={selected}
+              checked={option.selectAll ? isAllSelected : selected}
             />
             <Stack direction='row' alignItems='center'>
               {option.image &&
@@ -48,8 +73,8 @@ export const CheckmarksSelect = (props) => {
                     height={42} />
                 </Stack>}
               <Stack>
-                <Typography variant='body1' color='text.primary'>
-                  {localizeFunc(option.name)}
+                <Typography variant={primaryFontSize} color='text.primary'>
+                  {getOptionLabel(option)}
                 </Typography>
                 {getSecondaryText &&
                   <Typography variant='body2' color='text.secondary'>
@@ -74,9 +99,10 @@ export const CheckmarksSelect = (props) => {
           <>
             {value.slice(0, limitTags).map((option, index) => (
               <Chip
+                size={size}
                 {...getTagProps({ index })}
                 key={index}
-                label={localizeFunc(option.name)}
+                label={getOptionLabel(option)}
               />
             ))}
 
@@ -86,4 +112,4 @@ export const CheckmarksSelect = (props) => {
       }}
     />
   );
-}
+};

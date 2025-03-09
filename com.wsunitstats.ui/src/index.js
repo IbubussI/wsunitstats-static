@@ -54,7 +54,6 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     docs: {
-      main: 'initial',
       input: {
         gStart: '#181818',
         gEnd: '#fff0'

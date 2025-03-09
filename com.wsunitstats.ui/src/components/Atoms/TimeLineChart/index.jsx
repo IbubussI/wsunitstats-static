@@ -8,7 +8,8 @@ import {
   PointElement,
   LineController,
   LineElement,
-  Interaction
+  Interaction,
+  Tooltip as ChartTooltip
 } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {
@@ -16,11 +17,11 @@ import {
   Button,
   Fade,
   IconButton,
-  Popper,
+  Modal,
+  Paper,
+  Slider,
   Stack,
   styled,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
   useTheme
@@ -28,9 +29,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ThemeContext } from 'themeContext';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import savitzkyGolay from 'ml-savitzky-golay';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineController, LineElement);
-ChartJS.register(zoomPlugin);
 
 // Override getLabelAndValue to return the interpolated value
 const getLabelAndValue = LineController.prototype.getLabelAndValue;
@@ -38,26 +39,31 @@ LineController.prototype.getLabelAndValue = function (index) {
   if (index === -1) {
     const meta = this.getMeta();
     const pt = meta._pt;
-    const vScale = meta.vScale;
-    const iScale = meta.iScale;
+    let label = 'outOfScope';
+    let value = '';
+    if (pt) {
+      const vScale = meta.vScale;
+      const iScale = meta.iScale;
+      value = vScale.getValueForPixel(pt.y)
 
-    // find closest to the point previous index
-    const prev = Math.floor(iScale.min + iScale.getDecimalForPixel(pt.x) * (iScale.max - iScale.min));
-    const next = prev + 1;
-    let labelVal = prev;
-    if (prev <= iScale.max && prev >= iScale.min) {
-      const prevPixel = iScale.getPixelForValue(prev);
-      const nextPixel = iScale.getPixelForValue(next);
-
-      // find the time for current point
-      const len = nextPixel - prevPixel;
-      labelVal += (pt.x - prevPixel) / len;
+      // find closest to the point previous index
+      const prev = Math.floor(iScale.min + iScale.getDecimalForPixel(pt.x) * (iScale.max - iScale.min));
+      const next = prev + 1;
+      label = prev;
+      if (prev <= iScale.max && prev >= iScale.min) {
+        const prevPixel = iScale.getPixelForValue(prev);
+        const nextPixel = iScale.getPixelForValue(next);
+  
+        // find the time for current point
+        const len = nextPixel - prevPixel;
+        // label is interpolated x value, used for the title of tooltip
+        label += (pt.x - prevPixel) / len;
+      }
     }
 
-    // label val is interpolated x value in index scale, used for the title of tooltip
     return {
-      label: labelVal,
-      value: vScale.getValueForPixel(pt.y)
+      label: label,
+      value: value
     };
   }
   return getLabelAndValue.call(this, index);
@@ -89,6 +95,10 @@ Interaction.modes.interpolate = function (chart, e) {
   return items;
 };
 
+ChartTooltip.positioners.cursor = function (_, coordinates) {
+  return coordinates;
+};
+
 const vRuler = {
   id: 'verticalRuler',
   defaults: {
@@ -116,14 +126,12 @@ const vRuler = {
     }
 
     ctx.save();
-
     ctx.beginPath();
     ctx.lineWidth = opts.width;
     ctx.strokeStyle = opts.color;
     ctx.moveTo(x, bottom);
     ctx.lineTo(x, top);
     ctx.stroke();
-
     ctx.restore();
   }
 };
@@ -140,7 +148,7 @@ const dotIndicator = {
     }
   },
   afterEvent(chart, args) {
-    if (args.event.type === 'mouseout') {
+    if (!args.inChartArea) {
       const metas = chart.getSortedVisibleDatasetMetas();
       for (let i = 0; i < metas.length; i++) {
         metas[i]._pt = null;
@@ -148,58 +156,34 @@ const dotIndicator = {
       args.changed = true;
     }
   }
-}
-
-ChartJS.register(vRuler, dotIndicator);
-
-const WINDOWS = {
-  '9': {
-    norm: 231,
-    ki: [
-      -21, 14, 39, 54, 59, 54, 39, 14, -21
-    ]
-  },
 };
 
-// data processor for smoothing
-const SAVGOL_SMOOTH = {
-  name: 'savgol',
-  process: (points, degree) => {
-    const window = WINDOWS[degree];
-    if (!window) {
-      console.error("Provided smoothing window size is not supported");
-      return points;
+const endIcon = {
+  id: 'endIcon',
+  afterDatasetsDraw(chart) {
+    const metas = chart.getSortedVisibleDatasetMetas();
+    const { ctx } = chart;
+    for (let i = 0; i < metas.length; i++) {
+      const meta = metas[i];
+      const last = meta.dataset.last();
+      const endImg = meta._dataset.endIcon;
+      const imgWidth = endImg.width || 12;
+      const imgHeight = endImg.height || 12;
+      const imgX = last.x - imgWidth / 2;
+      const imgY = last.y - imgHeight / 2;
+      ctx.drawImage(endImg, imgX, imgY, imgWidth, imgHeight);
     }
-
-    const result = [];
-    const d = Math.floor(window.ki.length / 2);
-    for (let i = 0; i < points.length; i++) {
-      let sum = 0;
-      for (let j = 0; j < window.ki.length; j++) {
-        let index = i + (j - d);
-        // add fake points at the begin and end of the dataset to smooth them too
-        if (index < 0 || index >= points.length) {
-          index = i - (j - d);
-        }
-        sum += points[index] * window.ki[j];
-      }
-      result.push(sum / window.norm);
-    }
-    return result;
   }
 };
 
-const PROCESSORS = [
-  { label: 'chartProcessorSavGolSmooth', value: SAVGOL_SMOOTH.name },
-  { label: 'chartProcessorDefault', value: 'default' }
-];
-
-const ChartToggle = styled(ToggleButton)({
-  fontSize: '0.6rem',
-  lineHeight: 1,
-  paddingTop: 4,
-  paddingBottom: 4
-});
+const hideDatasets = {
+  id: 'hideDatasets',
+  beforeUpdate(chart) {
+    chart.data.datasets.forEach((dataset, i) => {
+      chart.setDatasetVisibility(i, dataset.visible)
+    });
+  }
+};
 
 const ChartButton = styled(Button)({
   fontSize: '0.6rem',
@@ -208,40 +192,77 @@ const ChartButton = styled(Button)({
   paddingBottom: 4
 });
 
-export const TimeLineChart = (props) => {
+const ChartSlider = styled(Slider)({
+  fontSize: '0.6rem',
+  lineHeight: 1,
+  paddingTop: 4,
+  paddingBottom: 4
+});
+
+const ModalContent = styled(Paper)(({ theme }) => ({
+  position: 'absolute',
+  width: '100%',
+  height: '100%',
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  padding: 4,
+  backgroundColor: theme.palette.background.default
+}));
+
+// number to turn off smooth (min values of slider)
+const SMOOTH_MIN = 0;
+const SMOOTH_MAX = 15;
+const SMOOTH_DEFAULT = 5;
+
+const TimeLineChartContent = (props) => {
   const {
     datasets,
-    length,
+    datasetsVisible,
     labels,
     colors = [],
     title,
     stepTime,
-    infoText
+    infoText,
+    pointMarkers,
+    endIcons,
+    valTransformer = (val) => val > 0 && val < 1 ? val.toFixed(1) : val.toFixed(0),
+    isModalOpen,
+    openModal,
+    closeModal
   } = props;
+  const { t } = useTranslation();
   const chartRef = React.useRef(null);
   const theme = useTheme();
   const themeContext = React.useContext(ThemeContext);
-  const { t } = useTranslation();
-  const [dataProcessor, setDataProcessor] = React.useState(PROCESSORS[0].value);
+  const [smoothLevel, setSmoothLevel] = React.useState(SMOOTH_DEFAULT);
 
   const processedPoints = React.useMemo(() => {
-    switch (dataProcessor) {
-      case SAVGOL_SMOOTH.name:
-        return datasets.map((points) => SAVGOL_SMOOTH.process(points, 9));
-      default:
-        return datasets;
+    if (smoothLevel === 0) {
+      // no-smooth
+      return datasets;
     }
-  }, [datasets, dataProcessor]);
+    return datasets.map((points) => {
+      const wSize = 2 * Math.ceil(Math.exp(smoothLevel*6/SMOOTH_MAX)) + 3;
+      return savitzkyGolay(points, 1, { derivative: 0, windowSize: wSize, pad: 'pre', polynomial: 3 })
+    });
+  }, [datasets, smoothLevel]);
 
   const tickLabels = React.useMemo(() => {
+    const length = datasets.reduce((accum, dataset) => Math.max(accum, dataset.length), 0);
     const short = new Array(length);
     for (let i = 0; i < length; i++) {
       short[i] = Utils.formatDurationChartShort(stepTime * i);
     }
     return short;
-  }, [length, stepTime]);
+  }, [datasets, stepTime]);
 
   const defaultColor = themeContext.isDark ? theme.palette.primary.dark : theme.palette.primary.light;
+  const endImages = endIcons.map((endIcon) => {
+    const img = new Image(endIcon.width, endIcon.height);
+    img.src = endIcon.src;
+    return img;
+  });
   const data = {
     labels: tickLabels, // use custom labels function
     datasets: processedPoints.map((points, i) => {
@@ -253,22 +274,27 @@ export const TimeLineChart = (props) => {
         borderColor: colors[i] || defaultColor,
         backgroundColor: colors[i] || defaultColor,
         pointBackgroundColor: 'transparent',
+        pointRadius: pointMarkers ? undefined : 0,
         dotIndicatorColor: colors[i] || defaultColor,
-        dotIndicatorBgColor: 'white'
+        dotIndicatorBgColor: 'white',
+        visible: datasetsVisible[i],
+        endIcon: endImages[i]
       }
     }),
   };
 
-  const valToPercent = (val) => {
-    return (100 * val).toFixed(0) + '%';
-  };
-
-  const options = {
+  const options = React.useMemo(() => ({
     devicePixelRatio: 1.5,
+    maintainAspectRatio: false,
     interaction: {
       mode: "interpolate",
       intersect: false,
       axis: "x"
+    },
+    layout: {
+      padding: {
+        right: 6
+      }
     },
     scales: {
       x: {
@@ -289,31 +315,39 @@ export const TimeLineChart = (props) => {
         min: 0,
         ticks: {
           callback: (t) => {
-            return valToPercent(t);
+            return valTransformer(t);
           }
         }
       }
     },
     plugins: {
       tooltip: {
+        position: 'cursor',
+        intersect: false,
+        filter: (item) => {
+          // required to hide tooltip when hovering on axis ticks or other non-chart area items of canvas
+          return item.label !== 'outOfScope';
+        },
         callbacks: {
           title: (tooltipItems) => {
-            return Utils.formatDurationChartLong(tooltipItems[0].label * stepTime);
+            return tooltipItems.length ? Utils.formatDurationChartLong(tooltipItems[0].label * stepTime) : '';
           },
           label: (tooltipItem) => {
-            return tooltipItem.dataset.label + ': ' + valToPercent(tooltipItem.formattedValue);
+            return tooltipItem.dataset.label + ': ' + valTransformer(tooltipItem.formattedValue);
           },
           labelColor: function (tooltipItem) {
             return {
               backgroundColor: tooltipItem.dataset.backgroundColor
             }
-          },
+          }
         }
       },
       legend: {
+        onClick: null,
         labels: {
           usePointStyle: true,
-          pointStyle: 'line'
+          pointStyle: 'line',
+          filter: item => datasetsVisible[item.datasetIndex]
         }
       },
       zoom: {
@@ -337,7 +371,7 @@ export const TimeLineChart = (props) => {
         }
       }
     }
-  }
+  }), [datasetsVisible, stepTime, tickLabels, valTransformer]);
 
   const resetZoom = () => {
     if (chartRef && chartRef.current) {
@@ -345,47 +379,81 @@ export const TimeLineChart = (props) => {
     }
   };
 
-  const changeProcessor = (event) => {
-    setDataProcessor(event.target.value);
-  };
-
   return (
-    <Box >
+    <Stack sx={{ height: '100%' }}>
       {/* control panel */}
       <Stack direction="row" gap={0.6} sx={{ justifyContent: 'right' }}>
+        {/* title */}
         <Stack direction='row' gap={0.4} sx={{ flexGrow: 1 }}>
           <Typography variant="body1">
             {title}
           </Typography>
-          {infoText && <InfoTextHelper text={infoText}/>}
+          {infoText && <InfoTextHelper text={infoText} />}
         </Stack>
+
+        {/* smooth level */}
+        <Stack gap={0.4} sx={{ alignItems: 'center', px: 1 }}>
+          <Typography variant="caption" sx={{ lineHeight: 0.9 }}>
+            {t('chartSmoothness')}
+          </Typography>
+          <ChartSlider
+            sx={{ width: 80 }}
+            size="small"
+            value={smoothLevel}
+            onChange={(_, newValue) => {
+              setSmoothLevel(newValue)
+            }}
+            min={SMOOTH_MIN}
+            max={SMOOTH_MAX}
+            valueLabelDisplay="auto"
+          />
+        </Stack>
+
+        {/* reset zoom */}
         <ChartButton onClick={resetZoom} variant='outlined'>
           {t('chartResetZoom')}
         </ChartButton>
-        <ToggleButtonGroup
-          size="small"
-          color="primary"
-          value={dataProcessor}
-          exclusive
-          onChange={changeProcessor}
-        >
-          {PROCESSORS.map((processor, index) =>
-            <ChartToggle key={index} value={processor.value}>
-              {t(processor.label)}
-            </ChartToggle>
-          )}
-        </ToggleButtonGroup>
+
+        {/* open/close in modal */}
+        <ChartButton onClick={() => isModalOpen ? closeModal() : openModal()} variant='outlined' sx={{ px: 0, minWidth: 24 }}>
+          {isModalOpen ? <i className="fa-solid fa-minimize fa-lg"></i> : <i className="fa-solid fa-maximize fa-lg"></i>}
+        </ChartButton>
+
+        {/* info */}
         <InfoTextHelper text={
-          <Typography variant="caption" sx={{ whiteSpace: 'pre-line'}}>
+          <Typography variant="caption" sx={{ whiteSpace: 'pre-line' }}>
             {t('chartActionsDescription')}
           </Typography>
         } />
       </Stack>
-      <Line
-        ref={chartRef}
-        options={options}
-        data={data}
-      />
+      <Box sx={{ flexGrow: 1, minHeight: 400 }}>
+        <Line
+          ref={chartRef}
+          options={options}
+          data={data}
+          plugins={[vRuler, dotIndicator, endIcon, hideDatasets, zoomPlugin]}
+        />
+      </Box>
+    </Stack>
+  );
+};
+
+export const TimeLineChart = (props) => {
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const openModal = () => setModalOpen(true);
+  const closeModal = () => setModalOpen(false);
+
+  return (
+    <Box>
+      <TimeLineChartContent {...props} openModal={openModal} closeModal={closeModal} isModalOpen={modalOpen} />
+      <Modal
+        open={modalOpen}
+        onClose={closeModal}
+      >
+        <ModalContent>
+          <TimeLineChartContent {...props} openModal={openModal} closeModal={closeModal} isModalOpen={modalOpen} />
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
@@ -408,4 +476,3 @@ const InfoTextHelper = ({ text }) => {
     </Tooltip>
   );
 };
-
