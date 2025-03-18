@@ -4,11 +4,13 @@ import { Doughnut } from 'react-chartjs-2';
 import { Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, );
 
 export const ArmorChart = ({content, colors}) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const chartRef = React.useRef();
+
   const [probabilities, values, avg, legendEntries] = React.useMemo(() => {
     const probabilities_ = [];
     const values_ = [];
@@ -39,37 +41,38 @@ export const ArmorChart = ({content, colors}) => {
         borderWidth: 1,
         backgroundColor: colors,
         centerText: t('commonArmorAVG'),
-      },
-    ],
+        avgColor: theme.palette.text.primary
+      }
+    ]
   };
 
   const avgPlugin = {
     id: "avgPlugin",
     beforeDraw(chart, _, opts) {
       const { ctx, data } = chart;
-      let x = chart.getDatasetMeta(0).data[0].x;
-      let y = chart.getDatasetMeta(0).data[0].y;
-      let dataset = data.datasets[0];
+      const x = chart.getDatasetMeta(0).data[0].x;
+      const y = chart.getDatasetMeta(0).data[0].y;
+      const dataset = data.datasets[0];
 
       ctx.font = 'bolder 18px sans-relief';
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = theme.palette.text.primary;
+      ctx.fillStyle = dataset.avgColor;
       ctx.fillText(dataset.centerText, x, y - 10);
       ctx.fillText(opts.avg, x, y + 10);
     }
   }
 
   const tooltipTitle = (tooltipItems) => {
-    let tooltipItem = tooltipItems[0];
-    let dataset = tooltipItem.chart.data.datasets[0];
-    let value = dataset.dataValues[tooltipItem.dataIndex];
+    const tooltipItem = tooltipItems[0];
+    const dataset = tooltipItem.chart.data.datasets[0];
+    const value = dataset.dataValues[tooltipItem.dataIndex];
     return t('commonArmorValue', { value: value });
   }
 
   const tooltipLabel = (tooltipItem) => {
-    let dataset = tooltipItem.chart.data.datasets[0];
-    let value = dataset.data[tooltipItem.dataIndex];
+    const dataset = tooltipItem.chart.data.datasets[0];
+    const value = dataset.data[tooltipItem.dataIndex];
     return value + '%';
   }
 
@@ -99,10 +102,10 @@ export const ArmorChart = ({content, colors}) => {
     <>
       <Box sx={{ width: '150px', height: '150px' }}>
         <Doughnut
-          redraw={true}
+          ref={chartRef}
           data={data}
           options={options}
-          plugins={[avgPlugin]}
+          plugins={[avgPlugin, Tooltip, Legend]}
         />
       </Box>
       <Box sx={{ paddingTop: '10px' }}>
