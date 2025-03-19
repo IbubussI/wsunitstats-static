@@ -32,6 +32,7 @@ export const ReplayPage = () => {
   const params = useParams();
   const [replayCodeInput, setReplayCodeInput] = React.useState('');
   const [replayInfo, setReplayInfo] = React.useState({});
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const openReplay = (replayCode) => {
     navigate(Utils.getUrlWithPathParams([
@@ -49,13 +50,16 @@ export const ReplayPage = () => {
     const replayCode = parseReplayCode(replayCodeParam);
     if (replayCode) {
       setReplayCodeInput(replayCode);
+      setIsLoading(true);
       Utils.fetchJson(Constants.WS_GAMES_API_REPLAY_BY_CODE + replayCode,
         (responseJson) => {
           const parser = new ReplayInfoParser(gameContext, replayCode);
           setReplayInfo(parser.parse(responseJson));
+          setIsLoading(false);
         },
         (errorResponse) => {
           setReplayInfo({ error: 255, message: errorResponse.message ? errorResponse.message : errorResponse });
+          setIsLoading(false);
         }
       );
     } else if (replayCodeParam) {
@@ -80,7 +84,8 @@ export const ReplayPage = () => {
           }
         }}
         onInputChange={(event) => setReplayCodeInput(event.target.value)}
-        inputValue={replayCodeInput} />
+        inputValue={replayCodeInput}
+        isLoading={isLoading} />
 
       {isSuccess
         ? <Outlet context={replayInfo} />
@@ -89,7 +94,7 @@ export const ReplayPage = () => {
   );
 };
 
-const ReplayForm = ({ onSubmit, onInputChange, inputValue }) => {
+const ReplayForm = ({ onSubmit, onInputChange, inputValue, isLoading }) => {
   const { t } = useTranslation();
   return (
     <FormContainer component='form'
@@ -99,7 +104,7 @@ const ReplayForm = ({ onSubmit, onInputChange, inputValue }) => {
         variant="standard"
         value={inputValue}
         onChange={onInputChange} />
-      <FormButton type='submit'>
+      <FormButton type='submit' loading={isLoading}>
         {t('replayFormLoad')}
       </FormButton>
     </FormContainer>

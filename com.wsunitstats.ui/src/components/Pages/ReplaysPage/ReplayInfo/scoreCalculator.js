@@ -318,7 +318,7 @@ export function getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp,
     }
   }
 
-  return {
+  const gatherEntry = {
     worker: [
       getValueCountingTime(currNationEntry.worker.upTime, currNationEntry.worker.value[0], prevNationEntry.worker.value[0]),
       getValueCountingTime(currNationEntry.worker.upTime, currNationEntry.worker.value[1], prevNationEntry.worker.value[1]),
@@ -336,29 +336,6 @@ export function getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp,
     ],
     whEff: getValueCountingTime(currNationEntry.whEff.upTime, currNationEntry.whEff.value, prevNationEntry.whEff.value)
   };
-}
-
-export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, res, timeLinePeriod) {
-  // avg workers per current timeline interval
-  const avgWorkerNum = (prevWorkers.worker + currWorkers.worker) / 2;
-  const avgBoatNum = (prevWorkers.boat + currWorkers.boat) / 2;
-  const avgTractorNum = (prevWorkers.tractor + currWorkers.tractor) / 2;
-
-  // calc gather efficiency
-  const actualYield = [
-    res[0] / timeLinePeriod,
-    res[1] / timeLinePeriod,
-    res[2] / timeLinePeriod,
-  ];
-  const maxEstimateYield = [
-    (gatherEntry.worker[0] * avgWorkerNum + gatherEntry.boat[0] * avgBoatNum + gatherEntry.tractor[0] * avgTractorNum) * gatherEntry.whEff,
-    (gatherEntry.worker[1] * avgWorkerNum + gatherEntry.boat[1] * avgBoatNum + gatherEntry.tractor[1] * avgTractorNum) * gatherEntry.whEff,
-    (gatherEntry.worker[2] * avgWorkerNum + gatherEntry.boat[2] * avgBoatNum + gatherEntry.tractor[2] * avgTractorNum) * gatherEntry.whEff
-  ];
-  const foodN = maxEstimateYield[0] > 0 ? actualYield[0] / maxEstimateYield[0] : 0;
-  const woodN = maxEstimateYield[1] > 0 ? actualYield[1] / maxEstimateYield[1] : 0;
-  const ironN = maxEstimateYield[2] > 0 ? actualYield[2] / maxEstimateYield[2] : 0;
-  const gatherEff = foodN + woodN + ironN;
 
   // calc resource "value" coefficients for each worker type
   function calcK(speedEntry) {
@@ -373,6 +350,37 @@ export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, res, ti
   const workerK = calcK(gatherEntry.worker);
   const boatK = calcK(gatherEntry.boat);
   const tractorK = calcK(gatherEntry.tractor);
+
+  gatherEntry.worker.k = workerK;
+  gatherEntry.boat.k = boatK;
+  gatherEntry.tractor.k = tractorK;
+  
+  return gatherEntry;
+}
+
+export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, resDelta, timeLinePeriod) {
+  // avg workers per current timeline interval
+  const avgWorkerNum = (prevWorkers.worker + currWorkers.worker) / 2;
+  const avgBoatNum = (prevWorkers.boat + currWorkers.boat) / 2;
+  const avgTractorNum = (prevWorkers.tractor + currWorkers.tractor) / 2;
+
+  // calc gather efficiency
+  const actualYield = [
+    resDelta[0] / timeLinePeriod,
+    resDelta[1] / timeLinePeriod,
+    resDelta[2] / timeLinePeriod,
+  ];
+  const maxEstimateYield = [
+    (gatherEntry.worker[0] * avgWorkerNum + gatherEntry.boat[0] * avgBoatNum + gatherEntry.tractor[0] * avgTractorNum) * gatherEntry.whEff,
+    (gatherEntry.worker[1] * avgWorkerNum + gatherEntry.boat[1] * avgBoatNum + gatherEntry.tractor[1] * avgTractorNum) * gatherEntry.whEff,
+    (gatherEntry.worker[2] * avgWorkerNum + gatherEntry.boat[2] * avgBoatNum + gatherEntry.tractor[2] * avgTractorNum) * gatherEntry.whEff
+  ];
+  const foodN = maxEstimateYield[0] > 0 ? actualYield[0] / maxEstimateYield[0] : 0;
+  const woodN = maxEstimateYield[1] > 0 ? actualYield[1] / maxEstimateYield[1] : 0;
+  const ironN = maxEstimateYield[2] > 0 ? actualYield[2] / maxEstimateYield[2] : 0;
+  const gatherEff = foodN + woodN + ironN;
+
+
   const totalGatherers = avgWorkerNum + avgBoatNum*2 + avgTractorNum*3;
 
   // calc efficiency score points (how efficient gathering was)
@@ -380,20 +388,21 @@ export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, res, ti
     // The more resources with less workers player has - the more score he has
     // The more reference (up to age) warehouse efficiency - the less score, to encourage faster warehouse upgrade
     // divided by 1000 to map resources to in-game values
-    return totalGatherers > 0 ? (res[0] * kEntry[0] + res[1] * kEntry[1] + res[2] * kEntry[2]) / (totalGatherers * refWhEfficiency * 1000) : 0;
+    return totalGatherers > 0 ? (resDelta[0] * kEntry[0] + resDelta[1] * kEntry[1] + resDelta[2] * kEntry[2]) / (totalGatherers * refWhEfficiency * 1000) : 0;
   }
-  const workerEffScore = calcEffScore(workerK, gatherEntry.whEff);
-  const boatEffScore = calcEffScore(boatK, gatherEntry.whEff);
-  const tractorEffScore = calcEffScore(tractorK, gatherEntry.whEff);
+  const workerEffScore = calcEffScore(gatherEntry.worker.k, gatherEntry.whEff);
+  const boatEffScore = calcEffScore(gatherEntry.boat.k, gatherEntry.whEff);
+  const tractorEffScore = calcEffScore(gatherEntry.tractor.k, gatherEntry.whEff);
   const gatherEffScore = workerEffScore + boatEffScore + tractorEffScore;
 
   // calc value score points (how much was gathered)
   function calcValScore(kEntry) {
-    return totalGatherers > 0 ? (res[0] * kEntry[0] + res[1] * kEntry[1] + res[2] * kEntry[2]) / 1000 : 0;
+    // divided by timeLinePeriod to get value per sec
+    return totalGatherers > 0 ? (resDelta[0] * kEntry[0] + resDelta[1] * kEntry[1] + resDelta[2] * kEntry[2]) / timeLinePeriod : 0;
   }
-  const workerValScore = calcValScore(workerK);
-  const boatValScore = calcValScore(boatK);
-  const tractorValScore = calcValScore(tractorK);
+  const workerValScore = calcValScore(gatherEntry.worker.k);
+  const boatValScore = calcValScore(gatherEntry.boat.k);
+  const tractorValScore = calcValScore(gatherEntry.tractor.k);
   const gatherValScore = workerValScore + boatValScore + tractorValScore;
 
   // possible improvement: add correction coefficient to compensate mines in IR
