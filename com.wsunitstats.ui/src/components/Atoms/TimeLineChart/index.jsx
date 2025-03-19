@@ -136,7 +136,7 @@ const vRuler = {
 
 const dotIndicator = {
   id: 'dotIndicator',
-  afterDraw(chart) {
+  afterDatasetsDraw(chart) {
     const metas = chart.getSortedVisibleDatasetMetas();
     for (let i = 0; i < metas.length; i++) {
       const meta = metas[i];
