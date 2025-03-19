@@ -2,14 +2,10 @@ import * as React from 'react';
 import * as Utils from 'utils/utils';
 import { Line } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
   PointElement,
   LineController,
-  LineElement,
   Interaction,
-  Tooltip as ChartTooltip
+  Tooltip
 } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {
@@ -22,7 +18,7 @@ import {
   Slider,
   Stack,
   styled,
-  Tooltip,
+  Tooltip as MuiTooltip,
   Typography,
   useTheme
 } from '@mui/material';
@@ -30,8 +26,10 @@ import { useTranslation } from 'react-i18next';
 import { ThemeContext } from 'themeContext';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import savitzkyGolay from 'ml-savitzky-golay';
+import { resolveChartImage } from './chartIconResolver';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineController, LineElement);
+// Probably not good idea to add something to existent chartjs objects
+// in global scope, since it can affect other charts on other pages
 
 // Override getLabelAndValue to return the interpolated value
 const getLabelAndValue = LineController.prototype.getLabelAndValue;
@@ -77,7 +75,7 @@ Interaction.modes.interpolate = function (chart, e) {
   for (let i = 0; i < metas.length; i++) {
     const meta = metas[i];
     const pt = meta.dataset.interpolate({ x }, "x");
-    if (pt && pt.y < chart.chartArea.bottom) {
+    if (pt && pt.y <= chart.chartArea.bottom) {
       const element = new PointElement({
         ...pt, options: {
           borderColor: meta._dataset.dotIndicatorColor,
@@ -95,7 +93,7 @@ Interaction.modes.interpolate = function (chart, e) {
   return items;
 };
 
-ChartTooltip.positioners.cursor = function (_, coordinates) {
+Tooltip.positioners.cursor = function (_, coordinates) {
   return coordinates;
 };
 
@@ -167,11 +165,13 @@ const endIcon = {
       const meta = metas[i];
       const last = meta.dataset.last();
       const endImg = meta._dataset.endIcon;
-      const imgWidth = endImg.width || 12;
-      const imgHeight = endImg.height || 12;
-      const imgX = last.x - imgWidth / 2;
-      const imgY = last.y - imgHeight / 2;
-      ctx.drawImage(endImg, imgX, imgY, imgWidth, imgHeight);
+      if (endImg != null) {
+        const imgWidth = endImg.width || 12;
+        const imgHeight = endImg.height || 12;
+        const imgX = last.x - imgWidth / 2;
+        const imgY = last.y - imgHeight / 2;
+        ctx.drawImage(endImg, imgX, imgY, imgWidth, imgHeight);
+      }
     }
   }
 };
@@ -213,7 +213,7 @@ const ModalContent = styled(Paper)(({ theme }) => ({
 // number to turn off smooth (min values of slider)
 const SMOOTH_MIN = 0;
 const SMOOTH_MAX = 15;
-const SMOOTH_DEFAULT = 5;
+const SMOOTH_DEFAULT = 3;
 
 const TimeLineChartContent = (props) => {
   const {
@@ -225,7 +225,7 @@ const TimeLineChartContent = (props) => {
     stepTime,
     infoText,
     pointMarkers,
-    endIcons,
+    results,
     valTransformer = (val) => val > 0 && val < 1 ? val.toFixed(1) : val.toFixed(0),
     isModalOpen,
     openModal,
@@ -245,6 +245,7 @@ const TimeLineChartContent = (props) => {
     return datasets.map((points) => {
       const wSize = 2 * Math.ceil(Math.exp(smoothLevel*6/SMOOTH_MAX)) + 3;
       return savitzkyGolay(points, 1, { derivative: 0, windowSize: wSize, pad: 'pre', polynomial: 3 })
+        .map(point => point > 0 ? point : 0);
     });
   }, [datasets, smoothLevel]);
 
@@ -258,11 +259,7 @@ const TimeLineChartContent = (props) => {
   }, [datasets, stepTime]);
 
   const defaultColor = themeContext.isDark ? theme.palette.primary.dark : theme.palette.primary.light;
-  const endImages = endIcons.map((endIcon) => {
-    const img = new Image(endIcon.width, endIcon.height);
-    img.src = endIcon.src;
-    return img;
-  });
+  const endImages = results.map((result) => resolveChartImage(result, theme.palette.background.default));
   const data = {
     labels: tickLabels, // use custom labels function
     datasets: processedPoints.map((points, i) => {
@@ -293,7 +290,7 @@ const TimeLineChartContent = (props) => {
     },
     layout: {
       padding: {
-        right: 6
+        right: 8
       }
     },
     scales: {
@@ -460,7 +457,7 @@ export const TimeLineChart = (props) => {
 
 const InfoTextHelper = ({ text }) => {
   return (
-    <Tooltip
+    <MuiTooltip
       arrow
       title={text}
       slots={{
@@ -473,6 +470,6 @@ const InfoTextHelper = ({ text }) => {
       <IconButton aria-label="delete" sx={{ p: 0, color: 'primary.main', maxHeight: '1em' }} disableTouchRipple>
         <HelpOutlineIcon />
       </IconButton>
-    </Tooltip>
+    </MuiTooltip>
   );
 };

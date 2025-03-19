@@ -1,7 +1,7 @@
 import { PlayerTable } from 'components/Pages/ReplaysPage/ReplayInfo/PlayerTable';
 import { GeneralTable } from 'components/Pages/ReplaysPage/ReplayInfo/GeneralTable';
 import { useOutletContext } from 'react-router-dom';
-import { ChartViewer } from './ChartsViewer';
+import { ChartViewer } from './ChartViewer';
 import { Box, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 

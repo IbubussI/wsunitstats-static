@@ -1,6 +1,6 @@
 import getAgeNation from './ageNationFinder';
-import { DatasetContainer, DatasetGroup, TimeLineDataset } from './datasetStructure';
-import { calcGatherMetrics, getGatherEntry } from './scoreCalculator';
+import { DatasetContainer, DatasetGroup, MultiRowDatasetContainer, TimeLineDataset, TimeLineMultiRowDataset } from './datasetStructure';
+import { calcGatherMetrics, calcResourceMetrics, getGatherEntry } from './scoreCalculator';
 
 export class ReplayInfoParser {
   static timeLinePeriod = 30000; //ms
@@ -53,15 +53,14 @@ export class ReplayInfoParser {
       return new ReplayParseResult().addError(
         replayApiResponse.error,
         'War Selection API is unavailable due to the server maintenance. ' +
-          'It can last up to several hours before endpoint will be available again. Please, try later'
+        'It can last up to several hours before endpoint will be available again. Please, try later'
       );
     }
     if (replayApiResponse.error !== 0) {
       return new ReplayParseResult().addError(
         replayApiResponse.error,
         `War Selection API responded with error [${replayApiResponse.error}]. ` +
-          `Original description: ${replayApiResponse.description}`
-
+        `Original description: ${replayApiResponse.description}`
       );
     }
 
@@ -241,46 +240,63 @@ export class ReplayInfoParser {
       const squadsCount = this.#groupMapByParsedId.size;
       const playersCount = this.#initData.players.length;
 
-      const setupGroups = (container) => {
-        const teamDatasetGroup = new DatasetGroup('replayDatasetGroupTeams');
-        const squadDatasetGroup = new DatasetGroup('replayDatasetGroupSquads');
-        const playerDatasetGroup = new DatasetGroup('replayDatasetGroupPlayers');
+      const setupGroups = (container,
+        getTeamResult = (teamId) => {
+          const playerTeam = this.#playerTeams.get(teamId);
+          const allPlayersDead = !playerTeam.some(playerId => this.#winnerSurvivalTime === this.#playerSurvival.get(playerId));
+          const isWinner = this.#teamWinners.has(teamId);
+          const isWonderWin = playerTeam.some(playerId => this.#playerResearchesData.get(playerId).isWonderWin);
+          return allPlayersDead ? 'death' : (isWinner ? (isWonderWin ? 'wonder' : 'win') : 'timeout');
+        },
+        getSquadResult = (squadId) => {
+          const squad = this.#groupMapByParsedId.get(squadId);
+          const allPlayersDead = !squad.members.some(playerId => this.#winnerSurvivalTime === this.#playerSurvival.get(playerId));
+          const anyMemberWon = squad.members.some(playerId => this.#playerWinners.has(playerId));
+          const anyMemberWonByWonder = squad.members.some(playerId => this.#playerResearchesData.get(playerId).isWonderWin);
+          return allPlayersDead ? 'death' : (anyMemberWon ? (anyMemberWonByWonder ? 'wonder' : 'win') : 'timeout');
+        },
+        getPlayerResult = (playerId) => {
+          const isDead = this.#winnerSurvivalTime > this.#playerSurvival.get(playerId);
+          const isWinner = this.#playerWinners.has(playerId);
+          const isWonderWin = this.#playerResearchesData.get(playerId).isWonderWin;
+          return isDead ? 'death' : (isWinner ? (isWonderWin ? 'wonder' : 'win') : 'timeout');
+        }) => {
+        const teamDatasetGroup = new DatasetGroup('replayDatasetGroupTeams', 'teams');
+        const squadDatasetGroup = new DatasetGroup('replayDatasetGroupSquads', 'squads');
+        const playerDatasetGroup = new DatasetGroup('replayDatasetGroupPlayers', 'players');
         container.addDatasetGroup(teamDatasetGroup);
         container.addDatasetGroup(squadDatasetGroup);
         container.addDatasetGroup(playerDatasetGroup);
 
+        const multiRow = container.isMultiRow;
+        const rowNum = container.rowNum;
+
         let playerTeamCounter = 0;
         for (let i = 0; i < teamsCount; i++) {
           const playerTeam = this.#playerTeams.get(i);
-          const allPlayersDead = !playerTeam.some(playerId => this.#winnerSurvivalTime === this.#playerSurvival.get(playerId));
-          const isWinner = this.#teamWinners.has(i);
-          const isWonderWin = playerTeam.some(playerId => this.#playerResearchesData.get(playerId).isWonderWin);
-          const result = allPlayersDead ? 'death' : (isWinner ? (isWonderWin ? 'wonder' : 'win') : 'timeout');
           const playerTeamsNumber = Array.from(this.#playerTeams.values()).filter(arr => arr.length > 0).length;
           playerTeamCounter = playerTeam.length > 0 ? playerTeamCounter + 1 : playerTeamCounter;
           const leadingFaction = this.#getPlayerFaction(playerTeam[0]);
           const color = playerTeamsNumber === 2 ? TEAM_COLORS[i % 2].light : FACTION_COLORS[leadingFaction];
-          teamDatasetGroup.addDataset(new TimeLineDataset('replayTeam', true, playerTeamCounter, result, color));
+          const dataset = multiRow ? new TimeLineMultiRowDataset('replayTeam', true, playerTeamCounter, getTeamResult(i), rowNum)
+            : new TimeLineDataset('replayTeam', true, playerTeamCounter, getTeamResult(i), color);
+          teamDatasetGroup.addDataset(dataset);
         }
 
         for (let i = 0; i < squadsCount; i++) {
           const squad = this.#groupMapByParsedId.get(i);
-          const allPlayersDead = !squad.members.some(playerId => this.#winnerSurvivalTime === this.#playerSurvival.get(playerId));
-          const anyMemberWon = squad.members.some(playerId => this.#playerWinners.has(playerId));
-          const anyMemberWonByWonder = squad.members.some(playerId => this.#playerResearchesData.get(playerId).isWonderWin);
-          const result = allPlayersDead ? 'death' : (anyMemberWon ? (anyMemberWonByWonder ? 'wonder' : 'win') : 'timeout');
           const creatorFaction = this.#getPlayerFaction(squad.creator.id);
-          squadDatasetGroup.addDataset(new TimeLineDataset('replaySquad', true, i + 1, result, FACTION_COLORS[creatorFaction]));
+          const dataset = multiRow ? new TimeLineMultiRowDataset('replaySquad', true, i + 1, getSquadResult(i), rowNum)
+            : new TimeLineDataset('replaySquad', true, i + 1, getSquadResult(i), FACTION_COLORS[creatorFaction]);
+          squadDatasetGroup.addDataset(dataset);
         }
 
         for (let i = 0; i < playersCount; i++) {
-          const isDead = this.#winnerSurvivalTime > this.#playerSurvival.get(i);
-          const isWinner = this.#playerWinners.has(i);
-          const isWonderWin = this.#playerResearchesData.get(i).isWonderWin;
-          const result = isDead ? 'death' : (isWinner ? (isWonderWin ? 'wonder' : 'win') : 'timeout');
           const playerFaction = this.#getPlayerFaction(i);
           const playerNickname = this.#playerScriptData[i].name;
-          playerDatasetGroup.addDataset(new TimeLineDataset(playerNickname, false, null, result, FACTION_COLORS[playerFaction]));
+          const dataset = multiRow ? new TimeLineMultiRowDataset(playerNickname, false, null, getPlayerResult(i), rowNum)
+            : new TimeLineDataset(playerNickname, false, null, getPlayerResult(i), FACTION_COLORS[playerFaction]);
+          playerDatasetGroup.addDataset(dataset);
         }
 
         return {
@@ -290,20 +306,46 @@ export class ReplayInfoParser {
         };
       };
 
-      const unitCreatePointsDatasetContainer = new DatasetContainer('replayDatasetUnitCreatePoints');
-      const unitKillPointsDatasetContainer = new DatasetContainer('replayDatasetUnitKillPoints');
-      const landPointsDatasetContainer = new DatasetContainer('replayDatasetLandPoints');
-      const workerPointsDatasetContainer = new DatasetContainer('replayDatasetWorkerPoints');
-      const gatherEfficiencyDatasetContainer = new DatasetContainer('replayDatasetGatherEfficiency', 'percent');
-      const gatherScoreDatasetContainer = new DatasetContainer('replayDatasetGatherScore');
-
       // this are references to the same entities as containers above
+      const unitCreatePointsDatasetContainer = new DatasetContainer('replayDatasetUnitCreatePoints');
       const unitCreatePointsData = setupGroups(unitCreatePointsDatasetContainer);
+
+      const unitKillPointsDatasetContainer = new DatasetContainer('replayDatasetUnitKillPoints');
       const unitKillPointsData = setupGroups(unitKillPointsDatasetContainer);
+
+      const landPointsDatasetContainer = new DatasetContainer('replayDatasetLandPoints');
       const landPointsData = setupGroups(landPointsDatasetContainer);
+
+      const workerPointsDatasetContainer = new DatasetContainer('replayDatasetWorkerPoints');
       const workerPointsData = setupGroups(workerPointsDatasetContainer);
+
+      const gatherEfficiencyDatasetContainer = new DatasetContainer('replayDatasetGatherEfficiency', 'percent');
       const gatherEfficiencyData = setupGroups(gatherEfficiencyDatasetContainer);
-      const gatherScoreData = setupGroups(gatherScoreDatasetContainer);
+
+      // todo: remove or use
+      //const gatherEffScoreDatasetContainer = new DatasetContainer('replayDatasetGatherEffScore');
+      //const gatherEffScoreData = setupGroups(gatherEffScoreDatasetContainer);
+
+      const gatherValueScoreDatasetContainer = new DatasetContainer('replayDatasetGatherValueScore');
+      const gatherValueScoreData = setupGroups(gatherValueScoreDatasetContainer);
+
+      const foodCollectedDatasetContainer = new DatasetContainer('replayDatasetFoodCollected');
+      const foodCollectedData = setupGroups(foodCollectedDatasetContainer);
+      const woodCollectedDatasetContainer = new DatasetContainer('replayDatasetWoodCollected');
+      const woodCollectedData = setupGroups(woodCollectedDatasetContainer);
+      const ironCollectedDatasetContainer = new DatasetContainer('replayDatasetIronCollected');
+      const ironCollectedData = setupGroups(ironCollectedDatasetContainer);
+      const foodNowDatasetContainer = new DatasetContainer('replayDatasetFoodNow');
+      const foodNowData = setupGroups(foodNowDatasetContainer);
+      const woodNowDatasetContainer = new DatasetContainer('replayDatasetWoodNow');
+      const woodNowData = setupGroups(woodNowDatasetContainer);
+      const ironNowDatasetContainer = new DatasetContainer('replayDatasetIronNow');
+      const ironNowData = setupGroups(ironNowDatasetContainer);
+
+      const resourcesCollectedDatasetContainer = new MultiRowDatasetContainer('replayDatasetResourcesCollected', RES_DATA.rows, RES_DATA.names, RES_DATA.colors, RES_DATA.icons);
+      const resourcesCollectedData = setupGroups(resourcesCollectedDatasetContainer);
+      const resourcesNowDatasetContainer = new MultiRowDatasetContainer('replayDatasetResourcesNow', RES_DATA.rows, RES_DATA.names, RES_DATA.colors, RES_DATA.icons);
+      const resourcesNowData = setupGroups(resourcesNowDatasetContainer);
 
       // prefill entries
       for (let i = 0; i < playersCount; i++) {
@@ -344,33 +386,60 @@ export class ReplayInfoParser {
           const boatNum = workerInfo[factionId][2];
           const tractorNum = workerInfo[factionId][3];
 
-          const foodDelta = resourceInfo[factionId][0];
-          const woodDelta = resourceInfo[factionId][1];
-          const ironDelta = resourceInfo[factionId][2];
+          const resInfo = resourceInfo[factionId];
+          const resDelta = [resInfo[0], resInfo[1], resInfo[2]];
+          const resCollected = [resInfo[3], resInfo[4], resInfo[5]];
+          const resNow = [resInfo[6], resInfo[7], resInfo[8]];
+          const resWas = playerMetadata.resources;
+          playerMetadata.resources = resNow;
 
-          const foodCollected = resourceInfo[factionId][3];
-          const woodCollected = resourceInfo[factionId][4];
-          const ironCollected = resourceInfo[factionId][5];
+          const teamId = playerMetadata.teamId;
+          const squadId = playerMetadata.squadId;
 
-          const foodNow = resourceInfo[factionId][6];
-          const woodNow = resourceInfo[factionId][7];
-          const ironNow = resourceInfo[factionId][8];
+          const resMetrics = calcResourceMetrics(
+            resNow,
+            resWas,
+            resDelta,
+            resCollected
+          );
 
-          if (this.#isAlive(playerId, time)) {
+          if (this.#isTeamAlive(teamId, time)) {
+            resourcesCollectedData.teams[teamId].computeSum(i, resMetrics.resCollected);
+            resourcesNowData.teams[teamId].computeSum(i, resMetrics.resNow);
+            foodCollectedData.teams[teamId].computeSum(i, resMetrics.resCollected[0]);
+            woodCollectedData.teams[teamId].computeSum(i, resMetrics.resCollected[1]);
+            ironCollectedData.teams[teamId].computeSum(i, resMetrics.resCollected[2]);
+            foodNowData.teams[teamId].computeSum(i, resMetrics.resNow[0]);
+            woodNowData.teams[teamId].computeSum(i, resMetrics.resNow[1]);
+            ironNowData.teams[teamId].computeSum(i, resMetrics.resNow[2]);
+          }
+
+          if (squadId != null && this.#isSquadAlive(squadId, time)) {
+            resourcesCollectedData.squads[squadId].computeSum(i, resMetrics.resCollected);
+            resourcesNowData.squads[squadId].computeSum(i, resMetrics.resNow);
+            foodCollectedData.squads[squadId].computeSum(i, resMetrics.resCollected[0]);
+            woodCollectedData.squads[squadId].computeSum(i, resMetrics.resCollected[1]);
+            ironCollectedData.squads[squadId].computeSum(i, resMetrics.resCollected[2]);
+            foodNowData.squads[squadId].computeSum(i, resMetrics.resNow[0]);
+            woodNowData.squads[squadId].computeSum(i, resMetrics.resNow[1]);
+            ironNowData.squads[squadId].computeSum(i, resMetrics.resNow[2]);
+          }
+
+          if (this.#isPlayerAlive(playerId, time)) {
             // Gather efficiency and score
             const currAgeNation = getAgeNation(time, this.#playerResearchTimeLine[playerId]);
 
             // update metadata values for next timeline
             const prevAgeNation = playerMetadata.ageNation;
             const prevWorkers = playerMetadata.workers;
-            //const prevRes = playerMetadata.resources;
+
             const currWorkers = { worker: workerNum, boat: boatNum, tractor: tractorNum };
             playerMetadata.ageNation = currAgeNation;
             playerMetadata.workers = currWorkers;
 
             const timeSinceLastAgeUp = this.#findPrevAgeResearchPassedTime(time, playerId);
             const gatherEntry = getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp, ReplayInfoParser.timeLinePeriod, time)
-            const ecoMetrics = calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, [foodDelta, woodDelta, ironDelta], ReplayInfoParser.timeLinePeriod);
+            const gatherMetrics = calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, resDelta, ReplayInfoParser.timeLinePeriod);
 
             // TODO kills/army points ratio
             //const combatScore = 0;
@@ -380,29 +449,39 @@ export class ReplayInfoParser {
             //const activityScore = 0;
             //const score = ecoMetrics.gatherScore + combatScore + managementScore + activityScore;
 
-            const teamId = playerMetadata.teamId;
-            const squadId = playerMetadata.squadId;
-
             unitCreatePointsData.players[playerId].push(unitCreatePoints);
             unitKillPointsData.players[playerId].push(unitKillPoints);
             landPointsData.players[playerId].push(landPoints / 1000);
             workerPointsData.players[playerId].push(workerPoints);
-            gatherEfficiencyData.players[playerId].push(ecoMetrics.gatherEfficiency);
-            gatherScoreData.players[playerId].push(ecoMetrics.gatherScore);
+            gatherEfficiencyData.players[playerId].push(gatherMetrics.gatherEfficiency);
+            //gatherEffScoreData.players[playerId].push(gatherMetrics.gatherEfficiencyScore);
+            gatherValueScoreData.players[playerId].push(gatherMetrics.gatherValueScore);
+            resourcesCollectedData.players[playerId].push(resMetrics.resCollected);
+            resourcesNowData.players[playerId].push(resMetrics.resNow);
+            foodCollectedData.players[playerId].push(resMetrics.resCollected[0]);
+            woodCollectedData.players[playerId].push(resMetrics.resCollected[1]);
+            ironCollectedData.players[playerId].push(resMetrics.resCollected[2]);
+            foodNowData.players[playerId].push(resMetrics.resNow[0]);
+            woodNowData.players[playerId].push(resMetrics.resNow[1]);
+            ironNowData.players[playerId].push(resMetrics.resNow[2]);
 
             unitCreatePointsData.teams[teamId].computeSum(i, unitCreatePoints);
             unitKillPointsData.teams[teamId].computeSum(i, unitKillPoints);
-            landPointsData.teams[teamId].computeSum(i, landPoints / 100);
+            landPointsData.teams[teamId].computeSum(i, landPoints / 1000);
             workerPointsData.teams[teamId].computeSum(i, workerPoints);
-            gatherEfficiencyData.teams[teamId].computeAvg(i, ecoMetrics.gatherEfficiency);
-            gatherScoreData.teams[teamId].computeAvg(i, ecoMetrics.gatherScore);
+            gatherEfficiencyData.teams[teamId].computeAvg(i, gatherMetrics.gatherEfficiency);
+            //gatherEffScoreData.teams[teamId].computeAvg(i, gatherMetrics.gatherEfficiencyScore);
+            gatherValueScoreData.teams[teamId].computeSum(i, gatherMetrics.gatherValueScore);
 
-            unitCreatePointsData.squads[squadId]?.computeSum(i, unitCreatePoints);
-            unitKillPointsData.squads[squadId]?.computeSum(i, unitKillPoints);
-            landPointsData.squads[squadId]?.computeSum(i, landPoints / 1000);
-            workerPointsData.squads[squadId]?.computeSum(i, workerPoints);
-            gatherEfficiencyData.squads[squadId]?.computeAvg(i, ecoMetrics.gatherEfficiency);
-            gatherScoreData.squads[squadId]?.computeAvg(i, ecoMetrics.gatherScore);
+            if (squadId != null) {
+              unitCreatePointsData.squads[squadId].computeSum(i, unitCreatePoints);
+              unitKillPointsData.squads[squadId].computeSum(i, unitKillPoints);
+              landPointsData.squads[squadId].computeSum(i, landPoints / 1000);
+              workerPointsData.squads[squadId].computeSum(i, workerPoints);
+              gatherEfficiencyData.squads[squadId].computeAvg(i, gatherMetrics.gatherEfficiency);
+              //gatherEffScoreData.squads[squadId].computeAvg(i, gatherMetrics.gatherEfficiencyScore);
+              //gatherValueScoreData.squads[squadId].computeSum(i, gatherMetrics.gatherValueScore);
+            }
           }
         }
       }
@@ -413,13 +492,22 @@ export class ReplayInfoParser {
         landPointsDatasetContainer,
         workerPointsDatasetContainer,
         gatherEfficiencyDatasetContainer,
-        gatherScoreDatasetContainer
+        gatherValueScoreDatasetContainer,
+        resourcesCollectedDatasetContainer,
+        resourcesNowDatasetContainer,
+        foodCollectedDatasetContainer,
+        woodCollectedDatasetContainer,
+        ironCollectedDatasetContainer,
+        foodNowDatasetContainer,
+        woodNowDatasetContainer,
+        ironNowDatasetContainer
       ];
       const resultFiltered = [];
       resultFull.forEach(container => {
         // filter out empty datasets
         container.datasetGroups.forEach(datasetGroup => {
-          const nonEmptyDatasets = datasetGroup.datasets.filter(dataset => dataset.values.length > 0);
+          const nonEmptyDatasets = datasetGroup.datasets.filter(dataset =>
+            dataset.values.length > 0 && (!Array.isArray(dataset.values[0]) || dataset.values[0].length > 0));
           datasetGroup.datasets = nonEmptyDatasets;
         });
         // filter out empty dataset groups
@@ -429,7 +517,7 @@ export class ReplayInfoParser {
           resultFiltered.push(container);
         }
       });
-      return resultFiltered;
+      return { charts: resultFiltered };
     }
     return [];
   }
@@ -655,12 +743,28 @@ export class ReplayInfoParser {
     return null;
   }
 
-  #isAlive(playerId, time) {
+  #isPlayerAlive(playerId, time) {
     if (!this.#isPlayersLostOn) {
       return true;
     }
 
     return time < this.#playerSurvival.get(playerId);
+  }
+
+  #isSquadAlive(squadId, time) {
+    if (!this.#isPlayersLostOn) {
+      return true;
+    }
+    const squadMembers = this.#groupMapByParsedId.get(squadId).members;
+    return squadMembers.some((playerId) => time < this.#playerSurvival.get(playerId));
+  }
+
+  #isTeamAlive(teamId, time) {
+    if (!this.#isPlayersLostOn) {
+      return true;
+    }
+    const teamMembers = this.#playerTeams.get(teamId);
+    return teamMembers.some((playerId) => time < this.#playerSurvival.get(playerId));
   }
 
   #findPrevAgeResearchPassedTime(time, playerId) {
@@ -926,3 +1030,10 @@ const TEAM_COLORS = [
     light: '#a2d8ff'
   }
 ];
+
+const RES_DATA = {
+  names: ['resourceFood', 'resourceWood', 'resourceIron'],
+  colors: ['#d84946', '#89411e', '#a29999'],
+  icons: ['food', 'wood', 'iron'],
+  rows: 3
+};

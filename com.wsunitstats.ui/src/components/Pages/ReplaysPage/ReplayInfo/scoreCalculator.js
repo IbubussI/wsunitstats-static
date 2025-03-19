@@ -373,32 +373,42 @@ export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, res, ti
   const workerK = calcK(gatherEntry.worker);
   const boatK = calcK(gatherEntry.boat);
   const tractorK = calcK(gatherEntry.tractor);
+  const totalGatherers = avgWorkerNum + avgBoatNum*2 + avgTractorNum*3;
 
-  // calc score points
-  function calcScore(res, kEntry, gathererNum, refWhEfficiency) {
+  // calc efficiency score points (how efficient gathering was)
+  function calcEffScore(kEntry, refWhEfficiency) {
     // The more resources with less workers player has - the more score he has
     // The more reference (up to age) warehouse efficiency - the less score, to encourage faster warehouse upgrade
     // divided by 1000 to map resources to in-game values
-    return gathererNum > 0 ? (res[0] * kEntry[0] + res[1] * kEntry[1] + res[2] * kEntry[2]) / (totalGatherers * refWhEfficiency * 1000) : 0;
+    return totalGatherers > 0 ? (res[0] * kEntry[0] + res[1] * kEntry[1] + res[2] * kEntry[2]) / (totalGatherers * refWhEfficiency * 1000) : 0;
   }
-  const totalGatherers = avgWorkerNum + avgBoatNum*2 + avgTractorNum*3;
-  const workerScore = calcScore(res, workerK, totalGatherers, gatherEntry.whEff);
-  const boatScore = calcScore(res, boatK, totalGatherers, gatherEntry.whEff);
-  const tractorScore = calcScore(res, tractorK, totalGatherers, gatherEntry.whEff);
-  const gatherScore = workerScore + boatScore + tractorScore;
+  const workerEffScore = calcEffScore(workerK, gatherEntry.whEff);
+  const boatEffScore = calcEffScore(boatK, gatherEntry.whEff);
+  const tractorEffScore = calcEffScore(tractorK, gatherEntry.whEff);
+  const gatherEffScore = workerEffScore + boatEffScore + tractorEffScore;
+
+  // calc value score points (how much was gathered)
+  function calcValScore(kEntry) {
+    return totalGatherers > 0 ? (res[0] * kEntry[0] + res[1] * kEntry[1] + res[2] * kEntry[2]) / 1000 : 0;
+  }
+  const workerValScore = calcValScore(workerK);
+  const boatValScore = calcValScore(boatK);
+  const tractorValScore = calcValScore(tractorK);
+  const gatherValScore = workerValScore + boatValScore + tractorValScore;
 
   // possible improvement: add correction coefficient to compensate mines in IR
   return {
     gatherEfficiency: gatherEff,
-    gatherScore: gatherScore
+    gatherEfficiencyScore: gatherEffScore,
+    gatherValueScore: gatherValScore
   };
 }
 
-export function calcResourceMetrics(resNow, resWas, resGathered) {
+export function calcResourceMetrics(resNow, resWas, resDelta, resCollected) {
   const resExpected = [
-    resWas[0] + resGathered[0],
-    resWas[1] + resGathered[1],
-    resWas[2] + resGathered[2]
+    resWas[0] + resDelta[0],
+    resWas[1] + resDelta[1],
+    resWas[2] + resDelta[2]
   ];
 
   const resSpent = [
@@ -408,8 +418,9 @@ export function calcResourceMetrics(resNow, resWas, resGathered) {
   ];
 
   return {
-    resStored: resNow,
-    resSpent: resSpent,
-    resGathered: resGathered
+    resNow: resNow.map(r => r / 1000),
+    resSpent: resSpent.map(r => r / 1000),
+    resDelta: resDelta.map(r => r / 1000),
+    resCollected: resCollected.map(r => r / 1000)
   };
 }

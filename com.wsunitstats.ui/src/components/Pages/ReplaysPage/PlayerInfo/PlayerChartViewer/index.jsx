@@ -1,15 +1,13 @@
 import * as React from "react";
-import { Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
 import { ChartBox } from "components/Pages/ReplaysPage/ChartBox";
-import { useTranslation } from "react-i18next";
 
-export const PlayerChartViewer = ({ timeLine, timeLinePeriod, playerId }) => {
-  const { t } = useTranslation();
+export const PlayerChartViewer = ({ charts, timeLinePeriod, playerId }) => {
   return (
     <Stack gap={1}>
-      {timeLine.length !== 0 &&
+      {charts.length !== 0 &&
         <ChartBox
-          timeLine={timeLine}
+          timeLine={charts}
           stepTime={timeLinePeriod}
           restrictByGroupName={'replayDatasetGroupPlayers'}
           restrictByDatasetIndex={playerId}

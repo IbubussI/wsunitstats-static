@@ -1,10 +1,8 @@
 import * as React from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-
-ChartJS.register(ArcElement, );
 
 export const ArmorChart = ({content, colors}) => {
   const { t } = useTranslation();

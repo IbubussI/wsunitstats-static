@@ -31,6 +31,19 @@ import { ThemeContext } from 'themeContext';
 import { PlayerInfo } from 'components/Pages/ReplaysPage/PlayerInfo';
 import { ReplayPage } from 'components/Pages/ReplaysPage';
 import { GameDataContext } from 'gameDataContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Tooltip,
+  ArcElement
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineController, LineElement, ArcElement, Tooltip, Legend);
 
 const lightTheme = createTheme({
   palette: {

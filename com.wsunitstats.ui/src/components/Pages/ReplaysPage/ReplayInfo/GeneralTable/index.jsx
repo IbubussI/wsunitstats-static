@@ -6,7 +6,8 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer
+  TableContainer,
+  useMediaQuery
 } from "@mui/material";
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
@@ -18,6 +19,7 @@ const GeneralTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 export const GeneralTable = ({ replayInfo }) => {
+  const isWide = useMediaQuery('(min-width:800px)');
   const { t } = useTranslation();
 
   const match = replayInfo.match;
@@ -43,7 +45,7 @@ export const GeneralTable = ({ replayInfo }) => {
   ];
 
   return (
-    <Stack direction="row" gap={1}>
+    <Stack direction={isWide ? 'row' : 'column'} gap={1}>
       <TableContainer component={Paper}>
         <Table>
           <TableBody>

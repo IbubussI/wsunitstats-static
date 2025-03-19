@@ -15,12 +15,34 @@ export class DatasetContainer {
   }
 }
 
+// container for datasets whith multiple rows (e.g. for all 3 resources in one dataset)
+export class MultiRowDatasetContainer extends DatasetContainer {
+  isMultiRow;
+  rowNum;
+  rowNames;
+  isLocalizeRowNames;
+  rowColors;
+  rowIcons;
+
+  constructor(locKeyPrefix, rowNum, rowNames, rowColors, rowIcons, isLocalizeRowNames = true, valueType = 'num') {
+    super(locKeyPrefix, valueType);
+    this.isMultiRow = true;
+    this.rowNum = rowNum;
+    this.rowNames = rowNames;
+    this.rowColors = rowColors;
+    this.rowIcons = rowIcons;
+    this.isLocalizeRowNames = isLocalizeRowNames;
+  }
+}
+
 export class DatasetGroup {
+  dataGroupIdentifier;
   dataGroupName; // Teams, Squads, Players etc
   datasets = [];
 
-  constructor(name) {
+  constructor(name, identifier) {
     this.dataGroupName = name;
+    this.dataGroupIdentifier = identifier;
   }
 
   addDataset(dataset) {
@@ -34,7 +56,7 @@ export class TimeLineDataset {
   datasetName; // team-name, squad-name, player-name etc
   isLocalizeName;
   localizationDynamicValue;
-  result; // 'win', 'death', 'timeout' strings
+  result; // string that represents icon at the end of dataset
   color;
   pointsSum = 0;
   pointsAvg = 0;
@@ -53,10 +75,8 @@ export class TimeLineDataset {
   push(value) {
     this.values.push(value);
     this.valuesComputed.push(1);
-    this.min = Math.min(this.min, value);
-    this.max = Math.max(this.max, value);
-    this.pointsSum = this.pointsSum + value;
-    this.pointsAvg = this.pointsSum / this.values.length;
+
+    this.calcTrackingFeatures(value, this.values.length);
   }
 
   // compute new value based on previous one
@@ -68,17 +88,73 @@ export class TimeLineDataset {
     const value = computeFunc(currentValue, computedValues);
     this.values[index] = value;
     this.valuesComputed[index] = computedValues + 1;
-    this.min = Math.min(this.min, value);
-    this.max = Math.max(this.max, value);
-    this.pointsSum = this.pointsSum + value;
-    this.pointsAvg = this.pointsSum / this.values.length;
+
+    this.calcTrackingFeatures(value, this.values.length);
   }
 
   computeAvg(index, value) {
-    this.compute(index, (curr, total) => (curr * total + value)/(total + 1))
+    this.compute(index, (curr, total) => (curr * total + value)/(total + 1));
   }
 
   computeSum(index, value) {
     this.compute(index, (curr) => curr + value);
+  }
+
+  calcTrackingFeatures(value, length) {
+    this.min = Math.min(this.min, value);
+    this.max = Math.max(this.max, value);
+    this.pointsSum = this.pointsSum + value;
+    this.pointsAvg = this.pointsSum / length;
+  }
+}
+
+// extends dataset with 2d array of values to support
+export class TimeLineMultiRowDataset extends TimeLineDataset {
+  constructor(name, isLocalizeName, localizationDynamicValue, result, rowNum) {
+    super(name, isLocalizeName, localizationDynamicValue, result, null);
+    this.values = Array.from(Array(rowNum), _ => []);
+    this.valuesComputed = Array.from(Array(rowNum), _ => []);
+  }
+
+  // add value to this dataset tracking its min/max/avg/sum
+  push(values) {
+    this.#checkIntegrity(values);
+    values.forEach((value, row) => {
+      this.values[row].push(value);
+      this.valuesComputed[row].push(1);
+      this.calcTrackingFeatures(value, this.values[row].length);
+    });
+  }
+
+  // compute new value based on previous one
+  compute(index, computeFunc) {
+    //this.#checkIntegrity(values);
+    const currentValue = this.values.map(row => row[index] != null ? row[index] : 0);
+    const computedValues = this.valuesComputed.map(row => row[index] != null ? row[index] : 0);
+    const values = computeFunc(currentValue, computedValues);
+    this.#checkIntegrity(values);
+    values.forEach((value, row) => {
+      this.values[row][index] = value;
+      this.valuesComputed[row][index] = computedValues[row] + 1;
+      this.calcTrackingFeatures(value, this.values[row].length);
+    });
+  }
+
+  computeAvg(index, values) {
+    this.compute(index, (currValues, totalValues) =>
+      currValues.map((curr, i) => {
+        const total = totalValues[i];
+        return (curr * total + values[i]) / (total + 1);
+      }));
+  }
+
+  computeSum(index, values) {
+    this.compute(index, (currValues) => currValues.map((curr, i) => curr + values[i]));
+  }
+
+  #checkIntegrity(values) {
+    if (values.length !== this.values.length) {
+      throw new Error(`Given values length ${values.length} should match with row number ${this.values.length} in this dataset`);
+    }
   }
 }
