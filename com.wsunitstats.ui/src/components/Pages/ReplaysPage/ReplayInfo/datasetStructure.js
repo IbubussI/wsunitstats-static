@@ -38,11 +38,13 @@ export class MultiRowDatasetContainer extends DatasetContainer {
 export class DatasetGroup {
   dataGroupIdentifier;
   dataGroupName; // Teams, Squads, Players etc
+  defaultValues; // datasets selected by default
   datasets = [];
 
-  constructor(name, identifier) {
+  constructor(name, identifier, defaultValues) {
     this.dataGroupName = name;
     this.dataGroupIdentifier = identifier;
+    this.defaultValues = new Set(defaultValues);
   }
 
   addDataset(dataset) {

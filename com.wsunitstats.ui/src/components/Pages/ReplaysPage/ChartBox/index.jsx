@@ -20,24 +20,24 @@ export const ChartBox = ({ timeLine, stepTime, restrictByGroupName, restrictByDa
     timeLine.map((datasetContainer, index) => ({ name: t(datasetContainer.containerName), index: index })),
     [timeLine, t]);
 
-  const filterDatasetGroups = React.useCallback((datasetGroups) =>
-    datasetGroups.filter((datasetGroup) => restrictByGroupName == null || datasetGroup.dataGroupName === restrictByGroupName),
+  const filterDatasetGroups = React.useCallback((datasetContainer) =>
+    datasetContainer.datasetGroups.filter((datasetGroup) => restrictByGroupName == null || datasetGroup.dataGroupName === restrictByGroupName),
     [restrictByGroupName]);
-  const filteredDadasetGroups = React.useMemo(() => filterDatasetGroups(datasetContainer.datasetGroups),
-    [datasetContainer.datasetGroups, filterDatasetGroups]);
+  const filteredDatasetGroups = React.useMemo(() => filterDatasetGroups(datasetContainer), [datasetContainer, filterDatasetGroups]);
 
-  const datasetGroup = filteredDadasetGroups[currentDatasetGroupIndex];
+  const datasetGroup = filteredDatasetGroups[currentDatasetGroupIndex];
 
   const datasetGroupOptions = React.useMemo(() =>
-    filteredDadasetGroups.map((datasetGroup, index) => ({ name: t(datasetGroup.dataGroupName), id: datasetGroup.dataGroupIdentifier, index: index })),
-    [filteredDadasetGroups, t]);
+    filteredDatasetGroups.map((datasetGroup, index) => ({ name: t(datasetGroup.dataGroupName), id: datasetGroup.dataGroupIdentifier, index: index })),
+    [filteredDatasetGroups, t]);
 
   const currentDatasetGroupOption = datasetGroupOptions[currentDatasetGroupIndex];
   const currentDatasetContainerOption = datasetContainerOptions[currentDatasetContainerIndex];
 
-  const filteredDatasetObjects = React.useMemo(() =>
+  const filterDatasetObjects = React.useCallback((datasetGroup) =>
     datasetGroup.datasets.filter((_, index) => restrictByDatasetIndex == null || restrictByDatasetIndex === index),
-    [datasetGroup, restrictByDatasetIndex]);
+    [restrictByDatasetIndex]);
+  const filteredDatasetObjects = React.useMemo(() => filterDatasetObjects(datasetGroup), [datasetGroup, filterDatasetObjects]);
   const datasetOptions = React.useMemo(() =>
     filteredDatasetObjects.map((dataset, index) => {
       const localized = () => dataset.localizationDynamicValue != null ? t(dataset.datasetName, { value: dataset.localizationDynamicValue }) : t(dataset.datasetName);
@@ -51,11 +51,15 @@ export const ChartBox = ({ timeLine, stepTime, restrictByGroupName, restrictByDa
   const valTransformer = valueType && VALUE_TRANSFORMERS[valueType];
   const chartDescription = t(datasetContainer.containerDescription);
   
+  const getDefaultDatasets = (group, objects) => objects.map((_, index) => {
+    const defValues = group.defaultValues;
+    return defValues.size > 0 ? defValues.has(index) : (isMultiRow && index !== 0 ? false : true);
+  });
   // array of true - visible, false - hidden datasets (index of array === index of dataset)
   // only one option is possible to select in multi-row mode
-  const [currentDatasets, setCurrentDatasets] = React.useState(() => filteredDatasetObjects.map((_, index) => isMultiRow && index !== 0 ? false : true));
+  const [currentDatasets, setCurrentDatasets] = React.useState(() => getDefaultDatasets(datasetGroup, filteredDatasetObjects));
   const currentDatasetOptions = datasetOptions.filter(option => currentDatasets[option.index]);
-  const chartDatasetOptions = isMultiRow ? Array(datasetContainer.rowNum).fill(true) : currentDatasetOptions;
+  const chartDatasetOptions = isMultiRow ? Array(datasetContainer.rowNum).fill(true) : currentDatasets;
   const datasets = React.useMemo(() => {
     if (isMultiRow) {
       return currentDatasetOptions.length > 0 ? filteredDatasetObjects[currentDatasetOptions[0].index].values : [];
@@ -106,7 +110,7 @@ export const ChartBox = ({ timeLine, stepTime, restrictByGroupName, restrictByDa
             // select default option instead of current one if it is not present
             const newContainer = timeLine[option.index];
             const newIndex = newContainer.datasetGroups.findIndex(newDatasetGroup => newDatasetGroup.dataGroupIdentifier === currentDatasetGroupOption.id);
-            const newGroups = filterDatasetGroups(newContainer.datasetGroups);
+            const newGroups = filterDatasetGroups(newContainer);
             setCurrentDatasetGroupIndex(newIndex >= 0 && newGroups[newIndex] != null ? newIndex : 0);
           }}
           value={currentDatasetContainerOption}
@@ -118,8 +122,10 @@ export const ChartBox = ({ timeLine, stepTime, restrictByGroupName, restrictByDa
           sx={{ minWidth: 240 }}
           onChange={(option) => {
             setCurrentDatasetGroupIndex(option.index);
-            // select all options in newly selected group by default and only first for multi-row mode
-            setCurrentDatasets(filteredDadasetGroups[option.index].datasets.map((_, index) => isMultiRow && index !== 0 ? false : true));
+            // select default options in newly selected group
+            const newGroup = filteredDatasetGroups[option.index];
+            const newObjects = filterDatasetObjects(newGroup);
+            setCurrentDatasets(getDefaultDatasets(newGroup, newObjects));
           }}
           value={currentDatasetGroupOption}
           options={datasetGroupOptions}

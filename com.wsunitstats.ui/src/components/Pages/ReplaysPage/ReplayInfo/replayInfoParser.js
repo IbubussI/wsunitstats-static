@@ -263,7 +263,7 @@ export class ReplayInfoParser {
         }) => {
         const teamDatasetGroup = new DatasetGroup('replayDatasetGroupTeams', 'teams');
         const squadDatasetGroup = new DatasetGroup('replayDatasetGroupSquads', 'squads');
-        const playerDatasetGroup = new DatasetGroup('replayDatasetGroupPlayers', 'players');
+        const playerDatasetGroup = new DatasetGroup('replayDatasetGroupPlayers', 'players', [0]);
         container.addDatasetGroup(teamDatasetGroup);
         container.addDatasetGroup(squadDatasetGroup);
         container.addDatasetGroup(playerDatasetGroup);
@@ -284,10 +284,8 @@ export class ReplayInfoParser {
         }
 
         for (let i = 0; i < squadsCount; i++) {
-          const squad = this.#groupMapByParsedId.get(i);
-          const creatorFaction = this.#getPlayerFaction(squad.creator.id);
           const dataset = multiRow ? new TimeLineMultiRowDataset('replaySquad', true, i + 1, getSquadResult(i), rowNum)
-            : new TimeLineDataset('replaySquad', true, i + 1, getSquadResult(i), FACTION_COLORS[creatorFaction]);
+            : new TimeLineDataset('replaySquad', true, i + 1, getSquadResult(i), FACTION_COLORS[i + 2]);
           squadDatasetGroup.addDataset(dataset);
         }
 
