@@ -9,11 +9,11 @@ const minCharts = 1;
 export const ChartViewer = ({ replayInfo }) => {
   const [boxNum, setBoxNum] = React.useState(1);
 
-  if (replayInfo.timeLine.charts.length !== 0) {
+  if (replayInfo.timeLine.length !== 0) {
     const chartBoxes = [];
     for (let i = 0; i < boxNum; i++) {
       chartBoxes.push(<ChartBox key={i}
-        timeLine={replayInfo.timeLine.charts}
+        timeLine={replayInfo.timeLine}
         stepTime={replayInfo.timeLinePeriod}
       />);
     }

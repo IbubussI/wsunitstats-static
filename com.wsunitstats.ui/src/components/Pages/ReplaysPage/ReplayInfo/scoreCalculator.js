@@ -1,3 +1,5 @@
+import { expDecay, calcArea } from "./mathUtils";
+
 /*
 worker gather speed table (res per sec):
         food wood iron	wh eff
@@ -380,7 +382,6 @@ export function calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, resDelt
   const ironN = maxEstimateYield[2] > 0 ? actualYield[2] / maxEstimateYield[2] : 0;
   const gatherEff = foodN + woodN + ironN;
 
-
   const totalGatherers = avgWorkerNum + avgBoatNum*2 + avgTractorNum*3;
 
   // calc efficiency score points (how efficient gathering was)
@@ -432,4 +433,107 @@ export function calcResourceMetrics(resNow, resWas, resDelta, resCollected) {
     resDelta: resDelta.map(r => r / 1000),
     resCollected: resCollected.map(r => r / 1000)
   };
+}
+
+export const MVP_CONST = {
+  playerKillK: 1600,
+  unitKillK: 1.6,
+  territoryK: 0.000025,
+  resourcesSpentK: 0.25,
+  firstWonderPoints: 600,
+  firstWonderPointsDecayRate: 1/2000000,
+  winWonderPoints: 250,
+  wonderPoints: 150,
+  wonderRefTime: 1590000,
+  winTeamK: 1.2,
+  armySizeK: 0.3,
+  researchPointsK: 1,
+  indirectGrowRate: 1/750000,
+  armyScoreTimeFrames: 5
+};
+
+export function calcMVPScore(options, debug = false, nickname = '') {
+  const {
+    playerKillsData,
+    unitKillPointsArray,
+    territorySum,
+    resourcesSpentAvg,
+    armySizeAvg,
+    researchPoints, // -
+    isWonder,
+    isFirstWonder,
+    firstWonderTime,
+    isWinWonder,
+    isWinTeam,
+    survivalTime
+  } = options;
+
+  const wonderK = isWonder ? 1 : 0;
+  const firstWonderK = isFirstWonder ? 1 : 0;
+  const winWonderK = isWinWonder ? 1 : 0;
+  const winTeamWonderK = isWinTeam ? 1 : 0;
+
+  const firstWonderTimeValue = expDecay(firstWonderK * MVP_CONST.firstWonderPoints, MVP_CONST.firstWonderPointsDecayRate, firstWonderTime - MVP_CONST.wonderRefTime);
+  const wdp = wonderK * MVP_CONST.wonderPoints + winTeamWonderK * (firstWonderTimeValue + winWonderK * MVP_CONST.winWonderPoints);
+  const pkp = playerKillsData ? calcPlayerKillValue(playerKillsData) * MVP_CONST.playerKillK : 0;
+  // kill points are cumulative (each value is a sum of prev values)
+  // we have to value early kills more than later, so take an avg calculated from area under curve of dataset
+  const ukp = Math.sqrt(calcArea(unitKillPointsArray)) * MVP_CONST.unitKillK;
+  const ter = territorySum * MVP_CONST.territoryK * (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime));
+  const res = resourcesSpentAvg * MVP_CONST.resourcesSpentK * (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime))**5;
+  const arm = armySizeAvg * MVP_CONST.armySizeK;
+  const tec = researchPoints * MVP_CONST.researchPointsK;
+
+  const directPoints = pkp + ukp;
+  const indirectPoints = ter + res;
+  const bonusPoints = wdp + arm + tec;
+  const result = MVP_CONST.winTeamK * (directPoints + indirectPoints + bonusPoints);
+
+  if (debug) {
+    console.log(`=================================`);
+    console.info(`Player: ${nickname}`);
+    //console.log(`Options:`);
+    //console.log(options);
+    console.info('Components:');
+    console.log(`Wonder flags (winTeam-firstWonder-winWonder): ${winTeamWonderK}-${firstWonderK}-${winWonderK}`);
+    console.log(`First Wonder Time: ${firstWonderTimeValue.toFixed(0)}`);
+    console.log(`Wonder: ${wdp.toFixed(0)}`);
+    console.log(`Player Kill: ${pkp.toFixed(0)}`);
+    console.log(`Unit Kill: ${ukp.toFixed(0)}`);
+    console.log(`Territory: ${ter.toFixed(0)}`);
+    console.log(`Resources Spent: ${res.toFixed(0)}`);
+    console.log(`Army Size: ${arm.toFixed(0)}`);
+    console.log(`Researches: ${tec.toFixed(0)}`);
+    console.info('Groups:');
+    console.log(`Direct points: ${directPoints.toFixed(0)}`);
+    console.log(`Indirect points: ${indirectPoints.toFixed(0)}`);
+    console.log(`Bonus points: ${bonusPoints.toFixed(0)}`);
+    console.log(`Score: ${result.toFixed(0)}`);
+  }
+
+  return result;
+}
+
+function calcPlayerKillValue(playerKillsData) {
+  let playerValue = 0;
+  playerKillsData.forEach((killEntry, killIndex) => {
+    const playerArmyScore = findLatestArmyScore(killEntry.playerArmyScore);
+    const teamArmyScore = Array.from(killEntry.teamArmyScore.values())
+      .reduce((acc, score) => acc + findLatestArmyScore(score), 0);
+    const teamMvpScore = Array.from(killEntry.teamInstantMvpScore.values())
+      .reduce((acc, score) => acc + score, 0);
+    const teamAvgMvpScore = killEntry.teamInstantMvpScore.size > 0 ? teamMvpScore / killEntry.teamInstantMvpScore.size : 1;
+
+    // the later kill - the less points will be given
+    const killValue = killEntry.victimMvpScore / (teamAvgMvpScore * Math.sqrt(killIndex + 1));
+    const playerArmyValue =  playerArmyScore / teamArmyScore;
+    const playerMvpValue =  killEntry.playerInstantMvpScore / teamMvpScore;
+    playerValue += (playerArmyValue + playerMvpValue) * 0.5 * killValue;
+  });
+  return playerValue;
+}
+
+function findLatestArmyScore(armyScore) {
+  return armyScore.slice(-MVP_CONST.armyScoreTimeFrames)
+    .reduce((acc, score) => acc + score);
 }

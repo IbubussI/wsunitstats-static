@@ -85,11 +85,13 @@ export const ChartBox = ({ timeLine, stepTime, restrictByGroupName, restrictByDa
   }, [filteredDatasetObjects, datasetContainer, isMultiRow]);
 
   const labels = React.useMemo(() => {
+    let labelNames;
     if (isMultiRow) {
-      return datasetContainer.isLocalizeRowNames ? datasetContainer.rowNames.map(name => t(name)) : datasetContainer.rowNames;
+      labelNames = datasetContainer.isLocalizeRowNames ? datasetContainer.rowNames.map(name => t(name)) : datasetContainer.rowNames;
     } else {
-      return datasetOptions.map(option => option.name);
+      labelNames = datasetOptions.map(option => option.name);
     }
+    return labelNames.map((labelName, index) => ({ name: labelName, id: index }))
   }, [datasetOptions, datasetContainer, isMultiRow, t]);
 
   const updateDatasets = (newValue) => {

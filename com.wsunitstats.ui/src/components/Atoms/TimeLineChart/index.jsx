@@ -5,13 +5,13 @@ import {
   PointElement,
   LineController,
   Interaction,
-  Tooltip
+  Tooltip,
+  Legend
 } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {
   Box,
   Button,
-  Fade,
   IconButton,
   Modal,
   Paper,
@@ -20,13 +20,19 @@ import {
   styled,
   Tooltip as MuiTooltip,
   Typography,
-  useTheme
+  useTheme,
+  ToggleButton,
+  alpha
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { ThemeContext } from 'themeContext';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import savitzkyGolay from 'ml-savitzky-golay';
 import { resolveChartImage } from './chartIconResolver';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import ZoomInMapIcon from '@mui/icons-material/ZoomInMap';
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
+import { TooltipIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
 
 // Probably not good idea to add something to existent chartjs objects
 // in global scope, since it can affect other charts on other pages
@@ -51,7 +57,7 @@ LineController.prototype.getLabelAndValue = function (index) {
       if (prev <= iScale.max && prev >= iScale.min) {
         const prevPixel = iScale.getPixelForValue(prev);
         const nextPixel = iScale.getPixelForValue(next);
-  
+
         // find the time for current point
         const len = nextPixel - prevPixel;
         // label is interpolated x value, used for the title of tooltip
@@ -163,7 +169,7 @@ const endIcon = {
     const { ctx } = chart;
     for (let i = 0; i < metas.length; i++) {
       const meta = metas[i];
-      const last = meta.dataset.last();
+      const last = meta.data[meta.data.length - 1];
       const endImg = meta._dataset.endIcon;
       if (endImg != null) {
         const imgWidth = endImg.width || 12;
@@ -192,6 +198,17 @@ const ChartButton = styled(Button)({
   paddingBottom: 4
 });
 
+const ChartToggle = styled(ToggleButton)(({ theme, selected }) => ({
+  fontSize: '0.6rem',
+  lineHeight: 1,
+  paddingTop: 4,
+  paddingBottom: 4,
+  borderColor: selected ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.5),
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+  }
+}));
+
 const ChartSlider = styled(Slider)({
   fontSize: '0.6rem',
   lineHeight: 1,
@@ -219,7 +236,7 @@ const TimeLineChartContent = (props) => {
   const {
     datasets,
     datasetsVisible,
-    labels,
+    labels, // use format { name: "...", index: 1 } to handle datasets with the same name correctly
     colors = [],
     title,
     stepTime,
@@ -236,6 +253,7 @@ const TimeLineChartContent = (props) => {
   const theme = useTheme();
   const themeContext = React.useContext(ThemeContext);
   const [smoothLevel, setSmoothLevel] = React.useState(SMOOTH_DEFAULT);
+  const [tooltipOn, setTooltipOn] = React.useState(true);
 
   const processedPoints = React.useMemo(() => {
     if (smoothLevel === 0) {
@@ -243,7 +261,7 @@ const TimeLineChartContent = (props) => {
       return datasets;
     }
     return datasets.map((points) => {
-      const wSize = 2 * Math.ceil(Math.exp(smoothLevel*6/SMOOTH_MAX)) + 3;
+      const wSize = 2 * Math.ceil(Math.exp(smoothLevel * 6 / SMOOTH_MAX)) + 3;
       return savitzkyGolay(points, 1, { derivative: 0, windowSize: wSize, pad: 'pre', polynomial: 3 })
         .map(point => point > 0 ? point : 0);
     });
@@ -262,22 +280,20 @@ const TimeLineChartContent = (props) => {
   const endImages = results.map((result) => resolveChartImage(result, theme.palette.background.default));
   const data = {
     labels: tickLabels, // use custom labels function
-    datasets: processedPoints.map((points, i) => {
-      return {
-        label: labels[i],
-        data: points,
-        fill: false,
-        cubicInterpolationMode: 'monotone',
-        borderColor: colors[i] || defaultColor,
-        backgroundColor: colors[i] || defaultColor,
-        pointBackgroundColor: 'transparent',
-        pointRadius: pointMarkers ? undefined : 0,
-        dotIndicatorColor: colors[i] || defaultColor,
-        dotIndicatorBgColor: 'white',
-        visible: datasetsVisible[i],
-        endIcon: endImages[i]
-      }
-    }),
+    datasets: processedPoints.map((points, i) => ({
+      label: labels[i],
+      data: points,
+      fill: false,
+      cubicInterpolationMode: 'monotone',
+      borderColor: colors[i] || defaultColor,
+      backgroundColor: colors[i] || defaultColor,
+      pointBackgroundColor: 'transparent',
+      pointRadius: pointMarkers ? undefined : 0,
+      dotIndicatorColor: colors[i] || defaultColor,
+      dotIndicatorBgColor: 'white',
+      visible: datasetsVisible[i],
+      endIcon: endImages[i]
+    })),
   };
 
   const options = React.useMemo(() => ({
@@ -319,6 +335,7 @@ const TimeLineChartContent = (props) => {
     },
     plugins: {
       tooltip: {
+        enabled: tooltipOn,
         position: 'cursor',
         intersect: false,
         filter: (item) => {
@@ -330,7 +347,7 @@ const TimeLineChartContent = (props) => {
             return tooltipItems.length ? Utils.formatDurationChartLong(tooltipItems[0].label * stepTime) : '';
           },
           label: (tooltipItem) => {
-            return tooltipItem.dataset.label + ': ' + valTransformer(tooltipItem.formattedValue);
+            return tooltipItem.dataset.label.name + ': ' + valTransformer(tooltipItem.formattedValue);
           },
           labelColor: function (tooltipItem) {
             return {
@@ -344,7 +361,12 @@ const TimeLineChartContent = (props) => {
         labels: {
           usePointStyle: true,
           pointStyle: 'line',
-          filter: item => datasetsVisible[item.datasetIndex]
+          filter: item => datasetsVisible[item.datasetIndex],
+          generateLabels: (chart) => Legend.defaults.labels.generateLabels(chart).map(labelItem => {
+            // override generated text
+            labelItem.text = labels[labelItem.datasetIndex].name;
+            return labelItem;
+          })
         }
       },
       zoom: {
@@ -368,7 +390,7 @@ const TimeLineChartContent = (props) => {
         }
       }
     }
-  }), [datasetsVisible, stepTime, tickLabels, valTransformer]);
+  }), [datasetsVisible, stepTime, tickLabels, valTransformer, labels, tooltipOn]);
 
   const resetZoom = () => {
     if (chartRef && chartRef.current) {
@@ -376,10 +398,14 @@ const TimeLineChartContent = (props) => {
     }
   };
 
+  const toggleTooltip = () => {
+    setTooltipOn(!tooltipOn);
+  };
+
   return (
     <Stack sx={{ height: '100%' }}>
       {/* control panel */}
-      <Stack direction="row" gap={0.6} sx={{ justifyContent: 'right' }}>
+      <Stack direction="row" gap={0.6} sx={{ justifyContent: 'right', alignItems: 'center' }}>
         {/* title */}
         <Stack direction='row' gap={0.4} sx={{ flexGrow: 1 }}>
           <Typography variant="body1">
@@ -406,15 +432,32 @@ const TimeLineChartContent = (props) => {
           />
         </Stack>
 
+        {/* toggle tooltip */}
+        <MuiTooltip arrow title={t('chartToggleTooltip')}>
+          <ChartToggle
+            value="toggle-tooltip"
+            selected={tooltipOn}
+            onClick={toggleTooltip}
+            variant='outlined'
+            color="primary"
+            sx={{ p: '1px', minWidth: 0 }}>
+            <TooltipIcon color={theme.palette.primary.main} sx={{ width: 20, height: 20 }} />
+          </ChartToggle>
+        </MuiTooltip>
+
         {/* reset zoom */}
-        <ChartButton onClick={resetZoom} variant='outlined'>
-          {t('chartResetZoom')}
-        </ChartButton>
+        <MuiTooltip arrow title={t('chartResetZoom')}>
+          <ChartButton onClick={resetZoom} variant='outlined' sx={{ p: '1px', minWidth: 0, }}>
+            <ZoomOutIcon fontSize='small' />
+          </ChartButton>
+        </MuiTooltip>
 
         {/* open/close in modal */}
-        <ChartButton onClick={() => isModalOpen ? closeModal() : openModal()} variant='outlined' sx={{ px: 0, minWidth: 24 }}>
-          {isModalOpen ? <i className="fa-solid fa-minimize fa-lg"></i> : <i className="fa-solid fa-maximize fa-lg"></i>}
-        </ChartButton>
+        <MuiTooltip arrow title={isModalOpen ? t('chartMinimize') : t('chartMaximize')}>
+          <ChartButton onClick={() => isModalOpen ? closeModal() : openModal()} variant='outlined' sx={{ p: '1px', minWidth: 0 }}>
+            {isModalOpen ? <ZoomInMapIcon fontSize='small' /> : <ZoomOutMapIcon fontSize='small' />}
+          </ChartButton>
+        </MuiTooltip>
 
         {/* info */}
         <InfoTextHelper text={
@@ -457,17 +500,8 @@ export const TimeLineChart = (props) => {
 
 const InfoTextHelper = ({ text }) => {
   return (
-    <MuiTooltip
-      arrow
-      title={text}
-      slots={{
-        transition: Fade
-      }}
-      slotProps={{
-        transition: { timeout: 600 },
-      }}
-    >
-      <IconButton aria-label="delete" sx={{ p: 0, color: 'primary.main', maxHeight: '1em' }} disableTouchRipple>
+    <MuiTooltip arrow title={text}>
+      <IconButton sx={{ p: 0, color: 'primary.main', maxHeight: '1em' }} disableTouchRipple>
         <HelpOutlineIcon />
       </IconButton>
     </MuiTooltip>

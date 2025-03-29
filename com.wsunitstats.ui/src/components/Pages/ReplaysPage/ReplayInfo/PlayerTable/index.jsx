@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Paper,
+  Stack,
   styled,
   Table,
   TableBody,
@@ -12,8 +13,8 @@ import {
   TableContainer,
   Tooltip,
 } from '@mui/material';
-import { DeadIcon, WinIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
-import { TagChip } from 'components/Atoms/TagChip';
+import { DeadIcon, MVPIcon, WinIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
+import { IconTagChip, TagChip } from 'components/Atoms/TagChip';
 import { Image } from 'components/Atoms/Renderer';
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
@@ -38,6 +39,15 @@ const RatingTag = styled(TagChip)(() => ({
     paddingLeft: '8px',
   }
 }));
+
+const MVPTag = styled(IconTagChip)(() => ({
+  '& span': {
+    paddingTop: '2px',
+    paddingBottom: '2px',
+    paddingRight: '8px',
+    paddingLeft: '8px',
+  }
+}))
 
 const ColoredTableRow = styled(NoBottomBorderRow, {
   shouldForwardProp: (prop) => prop !== "teamColor"
@@ -99,10 +109,23 @@ export const PlayerTable = ({ replayInfo }) => {
                     </Box>
                   </PlayerTableCell>
 
-                  {/* MVP */}
+                  {/* MVP Rating */}
                   <PlayerTableCell align="right" sx={{ width: '30px' }}>
-                    {player.mvpScore != null &&
-                      <RatingTag bgColor="#bb6911" label={Number(player.mvpScore).toFixed(0)} />}
+                      {player.mvpScore != null &&
+                        <MVPTag bgColor="#bb6911" label={Number(player.mvpScore).toFixed(0)} />}
+                  </PlayerTableCell>
+
+                  {/* MVP Icon */}
+                  <PlayerTableCell align="right" sx={{ px: 0, width: '18px' }}>
+                      {player.isMvp &&
+                      <MVPIcon fontSize='1rem'
+                        sx={{
+                          display: 'block',
+                          mt: '2px',
+                          width: 18,
+                          height: 18,
+                          color: '#ef630f'
+                        }} />}
                   </PlayerTableCell>
 
                   {/* Squad */}

@@ -46,7 +46,7 @@ export const PlayerInfo = () => {
           <Typography variant="h5" gutterBottom>
             {t('playerInfoChartsTitle')}
           </Typography>
-          <PlayerChartViewer charts={replayInfo.timeLine.charts} timeLinePeriod={replayInfo.timeLinePeriod} playerId={playerIndex} />
+          <PlayerChartViewer charts={replayInfo.timeLine} timeLinePeriod={replayInfo.timeLinePeriod} playerId={playerIndex} />
         </Box>}
     </Stack>
   );

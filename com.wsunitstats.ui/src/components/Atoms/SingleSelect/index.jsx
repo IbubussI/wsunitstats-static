@@ -36,6 +36,13 @@ export const SingleSelect = (props) => {
       renderInput={({ inputProps, ...props }) => (
         <TextField {...props} inputProps={{ ...inputProps, readOnly: true }} label={label} />
       )}
+      renderOption={(props, option) => {
+        return (
+          <li {...props} key={props['data-option-index']}>
+            {getOptionLabel(option)}
+          </li>
+        );
+      }}
     />
   );
 }

@@ -60,29 +60,37 @@ export class TimeLineDataset {
   localizationDynamicValue;
   result; // string that represents icon at the end of dataset
   color;
+  maxSize;
   pointsSum = 0;
-  pointsAvg = 0;
+  pointsAvgLocal = 0; // local - within entity lifetime (e.g. to player survivalTime)
+  pointsAvgGlobal = 0; // global - within match duration
+  // points with weight function applied
+  pointsSumK = 0;
+  pointsAvgLocalK = 0;
+  pointsAvgGlobalK = 0;
   min = Number.MAX_VALUE;
   max = Number.MIN_VALUE;
 
-  constructor(name, isLocalizeName, localizationDynamicValue, result, color) {
+  constructor(name, isLocalizeName, localizationDynamicValue, result, color, timeLineLength, kFunc) {
     this.datasetName = name;
     this.isLocalizeName = isLocalizeName;
     this.localizationDynamicValue = localizationDynamicValue;
     this.result = result;
     this.color = color;
+    this.kFunc = kFunc;
+    this.maxSize = timeLineLength;
   }
 
   // add value to this dataset tracking its min/max/avg/sum
-  push(value) {
+  push(value, time) {
     this.values.push(value);
     this.valuesComputed.push(1);
 
-    this.calcTrackingFeatures(value, this.values.length);
+    this.calcTrackingFeatures(value, this.values.length, time);
   }
 
   // compute new value based on previous one
-  compute(index, computeFunc) {
+  compute(index, computeFunc, time) {
     const arrVal = this.values[index];
     const arrComputedVal = this.valuesComputed[index];
     const currentValue = arrVal != null ? arrVal : 0;
@@ -91,28 +99,35 @@ export class TimeLineDataset {
     this.values[index] = value;
     this.valuesComputed[index] = computedValues + 1;
 
-    this.calcTrackingFeatures(value, this.values.length);
+    this.calcTrackingFeatures(value, this.values.length, time);
   }
 
-  computeAvg(index, value) {
-    this.compute(index, (curr, total) => (curr * total + value)/(total + 1));
+  computeAvg(index, value, time) {
+    this.compute(index, (curr, total) => (curr * total + value)/(total + 1), time);
   }
 
-  computeSum(index, value) {
-    this.compute(index, (curr) => curr + value);
+  computeSum(index, value, time) {
+    this.compute(index, (curr) => curr + value, time);
   }
 
-  calcTrackingFeatures(value, length) {
+  calcTrackingFeatures(value, length, time) {
     this.min = Math.min(this.min, value);
     this.max = Math.max(this.max, value);
     this.pointsSum = this.pointsSum + value;
-    this.pointsAvg = this.pointsSum / length;
+    this.pointsAvgLocal = this.pointsSum / length;
+    this.pointsAvgGlobal = this.pointsSum / this.maxSize;
+
+    if (this.kFunc && time) {
+      this.pointsSumK = this.pointsSumK + this.kFunc(value, time);
+      this.pointsAvgLocalK = this.pointsSumK / length;
+      this.pointsAvgGlobalK = this.pointsSumK / this.maxSize;
+    }
   }
 }
 
 // extends dataset with 2d array of values to support
 export class TimeLineMultiRowDataset extends TimeLineDataset {
-  constructor(name, isLocalizeName, localizationDynamicValue, result, rowNum) {
+  constructor(name, isLocalizeName, localizationDynamicValue, result, rowNum, timeLineLength) {
     super(name, isLocalizeName, localizationDynamicValue, result, null);
     this.values = Array.from(Array(rowNum), _ => []);
     this.valuesComputed = Array.from(Array(rowNum), _ => []);

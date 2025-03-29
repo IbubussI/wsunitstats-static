@@ -58,7 +58,7 @@ export const MultiSelect = (props) => {
       }}
       renderOption={(props, option, { selected }) => {
         return (
-          <li {...props}>
+          <li {...props} key={props['data-option-index']}>
             <Checkbox
               icon={<CheckBoxOutlineBlank fontSize="small" />}
               checkedIcon={<CheckBox fontSize="small" />}
@@ -88,7 +88,7 @@ export const MultiSelect = (props) => {
       renderInput={({ inputProps, ...props }) => (
         <TextField {...props} inputProps={{ ...inputProps, readOnly: true }} label={label} sx={{ minWidth: '0' }} />
       )}
-      componentsProps={{
+      slotProps={{
         paper: {
           elevation: 3
         }

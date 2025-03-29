@@ -1,4 +1,4 @@
-import { Chip, styled } from "@mui/material";
+import { Chip, Stack, styled } from "@mui/material";
 
 export const TagChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "tColor" && prop !== "bgColor"
@@ -17,3 +17,23 @@ export const TagChip = styled(Chip, {
     paddingBottom: '4px',
   }
 }));
+
+export const IconTagChip = (props) => {
+  const {
+    tagIcon: TagIcon,
+    label,
+    ...forwardedProps
+  } = props;
+  return (
+    <TagChip
+      {...forwardedProps}
+      component="div"
+      label={
+        TagIcon ? <Stack direction="row" sx={{ alignItems: 'center' }}>
+          <span style={{ all: 'unset' }}>{label}</span>
+          {TagIcon}
+        </Stack> : label
+      }
+    />
+  );
+};

@@ -39,3 +39,4 @@ build/
 /com.wsunitstats.service/src/main/resources/static/
 /specialTaskResults.txt
 /logs/
+/excel-units-output.xlsx
