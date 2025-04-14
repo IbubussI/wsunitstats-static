@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { FormButton } from 'components/Atoms/FormButton';
 import { ReplayInfoParser } from 'components/Pages/ReplaysPage/ReplayInfo/replayInfoParser';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
 import { GameDataContext } from 'gameDataContext';
@@ -30,9 +30,11 @@ export const ReplayPage = () => {
   const gameContext = useContext(GameDataContext);
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const [replayCodeInput, setReplayCodeInput] = React.useState('');
   const [replayInfo, setReplayInfo] = React.useState({});
   const [isLoading, setIsLoading] = React.useState(false);
+  const isDebug = searchParams.get('debug') || false;
 
   const openReplay = (replayCode) => {
     navigate(Utils.getUrlWithPathParams([
@@ -53,7 +55,7 @@ export const ReplayPage = () => {
       setIsLoading(true);
       Utils.fetchJson(Constants.WS_GAMES_API_REPLAY_BY_CODE + replayCode,
         (responseJson) => {
-          const parser = new ReplayInfoParser(gameContext, replayCode);
+          const parser = new ReplayInfoParser(gameContext, replayCode, isDebug);
           setReplayInfo(parser.parse(responseJson));
           setIsLoading(false);
         },
@@ -65,7 +67,7 @@ export const ReplayPage = () => {
     } else if (replayCodeParam) {
       setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
     }
-  }, [params.replayCode, gameContext]);
+  }, [params.replayCode, gameContext, isDebug]);
 
   const isSuccess = replayInfo && replayInfo.error === 0;
   return (

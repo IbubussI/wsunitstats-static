@@ -37,7 +37,7 @@ public class Utils {
         return divide(value, Constants.TICK_TIME);
     }
 
-    public static Double intToDoubleSpeed(Integer value) {
+    public static Double longToDoubleSpeed(Long value) {
         return divide(value, Constants.PROJECTILE_SPEED_VALUE_MULTIPLIER);
     }
 
@@ -220,6 +220,13 @@ public class Utils {
     }
 
     private static Double divide(Integer value, double divider) {
+        if (value == null) {
+            return null;
+        }
+        return value / divider;
+    }
+
+    private static Double divide(Long value, double divider) {
         if (value == null) {
             return null;
         }

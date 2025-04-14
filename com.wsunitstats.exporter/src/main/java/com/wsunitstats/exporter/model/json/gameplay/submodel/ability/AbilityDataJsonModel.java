@@ -33,4 +33,5 @@ public class AbilityDataJsonModel extends DamageJsonModel {
 
     //paratroopers
     private String parameters;
+    private Integer enoughDistance;
 }

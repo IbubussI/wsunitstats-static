@@ -39,6 +39,7 @@ import com.wsunitstats.exporter.service.ModelTransformingService;
 import com.wsunitstats.exporter.service.NationResolver;
 import com.wsunitstats.exporter.service.TagResolver;
 import com.wsunitstats.exporter.utils.Constants;
+import com.wsunitstats.exporter.utils.Constants.ResearchType;
 import com.wsunitstats.exporter.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,6 +75,18 @@ public class ModelBuilderImpl implements ModelBuilder {
 
     @Value("${researches.ageTransitionResearches}")
     private List<Integer> ageTransitionResearches;
+    @Value("${researches.ecoResearches}")
+    private List<Integer> ecoResearches;
+    @Value("${researches.popResearches}")
+    private List<Integer> popResearches;
+    @Value("${researches.territoryResearches}")
+    private List<Integer> territoryResearches;
+    @Value("${researches.combatResearches}")
+    private List<Integer> combatResearches;
+    @Value("${researches.unitResearches}")
+    private List<Integer> unitResearches;
+    @Value("${researches.buffResearches}")
+    private List<Integer> buffResearches;
     @Value("${researches.wonderTransitionResearches}")
     private List<Integer> wonderTransitionResearches;
 
@@ -200,14 +213,30 @@ public class ModelBuilderImpl implements ModelBuilder {
 
     private String getResearchType(int id) {
         if (ageTransitionResearches.contains(id)) {
-            return UpgradeType.AGE_TRANSITION.getType();
+            return ResearchType.AGE_TRANSITION.getType();
         }
-
+        if (ecoResearches.contains(id)) {
+            return ResearchType.ECO.getType();
+        }
+        if (popResearches.contains(id)) {
+            return ResearchType.POP.getType();
+        }
+        if (territoryResearches.contains(id)) {
+            return ResearchType.TERRITORY.getType();
+        }
+        if (combatResearches.contains(id)) {
+            return ResearchType.COMBAT.getType();
+        }
+        if (unitResearches.contains(id)) {
+            return ResearchType.UNIT.getType();
+        }
+        if (buffResearches.contains(id)) {
+            return ResearchType.BUFF.getType();
+        }
         if (wonderTransitionResearches.contains(id)) {
-            return UpgradeType.WONDER_TRANSITION.getType();
+            return ResearchType.WONDER_TRANSITION.getType();
         }
-
-        return UpgradeType.OTHER.getType();
+        return ResearchType.OTHER.getType();
     }
 
     private List<UpgradeModel> getUpgrades(ResearchJsonModel research, List<UpgradeJsonModel> upgrades) {

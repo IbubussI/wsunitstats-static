@@ -14,8 +14,7 @@ import java.util.Map;
 public class MovementJsonModel {
     private AirplaneJsonModel airplane;
     private List<BuildingJsonModel> building;
-    private Integer collisionElasticity;
-    private Integer collisionTags;
+    private CollisionJsonModel collision;
     private Map<String, Object> holdPassability;
     private List<GatherJsonModel> gather;
     private Integer moveAngle;

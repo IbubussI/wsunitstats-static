@@ -6,31 +6,40 @@ import RemoveIcon from '@mui/icons-material/Remove';
 
 const maxCharts = 15;
 const minCharts = 1;
-export const ChartViewer = ({ replayInfo }) => {
+export const ChartViewer = ({ id, replayInfo }) => {
   const [boxNum, setBoxNum] = React.useState(1);
+  const [chartBoxes] = React.useState(() =>
+    [<ChartBox key={0} id={`${id}-${0}`}
+      timeLine={replayInfo.timeLine}
+      stepTime={replayInfo.timeLinePeriod}
+    />]);
 
-  if (replayInfo.timeLine.length !== 0) {
-    const chartBoxes = [];
-    for (let i = 0; i < boxNum; i++) {
-      chartBoxes.push(<ChartBox key={i}
-        timeLine={replayInfo.timeLine}
-        stepTime={replayInfo.timeLinePeriod}
-      />);
-    }
-    return (
-      <Stack gap={1}>
-        {chartBoxes}
-        <Stack gap={1} direction="row" sx={{ justifyContent: 'center'}}>
-          <Button variant="contained" onClick={() => setBoxNum(Math.min(boxNum + 1, maxCharts))}>
-            <AddIcon />
-          </Button>
-          <Button variant="contained" onClick={() => setBoxNum(Math.max(boxNum - 1, minCharts))}>
-            <RemoveIcon />
-          </Button>
-        </Stack>
+  return (
+    <Stack gap={1}>
+      {[...chartBoxes]}
+      <Stack gap={1} direction="row" sx={{ justifyContent: 'center' }}>
+        <Button variant="contained" onClick={() => {
+          const currBoxNum = Math.min(boxNum + 1, maxCharts);
+          if (currBoxNum > boxNum) {
+            chartBoxes.push(<ChartBox key={boxNum} id={`${id}-${boxNum}`}
+              timeLine={replayInfo.timeLine}
+              stepTime={replayInfo.timeLinePeriod}
+            />);
+          }
+          setBoxNum(currBoxNum);
+        }}>
+          <AddIcon />
+        </Button>
+        <Button variant="contained" onClick={() => {
+          const currBoxNum = Math.max(boxNum - 1, minCharts);
+          if (currBoxNum < boxNum) {
+            chartBoxes.pop();
+          }
+          setBoxNum(currBoxNum);
+        }}>
+          <RemoveIcon />
+        </Button>
       </Stack>
-    );
-  } else {
-    return null;
-  }
+    </Stack>
+  );
 };

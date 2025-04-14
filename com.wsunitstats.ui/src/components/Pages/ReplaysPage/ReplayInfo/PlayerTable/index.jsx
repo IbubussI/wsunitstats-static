@@ -5,12 +5,12 @@ import {
   Box,
   Button,
   Paper,
-  Stack,
   styled,
   Table,
   TableBody,
   TableCell,
   TableContainer,
+  TableHead,
   Tooltip,
 } from '@mui/material';
 import { DeadIcon, MVPIcon, WinIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
@@ -29,6 +29,14 @@ const PlayerTableCell = styled(TableCell)(({ theme }) => ({
   borderColor: alpha(theme.palette.grey[700], 0.6),
   fontSize: theme.typography.body2.fontSize,
   padding: theme.spacing(0.8)
+}));
+
+const PlayerTableHeaderCell = styled(TableCell)(({ theme }) => ({
+  borderColor: alpha(theme.palette.grey[700], 0.6),
+  fontSize: theme.typography.body2.fontSize,
+  padding: theme.spacing(0.6),
+  lineHeight: '1rem',
+  color: theme.palette.grey[700]
 }));
 
 const RatingTag = styled(TagChip)(() => ({
@@ -60,7 +68,7 @@ const ColoredTableRow = styled(NoBottomBorderRow, {
     '&:hover': {
       backgroundColor: alpha(color, '0.8')
     }
-  }
+  };
 });
 
 export const PlayerTable = ({ replayInfo }) => {
@@ -70,6 +78,20 @@ export const PlayerTable = ({ replayInfo }) => {
   return (
     <TableContainer component={Paper} >
       <Table>
+        <TableHead>
+          <NoBottomBorderRow>
+            {/* Link, Color, Nickname */}
+            <PlayerTableHeaderCell colSpan={replayInfo.match.isMapGen ? 3 : 2}>{t('replayPlayerTablePlayerHeader')}</PlayerTableHeaderCell>
+            {/* MVP Rating, MVP Icon */}
+            <PlayerTableHeaderCell colSpan={2} align='center'>{t('replayPlayerTableMVPHeader')}</PlayerTableHeaderCell>
+            {/* Squad */}
+            <PlayerTableHeaderCell align='center'>{t('replayPlayerTableSquadHeader')}</PlayerTableHeaderCell>
+            {/* Lastest Age Reached, Survival Time, Win/Death, Wonder */}
+            <PlayerTableHeaderCell colSpan={4} align='center'>{t('replayPlayerTableSurvivalHeader')}</PlayerTableHeaderCell>
+            {/* Rating */}
+            <PlayerTableHeaderCell align='right'>{t('replayPlayerTableRatingHeader')}</PlayerTableHeaderCell>
+          </NoBottomBorderRow>
+        </TableHead>
         <TableBody>
           {replayInfo.teams.filter(team => team.isPlayerTeam).map((team) => {
             return team.players.map((playerId) => {
@@ -135,12 +157,12 @@ export const PlayerTable = ({ replayInfo }) => {
 
                   {/* Lastest Age Reached */}
                   <PlayerTableCell align="right" sx={{
-                    width: '60px',
+                    width: '40px',
                     lineHeight: 0,
                     paddingTop: 0,
                     paddingBottom: 0
                   }}>
-                    {player.researchAvailable &&
+                    {player.researchOn &&
                       <Tooltip title={t(lastAgeResearch.name)}
                         arrow
                         placement="right"

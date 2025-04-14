@@ -1,13 +1,20 @@
 export class DatasetContainer {
   containerName; // Army Score, Kill Score etc
+  containerType;
   containerDescription;
   valueType;
   datasetGroups = [];
 
-  constructor(locKeyPrefix, valueType = 'num') {
+  constructor(locKeyPrefix, valueType = 'num', containerType = 'points', eventTypes = null) {
     this.containerName = locKeyPrefix + 'Name';
+    this.containerType = containerType;
     this.containerDescription = locKeyPrefix + 'Description';
     this.valueType = valueType;
+    // possible events type list
+    if (containerType = 'events' && eventTypes) {
+      this.eventTypes = eventTypes;
+      this.eventFilterLabel = locKeyPrefix + 'FiltersLabel';
+    }
   }
 
   addDatasetGroup(datasetGroup) {
@@ -17,7 +24,6 @@ export class DatasetContainer {
 
 // container for datasets whith multiple rows (e.g. for all 3 resources in one dataset)
 export class MultiRowDatasetContainer extends DatasetContainer {
-  isMultiRow;
   rowNum;
   rowNames;
   isLocalizeRowNames;
@@ -26,7 +32,7 @@ export class MultiRowDatasetContainer extends DatasetContainer {
 
   constructor(locKeyPrefix, rowNum, rowNames, rowColors, rowIcons, isLocalizeRowNames = true, valueType = 'num') {
     super(locKeyPrefix, valueType);
-    this.isMultiRow = true;
+    this.containerType = 'multiRow';
     this.rowNum = rowNum;
     this.rowNames = rowNames;
     this.rowColors = rowColors;
@@ -52,14 +58,25 @@ export class DatasetGroup {
   }
 }
 
-export class TimeLineDataset {
-  values = [];
-  valuesComputed = []; // number of values processed to compute value at the same index in 'vales' array
+class BaseDataset {
+  values = [0]; // value objects (0 here is for the 0 point on timeline, as it is not captured)
   datasetName; // team-name, squad-name, player-name etc
   isLocalizeName;
   localizationDynamicValue;
   result; // string that represents icon at the end of dataset
-  color;
+  color; // color of dataset
+
+  constructor(name, isLocalizeName, localizationDynamicValue, result, color) {
+    this.datasetName = name;
+    this.isLocalizeName = isLocalizeName;
+    this.localizationDynamicValue = localizationDynamicValue;
+    this.result = result;
+    this.color = color;
+  }
+}
+
+export class TimeLineDataset extends BaseDataset {
+  valuesComputed = []; // number of values processed to compute value at the same index in 'vales' array (to handle e.g. team avg correctly)
   maxSize;
   pointsSum = 0;
   pointsAvgLocal = 0; // local - within entity lifetime (e.g. to player survivalTime)
@@ -72,11 +89,7 @@ export class TimeLineDataset {
   max = Number.MIN_VALUE;
 
   constructor(name, isLocalizeName, localizationDynamicValue, result, color, timeLineLength, kFunc) {
-    this.datasetName = name;
-    this.isLocalizeName = isLocalizeName;
-    this.localizationDynamicValue = localizationDynamicValue;
-    this.result = result;
-    this.color = color;
+    super(name, isLocalizeName, localizationDynamicValue, result, color);
     this.kFunc = kFunc;
     this.maxSize = timeLineLength;
   }
@@ -91,6 +104,7 @@ export class TimeLineDataset {
 
   // compute new value based on previous one
   compute(index, computeFunc, time) {
+    index++; // first value is always 0, shift other values by 1
     const arrVal = this.values[index];
     const arrComputedVal = this.valuesComputed[index];
     const currentValue = arrVal != null ? arrVal : 0;
@@ -128,12 +142,12 @@ export class TimeLineDataset {
 // extends dataset with 2d array of values to support
 export class TimeLineMultiRowDataset extends TimeLineDataset {
   constructor(name, isLocalizeName, localizationDynamicValue, result, rowNum, timeLineLength) {
-    super(name, isLocalizeName, localizationDynamicValue, result, null);
+    super(name, isLocalizeName, localizationDynamicValue, result, null, timeLineLength);
     this.values = Array.from(Array(rowNum), _ => []);
     this.valuesComputed = Array.from(Array(rowNum), _ => []);
   }
 
-  // add value to this dataset tracking its min/max/avg/sum
+  // add values to each row tracking min/max/avg/sum
   push(values) {
     this.#checkIntegrity(values);
     values.forEach((value, row) => {
@@ -145,7 +159,7 @@ export class TimeLineMultiRowDataset extends TimeLineDataset {
 
   // compute new value based on previous one
   compute(index, computeFunc) {
-    //this.#checkIntegrity(values);
+    index++; // first value is always 0, shift other values by 1
     const currentValue = this.values.map(row => row[index] != null ? row[index] : 0);
     const computedValues = this.valuesComputed.map(row => row[index] != null ? row[index] : 0);
     const values = computeFunc(currentValue, computedValues);
@@ -173,5 +187,39 @@ export class TimeLineMultiRowDataset extends TimeLineDataset {
     if (values.length !== this.values.length) {
       throw new Error(`Given values length ${values.length} should match with row number ${this.values.length} in this dataset`);
     }
+  }
+}
+
+export class TimeLineEventDataset extends BaseDataset {
+  events = [];
+
+  constructor(name, isLocalizeName, localizationDynamicValue, result, color) {
+    super(name, isLocalizeName, localizationDynamicValue, result, color);
+    this.values = [1];
+  }
+
+  push(events) {
+    this.events.push(...events);
+    this.values.push(1);
+  }
+}
+
+export class TimeLineEvent {
+  text;
+  type;
+  iconSrc;
+  iconWidth;
+  iconHeight;
+  x;
+  time;
+
+  constructor(text, type, iconSrc, iconWidth, iconHeight, x, time) {
+    this.text = text;
+    this.type = type;
+    this.iconSrc = iconSrc;
+    this.iconWidth = iconWidth;
+    this.iconHeight = iconHeight;
+    this.x = x;
+    this.time = time;
   }
 }

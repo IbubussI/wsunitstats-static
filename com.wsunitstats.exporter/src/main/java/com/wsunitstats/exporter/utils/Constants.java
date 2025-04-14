@@ -72,7 +72,7 @@ public class Constants {
         SELF_BUFF(4, "abilitySelfBuff"),
         //SELF_STUN(5, "abilityDance"),
         DAMAGE(6, "abilityDamage"),
-        PARATROOPER(7, "abilityParatrooper");
+        SCRIPT(7, "abilityScript");
 
         private final int type;
         private final String name;
@@ -274,6 +274,28 @@ public class Constants {
 
         public String getName() {
             return name;
+        }
+    }
+
+    public enum ResearchType {
+        AGE_TRANSITION("researchTypeAgeTransition"),
+        ECO("researchTypeEco"),
+        POP("researchTypePop"),
+        TERRITORY("researchTypeTerritory"),
+        COMBAT("researchTypeCombat"),
+        UNIT("researchTypeUnit"),
+        BUFF("researchTypeBuff"),
+        WONDER_TRANSITION("researchTypeWonderTransition"),
+        OTHER("researchTypeOther");
+
+        private final String type;
+
+        ResearchType(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
         }
     }
 }

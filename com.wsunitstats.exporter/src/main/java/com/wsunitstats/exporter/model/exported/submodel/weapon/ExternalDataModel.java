@@ -11,6 +11,7 @@ public class ExternalDataModel {
     private GroundAttack groundAttack;
     private Object work;
     private Object disableMindButton;
+    private Object customAbility;
 
     @Getter
     @Setter

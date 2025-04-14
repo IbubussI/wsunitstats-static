@@ -76,7 +76,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -85,7 +84,6 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 @Slf4j
 @Service
 public class ModelTransformingServiceImpl implements ModelTransformingService {
-    private static final Pattern ATTACK_GROUND_PATTERN = Pattern.compile("\"groundAttack\":\\{}");
     private static final int PROBABILITY_MAX = 100;
 
     @Autowired
@@ -336,7 +334,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         }
         ProjectileModel projectileModel = new ProjectileModel();
         projectileModel.setGameId(id);
-        projectileModel.setSpeed(Utils.intToDoubleSpeed(projectileJsonModel.getSpeed()));
+        projectileModel.setSpeed(Utils.longToDoubleSpeed(projectileJsonModel.getSpeed()));
         projectileModel.setTimeToStartCollision(Utils.intToDoubleShift(projectileJsonModel.getCollisionTimeToStart()));
         return projectileModel;
     }
@@ -535,7 +533,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 return mapper.readValue(externalDataString, ExternalDataModel.class);
             }
         } catch (Exception e) {
-            log.error("Can't parse attackGroundString");
+            log.error("Can't parse externalDataString: {}", externalDataString);
         }
         return new ExternalDataModel();
     }

@@ -47,42 +47,46 @@ const NumberTag = styled(TagChip)(() => ({
   }
 }));
 
-export const UnitsInfo = ({ unitsCreated }) => {
-  const workers = unitsCreated.get(workerKey);
-  const land = unitsCreated.get(landKey);
-  const air = unitsCreated.get(airKey);
-  const fleet = unitsCreated.get(fleetKey);
-  const prodBuildings = unitsCreated.get(prodBuildKey);
-  const defBuildings = unitsCreated.get(defBuildKey);
-  const ecoBuildings = unitsCreated.get(ecoBuildKey);
-  const gameplayBuildings = unitsCreated.get(gameplayBuildKey);
-  const other = unitsCreated.get(otherKey);
+export const UnitsInfo = ({ unitStatsMap }) => {
+  const workers = unitStatsMap.get(workerKey);
+  const land = unitStatsMap.get(landKey);
+  const air = unitStatsMap.get(airKey);
+  const fleet = unitStatsMap.get(fleetKey);
+  const prodBuildings = unitStatsMap.get(prodBuildKey);
+  const defBuildings = unitStatsMap.get(defBuildKey);
+  const ecoBuildings = unitStatsMap.get(ecoBuildKey);
+  const gameplayBuildings = unitStatsMap.get(gameplayBuildKey);
+  const other = unitStatsMap.get(otherKey);
+
+  const isCol1 = ecoBuildings || workers;
+  const isCol2 = prodBuildings || defBuildings || gameplayBuildings;
+  const isCol3 = land || air || fleet || other;
   return (
     <Stack direction="row" gap={1} sx={{ overflowX: 'auto', p: 0.5 }}>
-      <Stack sx={{ flex: 1 }} gap={1}>
-        <UnitsTable unitsCreated={ecoBuildings} category={ecoBuildKey} />
-        <UnitsTable unitsCreated={workers} category={workerKey} />
-      </Stack>
-      <Stack sx={{ flex: 1 }} gap={1}>
-        <UnitsTable unitsCreated={prodBuildings} category={prodBuildKey} />
-        <UnitsTable unitsCreated={defBuildings} category={defBuildKey} />
-        <UnitsTable unitsCreated={gameplayBuildings} category={gameplayBuildKey} />
-      </Stack>
-      <Stack sx={{ flex: 1 }} gap={1}>
-        <UnitsTable unitsCreated={land} category={landKey} />
-        <UnitsTable unitsCreated={air} category={airKey} />
-        <UnitsTable unitsCreated={fleet} category={fleetKey} />
-        <UnitsTable unitsCreated={other} category={otherKey} />
-      </Stack>
+      {isCol1 && <Stack sx={{ flex: 1, maxWidth: 276 }} gap={1}>
+        <UnitsTable unitStats={ecoBuildings} category={ecoBuildKey} />
+        <UnitsTable unitStats={workers} category={workerKey} />
+      </Stack>}
+      {isCol2 && <Stack sx={{ flex: 1, maxWidth: 276 }} gap={1}>
+        <UnitsTable unitStats={prodBuildings} category={prodBuildKey} />
+        <UnitsTable unitStats={defBuildings} category={defBuildKey} />
+        <UnitsTable unitStats={gameplayBuildings} category={gameplayBuildKey} />
+      </Stack>}
+      {isCol3 && <Stack sx={{ flex: 1, maxWidth: 276 }} gap={1}>
+        <UnitsTable unitStats={land} category={landKey} />
+        <UnitsTable unitStats={air} category={airKey} />
+        <UnitsTable unitStats={fleet} category={fleetKey} />
+        <UnitsTable unitStats={other} category={otherKey} />
+      </Stack>}
     </Stack>
   );
 };
 
-const UnitsTable = ({ unitsCreated, category }) => {
+const UnitsTable = ({ unitStats, category }) => {
   const gameContext = useContext(GameDataContext);
   const { t } = useTranslation();
 
-  return unitsCreated
+  return unitStats
     ? <TableContainer component={Paper}>
       <Table>
         <TableHead>
@@ -93,10 +97,10 @@ const UnitsTable = ({ unitsCreated, category }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {unitsCreated.map((unitCreated) => {
-            const unit = gameContext.units[unitCreated.id];
+          {unitStats.map((unitStats) => {
+            const unit = gameContext.units[unitStats.id];
             return (
-              <NoBottomBorderRow key={unitCreated.id} hover>
+              <NoBottomBorderRow key={unitStats.id} hover>
                 <BodyCell>
                   <EntityInfo
                     clearLinkStyle
@@ -116,7 +120,7 @@ const UnitsTable = ({ unitsCreated, category }) => {
                     }} />
                 </BodyCell>
                 <BodyCell align='right'>
-                  <NumberTag label={unitCreated.number} />
+                  <NumberTag label={unitStats.number} />
                 </BodyCell>
               </NoBottomBorderRow>
             );

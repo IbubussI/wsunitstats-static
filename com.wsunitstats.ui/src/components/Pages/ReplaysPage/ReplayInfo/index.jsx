@@ -27,7 +27,7 @@ export const ReplayInfo = () => {
         <Typography variant="h5" gutterBottom>
           {t('replayChartsTitle')}
         </Typography>
-        <ChartViewer replayInfo={replayInfo} />
+        <ChartViewer id={'replay-info'} replayInfo={replayInfo} />
       </Box>
     </Stack>
   );

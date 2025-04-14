@@ -145,9 +145,9 @@ export const GeneralTable = ({ player }) => {
   const rowsRight = [
     [t('playerInfoColorCell'), playerColor],
     [t('playerInfoMatchResultCell'), playerMatchResultIcon],
-    [t('playerInfoSurvivalTimeCell'), player.survivalAvailable ? Utils.formatDuration(player.survivalTime) : '-'],
-    [t('playerInfoWonderCell'), player.researchAvailable && player.isWonderBuilt ? wonderIcon : '-'],
-    [t('playerInfoLatestAgeCell'), player.researchAvailable ? latestAge : '-'],
+    [t('playerInfoSurvivalTimeCell'), player.survivalOn ? Utils.formatDuration(player.survivalTime) : '-'],
+    [t('playerInfoWonderCell'), player.researchOn && player.isWonderBuilt ? wonderIcon : '-'],
+    [t('playerInfoLatestAgeCell'), player.researchOn ? latestAge : '-'],
   ];
 
   return (

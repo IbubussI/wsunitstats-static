@@ -10,6 +10,7 @@ import com.wsunitstats.exporter.model.exported.submodel.ability.GenericAbility;
 import com.wsunitstats.exporter.model.exported.submodel.ability.ParatrooperModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.ResearchAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.TransformAbilityModel;
+import com.wsunitstats.exporter.model.exported.submodel.ability.UseWeaponModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.WorkModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.DeathAbilityContainer;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
@@ -110,7 +111,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private GenericAbilityContainer mapContainer(UnitJsonModel unitJsonModel, Integer abilityId) {
         Constants.AbilityType abilityType = getAbilityType(unitJsonModel.getAbility().getAbilities().get(abilityId));
         switch (abilityType) {
-            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV, PARATROOPER -> {
+            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV, SCRIPT -> {
                 GenericAbilityContainer workAbility = mapWorkAbility(unitJsonModel, abilityId);
                 workAbility.setContainerName(Constants.AbilityContainerType.WORK.getName());
                 workAbility.setContainerType(Constants.AbilityContainerType.WORK.getType());
@@ -179,7 +180,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
             case TRANSFORM -> genericAbility = mapTransformAbility(abilityJsonModel);
             case CREATE_ENV -> genericAbility = mapCreateEnvAbility(abilityJsonModel, unitJsonModel);
             case CREATE_UNIT -> genericAbility = mapCreateUnitAbility(abilityJsonModel);
-            case PARATROOPER -> genericAbility = mapParatrooperAbility(abilityJsonModel);
+            case SCRIPT -> genericAbility = mapScriptAbility(abilityJsonModel);
             default -> {
                 return null;
             }
@@ -271,11 +272,33 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         return abilityModel;
     }
 
-    private GenericAbility mapParatrooperAbility(AbilityJsonModel abilityJsonModel) {
-        ParatrooperModel abilityModel = new ParatrooperModel();
-        EntityInfoModel entityInfoModel = new EntityInfoModel();
+    private GenericAbility mapScriptAbility(AbilityJsonModel abilityJsonModel) {
         String parametersString = abilityJsonModel.getData().getParameters();
         Map<String, String> params = modelTransformingService.transformParameters(parametersString);
+        String ability = params.get("ability");
+        if ("paratroopers".equals(ability)) {
+            return mapParatrooperAbility(params);
+        } else if ("useWeapon".equals(ability)) {
+            return mapWeaponAbility(params);
+        }
+        throw new IllegalStateException("Unable to determine script ability for: " + parametersString);
+    }
+
+    private GenericAbility mapWeaponAbility(Map<String, String> params) {
+        UseWeaponModel weaponModel = new UseWeaponModel();
+        weaponModel.setWeapon(Integer.parseInt(params.get("weapon")));
+        String tags = params.get("tags");
+        if (tags != null) {
+            weaponModel.setTags(tagResolver.getUnitTags(Long.parseLong(tags)));
+        }
+        weaponModel.setGround(Boolean.parseBoolean(params.get("ground")));
+        weaponModel.setSingle(Boolean.parseBoolean(params.get("single")));
+        return weaponModel;
+    }
+
+    private GenericAbility mapParatrooperAbility(Map<String, String> params) {
+        ParatrooperModel abilityModel = new ParatrooperModel();
+        EntityInfoModel entityInfoModel = new EntityInfoModel();
         int entityId = Integer.parseInt(params.get("pType"));
         String entityType = Constants.EntityType.UNIT.getName();
         entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));

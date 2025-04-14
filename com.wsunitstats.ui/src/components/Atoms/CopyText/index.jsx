@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { InfoSnackbar } from "components/Atoms/InfoSnackbar";
 
 const CopyButton = styled(Button)(() => ({
-  padding: '2px',
+  padding: '5px',
+  margin: '-5px'
 }));
 
 /**

@@ -5,15 +5,18 @@ import com.wsunitstats.exporter.model.exported.ResearchModel;
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.option.NationOption;
 import com.wsunitstats.exporter.model.exported.option.ResearchOption;
+import com.wsunitstats.exporter.model.exported.option.ResearchTypeOption;
 import com.wsunitstats.exporter.model.exported.option.TagOption;
 import com.wsunitstats.exporter.model.exported.option.UnitOption;
 import com.wsunitstats.exporter.model.exported.submodel.NationModel;
 import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.service.OptionsBuilder;
 import com.wsunitstats.exporter.service.UnitCategoryService;
+import com.wsunitstats.exporter.utils.Constants.ResearchType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +51,15 @@ public class OptionsBuilderImpl implements OptionsBuilder {
             researchOption.setImage(research.getImage());
             researchOption.setType(research.getType());
             return researchOption;
+        }).toList();
+    }
+
+    public Collection<ResearchTypeOption> buildResearchTypeOptions() {
+        return Arrays.stream(ResearchType.values()).map(researchType -> {
+            ResearchTypeOption researchTypeOption = new ResearchTypeOption();
+            researchTypeOption.setId(researchType.ordinal());
+            researchTypeOption.setName(researchType.getType());
+            return researchTypeOption;
         }).toList();
     }
 

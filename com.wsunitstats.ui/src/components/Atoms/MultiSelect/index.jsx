@@ -23,6 +23,9 @@ export const MultiSelect = (props) => {
     size,
     primaryFontSize = 'body1',
     getOptionLabel = (option) => option.name,
+    displayTags = true,
+    slotProps,
+    disableRipple = false,
     ...forwardedProps
   } = props;
   const { t } = useTranslation();
@@ -58,12 +61,13 @@ export const MultiSelect = (props) => {
       }}
       renderOption={(props, option, { selected }) => {
         return (
-          <li {...props} key={props['data-option-index']}>
+          <li {...props} key={props['data-option-index']} style={{ paddingLeft: '2px', paddingRight: '2px'}}>
             <Checkbox
               icon={<CheckBoxOutlineBlank fontSize="small" />}
               checkedIcon={<CheckBox fontSize="small" />}
               style={{ marginRight: 8 }}
               checked={option.selectAll ? isAllSelected : selected}
+              disableRipple
             />
             <Stack direction='row' alignItems='center'>
               {option.image &&
@@ -86,14 +90,18 @@ export const MultiSelect = (props) => {
         );
       }}
       renderInput={({ inputProps, ...props }) => (
-        <TextField {...props} inputProps={{ ...inputProps, readOnly: true }} label={label} sx={{ minWidth: '0' }} />
+        <TextField {...props} inputProps={{ ...inputProps, readOnly: true }} label={displayTags ? label : ''} sx={{ minWidth: '0' }} />
       )}
       slotProps={{
+        ...slotProps,
         paper: {
           elevation: 3
         }
       }}
       renderTags={(value, getTagProps) => {
+        if (!displayTags) {
+          return label;
+        }
         const numTags = value.length;
         return (
           <>

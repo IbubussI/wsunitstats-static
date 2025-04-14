@@ -32,15 +32,19 @@ const icons = {
   win: { getSrc: winIcon, width: 12, height: 12 },
   death: { getSrc: deathIcon, width: 12, height: 12 },
   wonder: { getSrc: wonderWinIcon, width: 14, height: 14 },
-  timeout: { getSrc: timeoutIcon, width: 12, height: 12  },
-  food: { getSrc: foodIcon, width: 16, height: 16  },
-  wood: { getSrc: woodIcon, width: 16, height: 16  },
-  iron: { getSrc: ironIcon, width: 16, height: 16  }
-}
+  timeout: { getSrc: timeoutIcon, width: 12, height: 12 },
+  food: { getSrc: foodIcon, width: 16, height: 16 },
+  wood: { getSrc: woodIcon, width: 16, height: 16 },
+  iron: { getSrc: ironIcon, width: 16, height: 16 }
+};
 
-export const resolveChartImage = (iconIdentifierString, color) => {
+export const resolveEndIcon = (iconIdentifierString, color) => {
   const icon = icons[iconIdentifierString];
-  const img = new Image(icon.width, icon.height);
-  img.src = icon.getSrc(color);
+  return resolveIcon(icon.getSrc(color), icon.width, icon.height);
+};
+
+export const resolveIcon = (iconSrc, width, height) => {
+  const img = new Image(width, height);
+  img.src = iconSrc;
   return img;
 };
