@@ -10,7 +10,6 @@ import {
   ArcElement,
   Interaction
 } from 'chart.js';
-import annotationPlugin from 'chartjs-plugin-annotation';
 
 function getInterpolatedLabelAndValue(meta) {
   const pt = meta._pt;
@@ -123,4 +122,4 @@ Tooltip.positioners.cursor = function (_, coordinates) {
 };
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineController, LineElement,
-  ArcElement, Tooltip, Legend, InterpolatedPointStateCleanUp, annotationPlugin);
+  ArcElement, Tooltip, Legend, InterpolatedPointStateCleanUp);
