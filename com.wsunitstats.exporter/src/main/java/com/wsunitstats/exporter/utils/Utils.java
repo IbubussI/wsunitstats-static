@@ -1,6 +1,7 @@
 package com.wsunitstats.exporter.utils;
 
 import com.wsunitstats.exporter.model.NationName;
+import com.wsunitstats.exporter.model.exported.submodel.ResourceModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -217,6 +218,32 @@ public class Utils {
         BigDecimal bd = BigDecimal.valueOf(value);
         bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
+    }
+
+    /**
+     * Returns a sum of 2 resource lists
+     */
+    public static List<ResourceModel> addResources(List<ResourceModel> first, List<ResourceModel> second) {
+        if (first == null) {
+            return second;
+        }
+        if (second == null) {
+            return first;
+        }
+        if (first.size() != second.size()) {
+            throw new IllegalArgumentException("Resource arrays should be the same size.");
+        }
+
+        List<ResourceModel> result = new ArrayList<>();
+        for (int i = 0; i < first.size(); i++) {
+            ResourceModel res = new ResourceModel();
+            res.setValue(first.get(i).getValue() + second.get(i).getValue());
+            res.setResourceId(first.get(i).getResourceId());
+            res.setResourceName(first.get(i).getResourceName());
+            res.setImage(first.get(i).getImage());
+            result.add(res);
+        }
+        return result;
     }
 
     private static Double divide(Integer value, double divider) {

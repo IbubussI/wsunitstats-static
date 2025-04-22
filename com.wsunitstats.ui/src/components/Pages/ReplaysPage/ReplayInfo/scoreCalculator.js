@@ -1,282 +1,5 @@
+import { gatherEfficiencyLookupTable } from "./gatherEfficiencyLookupTable";
 import { expDecay, calcArea } from "./mathUtils";
-
-/*
-worker gather speed table (res per sec):
-        food wood iron	wh eff
-stone	  1.1  1.1  -	    100%
-stoneU	1.3  1.3  -	    100%
-eu	    1.3  1.4  0.7	  110%
-euU	    1.6  1.6  0.9	  110%
-as	    1.5  1.2  0.6	  110%
-asU	    1.5  1.3  0.8	  110%
-westEu  1.5  1.5  0.8	  140%
-westEuU 1.5  1.6  1.0	  140%
-eastEu  1.6  1.5  0.8	  140%
-eastEuU 1.6  1.5  1.0   140%
-westAs  1.6  1.4  0.8	  130%
-eastAs  1.6  1.4  0.8	  130%
-ir	    1.8  1.8  1.2	  150%
-china	  1.8  1.5  0.8	  150%
-*/
-const gatherEfficiencyLookupTable = {
-  "0": { // Stone age
-    "1": {
-      worker: {
-        value: [1.3, 1.3, 0],
-        upTime: 30
-      },
-      whEff: {
-        value: 1
-      }
-    },
-    default: { // spawn time (before stone upgrades)
-      worker: {
-        value: [1.1, 1.1, 0]
-      },
-      whEff: {
-        value: 1
-      }
-    }
-  },
-  "1": { // Bronze age
-    "2": { // Europe
-      worker: {
-        value: [1.3, 1.4, 0.7],
-        upTime: 10 // upgr workers
-      },
-      boat: {
-        value: [6, 0, 0]
-      },
-      whEff: {
-        value: 1.1,
-        upTime: 10 // upgr wh
-      }
-    },
-    "3": { // Asia
-      worker: {
-        value: [1.5, 1.2, 0.6],
-        upTime: 10 // upgr workers
-      },
-      boat: {
-        value: [4.7, 0, 0]
-      },
-      whEff: {
-        value: 1.1,
-        upTime: 10 // upgr wh
-      }
-    }
-  },
-  "2": { // Iron age
-    "2": { // Europe
-      worker: {
-        value: [1.6, 1.6, 0.9],
-        upTime: 60 // upgr wood/iron
-      },
-      boat: {
-        value: [6, 0, 0]
-      },
-      whEff: {
-        value: 1.1
-      }
-    },
-    "3": { // Asia
-      worker: {
-        value: [1.5, 1.3, 0.8],
-        upTime: 60 // upgr wood/iron
-      },
-      boat: {
-        value: [4.7, 0, 0]
-      },
-      whEff: {
-        value: 1.1
-      }
-    }
-  },
-  "3": { // Med age
-    "4": { // Western Europe
-      worker: {
-        value: [1.5, 1.6, 1.0],
-        upTime: 60 // upgr workers + stone/iron
-      },
-      boat: {
-        value: [7.2, 0, 0],
-        upTime: 30 // upgr port + fisher
-      },
-      whEff: {
-        value: 1.3,
-        upTime: 10 // upgr wh
-      }
-    },
-    "5": { // Eastern Europe
-      worker: {
-        value: [1.5, 1.5, 0.8],
-        upTime: 60 // upgr workers + stone/iron
-      },
-      boat: {
-        value: [7.2, 0, 0],
-        upTime: 30 // upgr port + fisher
-      },
-      whEff: {
-        value: 1.3,
-        upTime: 10 // upgr wh
-      }
-    },
-    "6": { // Western Asia
-      worker: {
-        value: [1.6, 1.4, 0.8],
-        upTime: 10 // upgr workers
-      },
-      boat: {
-        value: [4.7, 0, 0]
-      },
-      whEff: {
-        value: 1.3,
-        upTime: 15 // upgr wh
-      }
-    },
-    "7": { // Eastern Asia
-      worker: {
-        value: [1.6, 1.4, 0.8]
-      },
-      boat: {
-        value: [6, 0, 0],
-        upTime: 40 // upgr port + fisher
-      },
-      whEff: {
-        value: 1.3,
-        upTime: 15 // upgr wh
-      }
-    }
-  },
-  "4": { // Late med age
-    "4": { // Western Europe
-      worker: {
-        value: [1.5, 1.6, 1.0]
-      },
-      boat: {
-        value: [7.2, 0, 0]
-      },
-      whEff: {
-        value: 1.4,
-        upTime: 60 // upgr efficiency
-      }
-    },
-    "5": { // Eastern Europe
-      worker: {
-        value: [1.5, 1.5, 0.8]
-      },
-      boat: {
-        value: [7.2, 0, 0]
-      },
-      whEff: {
-        value: 1.4,
-        upTime: 60 // upgr efficiency
-      }
-    },
-    "6": { // Western Asia
-      worker: {
-        value: [1.6, 1.4, 0.8]
-      },
-      boat: {
-        value: [4.7, 0, 0]
-      },
-      whEff: {
-        value: 1.4,
-        upTime: 60 // upgr efficiency
-      }
-    },
-    "7": { // Eastern Asia
-      worker: {
-        value: [1.6, 1.4, 0.8]
-      },
-      boat: {
-        value: [6, 0, 0]
-      },
-      whEff: {
-        value: 1.4,
-        upTime: 60 // upgr efficiency
-      }
-    }
-  },
-  "5": { // IR 1
-    "15": { // China
-      worker: {
-        value: [1.8, 1.5, 0.8],
-        upTime: 20 // upgr workers
-      },
-      boat: {
-        value: [8, 0, 0],
-        upTime: 40
-      },
-      whEff: {
-        value: 1.5,
-        upTime: 30 // upgr wh
-      }
-    },
-    default: { // All nations
-      worker: {
-        value: [1.8, 1.8, 1.2],
-        upTime: 60 // upgr workers
-      },
-      boat: {
-        value: [10, 0, 0],
-        upTime: 120 // upgr port + fisher
-      },
-      tractor: {
-        value: [9, 0, 0]
-      },
-      whEff: {
-        value: 1.5,
-        upTime: 30 // upgr wh
-      }
-    },
-  },
-  "6": { // IR 2
-    "9": { // GB
-      boat: {
-        value: [20, 0, 0],
-        upTime: 120 // upgr fish catching
-      },
-      whEff: {
-        value: 1.5
-      }
-    },
-    "15": { // China
-      worker: {
-        value: [1.8, 1.5, 0.8]
-      },
-      boat: {
-        value: [8, 0, 0]
-      },
-      whEff: {
-        value: 1.5
-      }
-    },
-    "16": { // Japan
-      boat: {
-        value: [20, 0, 0],
-        upTime: 120 // upgr fish catching
-      },
-      whEff: {
-        value: 1.5
-      }
-    },
-    default: { // All nations
-      worker: {
-        value: [1.8, 1.8, 1.2]
-      },
-      boat: {
-        value: [10, 0, 0]
-      },
-      tractor: {
-        value: [9, 0, 0]
-      },
-      whEff: {
-        value: 1.5
-      }
-    }
-  }
-};
 
 /**
  * Returns an object that describes gathering speed for the given time/age/nation
@@ -437,7 +160,8 @@ export function calcResourceMetrics(resNow, resWas, resDelta, resCollected) {
 
 export const MVP_CONST = {
   playerKillK: 400,
-  unitKillK: 1.6,
+  combatK: 1.2,
+  unitKillK: 0.8,
   territoryK: 0.000025,
   resourcesSpentK: 0.25,
   firstWonderPoints: 600,
@@ -455,8 +179,9 @@ export const MVP_CONST = {
 
 export function calcMVPScore(options, debug = false, nickname = '') {
   const {
-    playerKillsData,
-    unitKillPointsArray,
+    playerKillsData, 
+    unitCombatPointsArray, // defined within time
+    unitKillPointsArray, // defined as array of unit-points/number (final result)
     territorySum,
     resourcesSpentAvg,
     armySizeAvg,
@@ -466,8 +191,7 @@ export function calcMVPScore(options, debug = false, nickname = '') {
     firstWonderTime,
     isWinWonder,
     isWinTeam,
-    survivalTime,
-    matchTime // -
+    survivalTime
   } = options;
 
   const wonderK = isWonder ? 1 : 0;
@@ -477,18 +201,19 @@ export function calcMVPScore(options, debug = false, nickname = '') {
 
   const firstWonderTimeValue = expDecay(firstWonderK * MVP_CONST.firstWonderPoints, MVP_CONST.firstWonderPointsDecayRate, firstWonderTime - MVP_CONST.wonderRefTime);
   const wdp = wonderK * MVP_CONST.wonderPoints + winTeamWonderK * (firstWonderTimeValue + winWonderK * MVP_CONST.winWonderPoints);
-  // kill points are cumulative (each value is a sum of prev values)
+  // combat points are cumulative (each value is a sum of prev values)
   // we have to value early kills more than later, so take an avg calculated from area under curve of dataset
-  const ukp = Math.sqrt(calcArea(unitKillPointsArray)) * MVP_CONST.unitKillK;
+  const ucp = Math.sqrt(calcArea(unitCombatPointsArray)) * MVP_CONST.combatK;
+  const ukp = unitKillPointsArray ? calcUnitKillPoints(unitKillPointsArray) * MVP_CONST.unitKillK : 0;
   // player kill points depend on how much unit kill points killer have
-  const playerKillK = ukp / 2;
+  const playerKillK = ucp / 2;
   const pkp = playerKillsData ? calcPlayerKillValue(playerKillsData) * playerKillK : 0;
   const ter = territorySum * MVP_CONST.territoryK * (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime));
   const res = resourcesSpentAvg * MVP_CONST.resourcesSpentK * (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime))**5;
   const arm = armySizeAvg * MVP_CONST.armySizeK;
   const tec = researchPoints * MVP_CONST.researchPointsK;
 
-  const directPoints = pkp + ukp;
+  const directPoints = pkp + ucp + ukp;
   const indirectPoints = ter + res;
   const bonusPoints = wdp + arm + tec;
   const winTeamK = isWinTeam ? MVP_CONST.winTeamK : MVP_CONST.looseTeamK;
@@ -502,6 +227,7 @@ export function calcMVPScore(options, debug = false, nickname = '') {
     First Wonder Time: ${firstWonderTimeValue.toFixed(0)}
     Wonder: ${wdp.toFixed(0)}
     Player Kill: ${pkp.toFixed(0)}
+    Unit Combat: ${ucp.toFixed(0)}
     Unit Kill: ${ukp.toFixed(0)}
     Territory: ${ter.toFixed(0)}
     Resources Spent: ${res.toFixed(0)}
@@ -511,12 +237,13 @@ export function calcMVPScore(options, debug = false, nickname = '') {
     Direct points: ${directPoints.toFixed(0)}
     Indirect points: ${indirectPoints.toFixed(0)}
     Bonus points: ${bonusPoints.toFixed(0)}
-    Score: ${result.toFixed(0)}`)
+    Score: ${result.toFixed(0)}`);
   }
 
   return result;
 }
 
+// calc impact of kill, non-direct method
 function calcPlayerKillValue(playerKillsData) {
   let playerValue = 0;
   playerKillsData.forEach((killEntry, killIndex) => {
@@ -539,4 +266,8 @@ function calcPlayerKillValue(playerKillsData) {
 function findLatestArmyScore(armyScore) {
   return armyScore.slice(-MVP_CONST.armyScoreTimeFrames)
     .reduce((acc, score) => acc + score);
+}
+
+function calcUnitKillPoints(unitKillPointsArray) {
+  return unitKillPointsArray.reduce((acc, entry) => acc + entry.points * entry.number, 0);
 }

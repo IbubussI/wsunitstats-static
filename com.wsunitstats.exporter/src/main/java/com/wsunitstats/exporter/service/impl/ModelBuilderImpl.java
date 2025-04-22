@@ -38,6 +38,9 @@ import com.wsunitstats.exporter.service.ModelBuilder;
 import com.wsunitstats.exporter.service.ModelTransformingService;
 import com.wsunitstats.exporter.service.NationResolver;
 import com.wsunitstats.exporter.service.TagResolver;
+import com.wsunitstats.exporter.service.UnitCategoryService;
+import com.wsunitstats.exporter.service.UnitSourceFinder;
+import com.wsunitstats.exporter.service.UnitValueCalculator;
 import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Constants.ResearchType;
 import com.wsunitstats.exporter.utils.Utils;
@@ -72,6 +75,10 @@ public class ModelBuilderImpl implements ModelBuilder {
     private NationResolver nationResolver;
     @Autowired
     private TagResolver tagResolver;
+    @Autowired
+    private UnitCategoryService unitCategoryService;
+    @Autowired
+    private UnitValueCalculator unitValueCalculator;
 
     @Value("${researches.ageTransitionResearches}")
     private List<Integer> ageTransitionResearches;
@@ -105,7 +112,7 @@ public class ModelBuilderImpl implements ModelBuilder {
 
         Map<Integer, List<UnitResearchModel>> unitResearchesMap = generateUnitResearchesMap(researches, upgrades);
 
-        List<UnitModel> result = new ArrayList<>();
+        List<UnitModel> units = new ArrayList<>();
         for (Map.Entry<Integer, UnitJsonModel> entry : unitMap.entrySet()) {
             Integer id = entry.getKey();
             UnitJsonModel unitJsonModel = entry.getValue();
@@ -181,10 +188,19 @@ public class ModelBuilderImpl implements ModelBuilder {
             }
 
             unit.setApplicableResearches(unitResearchesMap.get(id));
+            unit.setCategory(unitCategoryService.getSimpleUnitCategory(unit).getName());
+            unit.setAdvancedCategory(unitCategoryService.getAdvancedUnitCategory(unit).getName());
 
-            result.add(unit);
+            units.add(unit);
         }
-        return result;
+
+        // second iteration to find unit sources
+        UnitSourceFinder unitSourceFinder = new UnitSourceFinder(units);
+        for (UnitModel unit : units) {
+            unit.setSources(unitSourceFinder.getUnitSources(unit.getGameId()));
+            unit.setKillValue(unitValueCalculator.calcKillValue(unit));
+        }
+        return units;
     }
 
     @Override
@@ -288,11 +304,11 @@ public class ModelBuilderImpl implements ModelBuilder {
 
     private BuildingModel getBuildModel(UnitJsonModel unitJsonModel, GameplayFileJsonModel gameplayJsonModel, int unitId) {
         List<BuildJsonModel> buildJsonModels = gameplayJsonModel.getBuild();
-        return IntStream.range(0, buildJsonModels.size())
+        int buildId = IntStream.range(0, buildJsonModels.size())
                 .filter(index -> buildJsonModels.get(index).getUnit() == unitId)
-                .mapToObj(index -> transformingService.transformBuilding(index, unitJsonModel, buildJsonModels.get(index)))
                 .findFirst()
-                .orElse(null);
+                .orElse(-1);
+        return transformingService.transformBuilding(buildId, unitJsonModel, buildId >= 0 ? buildJsonModels.get(buildId) : null);
     }
 
     private List<GatherModel> getGatherList(List<GatherJsonModel> gatherList) {

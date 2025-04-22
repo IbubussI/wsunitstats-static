@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import ArrowBackTwoToneIcon from '@mui/icons-material/ArrowBackTwoTone';
 import { Link, useOutletContext, useParams } from 'react-router-dom';
-import { UnitKillsInfo, UnitsInfo } from './UnitsInfo';
+import { UnitsInfoTabs } from './UnitsInfo';
 import { useTranslation } from 'react-i18next';
 import { GeneralTable } from './GeneralTable';
 import { PlayerChartViewer } from './PlayerChartViewer';
@@ -34,19 +34,12 @@ export const PlayerInfo = () => {
         </Box>
       </Box>
       <GeneralTable player={player} />
-      {player.unitsCreatedOn &&
+      {(player.unitsCreatedOn || player.unitsKilledOn) &&
         <Box>
           <Typography variant="h5" gutterBottom>
-            {t('playerInfoUnitsCreatedTitle')}
+            {t('playerInfoUnitsTitle')}
           </Typography>
-          <UnitsInfo unitStatsMap={player.unitsCreated} />
-        </Box>}
-      {player.unitsKilledOn &&
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            {t('playerInfoUnitsKilledTitle')}
-          </Typography>
-          <UnitKillsInfo unitsKilledPlain={player.unitsKilledPlain} unitsKilledByFaction={player.unitsKilledByFaction} />
+          <UnitsInfoTabs player={player} />
         </Box>}
       {replayInfo.timeLine &&
         <Box>

@@ -94,6 +94,7 @@ export class PlayerResearch {
 export class PlayerUnitStat {
   id;
   number;
+  points;
 }
 
 export class MatchType {

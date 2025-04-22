@@ -56,6 +56,7 @@ export class ReplayInfoParser {
   #groupMapByGameId;
   #groupMapByParsedId;
   #playerResearchesData;
+  #unitsKilledLostData;
 
   #isMatchDataOn;
   #isPlayersLostOn;
@@ -125,7 +126,7 @@ export class ReplayInfoParser {
       }
 
       this.#playerResearchTimeLine = this.#generatePlayerResearchTimeLine();
-
+      this.#unitsKilledLostData = this.#parseUnitsKilledAndLost();
       const teamEntries = this.#generateTeamsData();
       this.#factionTeams = teamEntries[0];
       this.#playerTeams = teamEntries[1];
@@ -203,7 +204,7 @@ export class ReplayInfoParser {
 
   #parsePlayers(mvpScoreData) {
     const playerList = [];
-    const mvp = { index: 0, score: 0 };
+    const mvp = { index: -1, score: 0 };
     this.#playerScriptData.forEach((playerScriptEntry, playerId) => {
       const player = new Player();
       playerList[playerId] = player;
@@ -241,13 +242,15 @@ export class ReplayInfoParser {
       }
 
       if (this.#isUnitsKilledOn) {
-        const unitsKilledResult = this.#parsePlayerUnitsKilled(factionId);
-        player.unitsKilledByFaction = unitsKilledResult[0];
-        player.unitsKilledPlain = unitsKilledResult[1];
-        player.unitsKilledOn = player.unitsKilledPlain.size > 0;
+        player.unitsKilledByFaction = this.#unitsKilledLostData.killedByFactions.get(factionId);
+        player.unitsKilledPlain = this.#unitsKilledLostData.killedPlain.get(factionId);
+        player.unitsLostByFaction = this.#unitsKilledLostData.lostByFactions.get(factionId);
+        player.unitsLostPlain = this.#unitsKilledLostData.lostPlain.get(factionId);
+        player.unitsKilledOn = player.unitsKilledPlain?.size > 0;
+        player.unitsLostOn = player.unitsLostPlain?.size > 0;
       }
 
-      if (this.#isTimelineOn) {
+      if (this.#isTimelineOn && this.#isUnitsKilledOn) {
         player.mvpScore = calcMVPScore({
           isWonder: player.isWonderBuilt,
           isWinTeam: this.#teamWinners.has(player.team),
@@ -255,7 +258,7 @@ export class ReplayInfoParser {
           isWinWonder: player.isWonderWin,
           firstWonderTime: player.firstWonderTime,
           researchPoints: 0,
-          playerKillPoints: 0,
+          unitKillPointsArray: player.unitsKilledPlain && Array.from(player.unitsKilledPlain.values()).flatMap(v => v),
           survivalTime: player.survivalTime,
           ...mvpScoreData[playerId]
         }, this.#isDebug, player.nickname);
@@ -264,7 +267,9 @@ export class ReplayInfoParser {
       }
     });
 
-    playerList[mvp.index].isMvp = true;
+    if (playerList[mvp.index]) {
+      playerList[mvp.index].isMvp = true;
+    }
 
     return playerList;
   }
@@ -567,7 +572,7 @@ export class ReplayInfoParser {
               researchPoints: 0,
               playerKillPoints: 0,
               survivalTime: time,
-              unitKillPointsArray: unitKillPointsData.players[playerId].values,
+              unitCombatPointsArray: unitKillPointsData.players[playerId].values,
               territorySum: landPointsData.players[playerId].pointsSum,
               resourcesSpentAvg: resourcesSpentData.players[playerId].pointsAvgLocal,
               armySizeAvg: unitCreatePointsData.players[playerId].pointsAvgLocal,
@@ -586,7 +591,7 @@ export class ReplayInfoParser {
                   researchPoints: 0,
                   playerKillPoints: 0,
                   survivalTime: time,
-                  unitKillPointsArray: unitKillPointsData.players[i].values,
+                  unitCombatPointsArray: unitKillPointsData.players[i].values,
                   territorySum: landPointsData.players[i].pointsSum,
                   resourcesSpentAvg: resourcesSpentData.players[i].pointsAvgLocal,
                   armySizeAvg: unitCreatePointsData.players[i].pointsAvgLocalK,
@@ -617,7 +622,7 @@ export class ReplayInfoParser {
       timeLineMvpScoreStructure.push({
         // kill points calculated from area of figure below the curve to
         playerKillsData: playerKillsDataMap.get(playerId),
-        unitKillPointsArray: unitKillPointsData.players[playerId].values,
+        unitCombatPointsArray: unitKillPointsData.players[playerId].values,
         territorySum: landPointsData.players[playerId].pointsSum,
         resourcesSpentAvg: resourcesSpentData.players[playerId].pointsAvgLocal,
         armySizeAvg: unitCreatePointsData.players[playerId].pointsAvgLocal,
@@ -894,17 +899,19 @@ export class ReplayInfoParser {
   }
 
   #parsePlayerUnitsCreated(factionId) {
-    const statsEntry = this.#stats[factionId]?.unitsCreated;
+    const unitEntry = this.#stats[factionId]?.unitsCreated;
     const units = new Map();
-    if (statsEntry) {
-      for (const [unitTypeId, number] of Object.entries(statsEntry)) {
+    if (unitEntry) {
+      for (const [unitTypeId, number] of Object.entries(unitEntry)) {
+        const unitTypeIdN = gameEngineIndexShift(unitEntry) + parseInt(unitTypeId);
         const unitCreated = new PlayerUnitStat();
-        unitCreated.id = unitTypeId;
+        unitCreated.id = unitTypeIdN;
         unitCreated.number = number;
-        const unitCategory = this.#context.units[unitTypeId].category;
-        const unitEntry = units.get(unitCategory);
-        if (unitEntry != null) {
-          unitEntry.push(unitCreated);
+        const unitCategory = this.#context.units[unitTypeIdN].category;
+
+        const unitCategoryEntry = units.get(unitCategory);
+        if (unitCategoryEntry != null) {
+          unitCategoryEntry.push(unitCreated);
         } else {
           units.set(unitCategory, [unitCreated]);
         }
@@ -913,40 +920,126 @@ export class ReplayInfoParser {
     return units;
   }
 
-  #parsePlayerUnitsKilled(factionId) {
-    const unitsKilledEntry = this.#unitsKilled[factionId];
-    const factions = [];
-    const units = new Map();
-    if (unitsKilledEntry) {
-      for (const [victimFaction, unitEntry] of Object.entries(unitsKilledEntry)) {
-        const factionUnits = new Map();
-        for (const [unitTypeId, number] of Object.entries(unitEntry)) {
-          const unitKilled = new PlayerUnitStat();
-          unitKilled.id = unitTypeId;
-          unitKilled.number = number;
-          const unitCategory = this.#context.units[unitTypeId].category;
+  #parseUnitsKilledAndLost() {
+    if (!this.#isUnitsKilledOn) {
+      return;
+    }
 
-          const unitEntry = units.get(unitCategory);
-          if (unitEntry != null) {
-            unitEntry.push(unitKilled);
+    const killedByFactions = new Map();
+    const killedPlain = new Map();
+    const lostByFactions = new Map();
+    const lostPlain = new Map();
+
+    // indexes of unit entries in the array stored separately
+    // to be able to access the entries from array
+    // to sum up similar units from different factions
+    // for killedPlain/lostPlain data
+    const killedPlainIndex = new Map();
+    const lostPlainIndex = new Map();
+
+    for (const [killerFaction, victimEntry] of Object.entries(this.#unitsKilled)) {
+      const killerFactionN = gameEngineIndexShift(this.#unitsKilled) + parseInt(killerFaction);
+      const killedByFactionsEntry = [];
+      const killedPlainEntry = new Map();
+      killedByFactions.set(killerFactionN, killedByFactionsEntry);
+      killedPlain.set(killerFactionN, killedPlainEntry);
+      killedPlainIndex.set(killerFactionN, new Map());
+
+      for (const [victimFaction, unitEntry] of Object.entries(victimEntry)) {
+        const victimFactionN = gameEngineIndexShift(victimEntry) + parseInt(victimFaction);
+        const lostByFactionsEntry = lostByFactions.get(victimFactionN) || new Map();
+        const lostPlainEntry = lostPlain.get(victimFactionN) || new Map();
+        lostByFactions.set(victimFactionN, lostByFactionsEntry);
+        lostPlain.set(victimFactionN, lostPlainEntry);
+
+        const killedFactionUnits = new Map();
+        const lostFactionUnits = new Map();
+        for (const [unitTypeId, number] of Object.entries(unitEntry)) {
+          const unitTypeIdN = gameEngineIndexShift(unitEntry) + parseInt(unitTypeId);
+          const unitKilled = new PlayerUnitStat();
+          const unitContext = this.#context.units[unitTypeIdN];
+          unitKilled.id = unitTypeIdN;
+          unitKilled.number = number;
+          unitKilled.points = unitContext.killValue;
+          const unitCategory = unitContext.category;
+
+          // add to units killed plain
+          const killedUnitCategoryEntry = killedPlainEntry.get(unitCategory);
+          const killedPlainIndexEntry = killedPlainIndex.get(killerFactionN);
+          if (killedUnitCategoryEntry != null) {
+            const prevIndex = killedPlainIndexEntry.get(unitTypeIdN);
+            if (prevIndex != null) {
+              const prevUnitEntry = killedUnitCategoryEntry[prevIndex];
+              prevUnitEntry.number += unitKilled.number;
+            } else {
+              killedUnitCategoryEntry.push({...unitKilled});
+              killedPlainIndexEntry.set(unitTypeIdN, killedUnitCategoryEntry.length - 1);
+            }
           } else {
-            units.set(unitCategory, [unitKilled]);
+            killedPlainIndexEntry.set(unitTypeIdN, 0);
+            killedPlainEntry.set(unitCategory, [{...unitKilled}]);
           }
 
-          const unitFactionEntry = factionUnits.get(unitCategory);
-          if (unitFactionEntry != null) {
-            unitFactionEntry.push(unitKilled);
+          // add to units killed by factions
+          const killedFactionCategoryEntry = killedFactionUnits.get(unitCategory);
+          if (killedFactionCategoryEntry != null) {
+            killedFactionCategoryEntry.push({...unitKilled});
           } else {
-            factionUnits.set(unitCategory, [unitKilled]);
+            killedFactionUnits.set(unitCategory, [{...unitKilled}]);
+          }
+
+          // add to units lost plain
+          const lostUnitCategoryEntry = lostPlainEntry.get(unitCategory);
+          const lostPlainIndexEntry = lostPlainIndex.get(victimFactionN) || new Map();
+          lostPlainIndex.set(victimFactionN, lostPlainIndexEntry);
+          if (lostUnitCategoryEntry != null) {
+            const prevIndex = lostPlainIndexEntry.get(unitTypeIdN);
+            if (prevIndex != null) {
+              const prevUnitEntry = lostUnitCategoryEntry[prevIndex];
+              prevUnitEntry.number += unitKilled.number;
+            } else {
+              lostUnitCategoryEntry.push({...unitKilled});
+              lostPlainIndexEntry.set(unitTypeIdN, lostUnitCategoryEntry.length - 1);
+            }
+          } else {
+            lostPlainIndexEntry.set(unitTypeIdN, 0);
+            lostPlainEntry.set(unitCategory, [{...unitKilled}]);
+          }
+
+          // add to units lost by factions
+          const lostFactionCategoryEntry = lostFactionUnits.get(unitCategory);
+          if (lostFactionCategoryEntry != null) {
+            lostFactionCategoryEntry.push({...unitKilled});
+          } else {
+            lostFactionUnits.set(unitCategory, [{...unitKilled}]);
+          }
+
+          const prevLostByFactionsEntry = lostByFactionsEntry.get(killerFactionN);
+          if (prevLostByFactionsEntry != null) {
+            // concat two maps
+            lostFactionUnits.forEach((v, k) => {
+              prevLostByFactionsEntry.units.set(k, v);
+            });
+          } else {
+            lostByFactionsEntry.set(killerFactionN, {
+              name: this.#getFactionName(killerFactionN),
+              units: lostFactionUnits
+            });
           }
         }
-        factions.push({
-          name: this.#getFactionName(victimFaction),
-          unitsKilled: factionUnits
+        killedByFactionsEntry.push({
+          name: this.#getFactionName(victimFactionN),
+          units: killedFactionUnits
         });
       }
     }
-    return [factions, units];
+
+    // flattern map to value-array to match the format
+    for (const [k, v] of lostByFactions) {
+      lostByFactions.set(k, Array.from(v.values()))
+    }
+
+    return { killedByFactions, killedPlain, lostByFactions, lostPlain };
   }
 
   #getWonderLeaders(wonderLeaderCandidates) {
@@ -1028,6 +1121,10 @@ export class ReplayInfoParser {
       });
   }
 }
+
+function gameEngineIndexShift(container) {
+  return Array.isArray(container) ? 1 : 0;
+} 
 
 function getSetBitPositions(bitset) {
   const result = [];

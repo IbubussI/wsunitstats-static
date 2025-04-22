@@ -1,2 +1,2 @@
-export * from './unitsInfo';
-export * from './unitKillsInfo';
+export { UnitsInfo } from './unitsInfo';
+export { UnitsInfoTabs } from './unitsInfoTabs';

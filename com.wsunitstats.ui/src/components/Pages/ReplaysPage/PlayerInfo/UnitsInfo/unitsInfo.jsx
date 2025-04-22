@@ -11,22 +11,12 @@ import {
   TableHead,
   TableRow
 } from '@mui/material';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 import { GameDataContext } from 'gameDataContext';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
 import { EntityInfo } from 'components/Atoms/Renderer';
 import { useTranslation } from 'react-i18next';
 import { TagChip } from 'components/Atoms/TagChip';
-
-const workerKey = 'unitCategoryWorker';
-const landKey = 'unitCategoryLand';
-const airKey = 'unitCategoryAir';
-const fleetKey = 'unitCategoryFleet';
-const prodBuildKey = 'unitCategoryProdBuild';
-const defBuildKey = 'unitCategoryDefBuild';
-const ecoBuildKey = 'unitCategoryEcoBuild';
-const gameplayBuildKey = 'unitCategoryGameplayBuild';
-const otherKey = 'unitCategoryOther';
 
 const HeaderCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: alpha(theme.palette.background.default, 0.4),
@@ -48,46 +38,55 @@ const NumberTag = styled(TagChip)(() => ({
 }));
 
 export const UnitsInfo = ({ unitStatsMap }) => {
-  const workers = unitStatsMap.get(workerKey);
-  const land = unitStatsMap.get(landKey);
-  const air = unitStatsMap.get(airKey);
-  const fleet = unitStatsMap.get(fleetKey);
-  const prodBuildings = unitStatsMap.get(prodBuildKey);
-  const defBuildings = unitStatsMap.get(defBuildKey);
-  const ecoBuildings = unitStatsMap.get(ecoBuildKey);
-  const gameplayBuildings = unitStatsMap.get(gameplayBuildKey);
-  const other = unitStatsMap.get(otherKey);
+  const gameContext = useContext(GameDataContext);
 
-  const isCol1 = ecoBuildings || workers;
-  const isCol2 = prodBuildings || defBuildings || gameplayBuildings;
-  const isCol3 = land || air || fleet || other;
+  const columns = React.useMemo(() => {
+    const elements = Array.from(unitStatsMap.entries()
+      .map(entry => ({ data: entry, num: entry[1].length + 1 }))
+      .map(entry => {
+        const units = entry.data[1];
+        units.forEach(unit => {
+          const unitContext = gameContext.units[unit.id];
+          unit.context = unitContext;
+        });
+        units.sort((u1, u2) => u1.context.nationId - u2.context.nationId);
+        return entry;
+      }));
+  
+    const sortedElements = elements.sort((el1, el2) => el2.num - el1.num);
+    const largest = sortedElements[0].num;
+    const rest = sortedElements.slice(1).reduce((acc, el) => acc + el.num, 0);
+    // split big column if there is any
+    if (largest >= (rest + 3) && rest > 0) {
+      const sliceIndex = Math.floor(largest / 2);
+      const array1 = sortedElements[0].data[1].slice(0, sliceIndex);
+      const array2 = sortedElements[0].data[1].slice(sliceIndex);
+      sortedElements[0] = { data: [sortedElements[0].data[0], array1], num: array1.length + 1 };
+      sortedElements.push({ data: [sortedElements[0].data[0], array2], num: array2.length + 1 });
+    }
+
+    return Utils.solvePartitioning(sortedElements, 3);
+  }, [unitStatsMap, gameContext.units]);
+
   return (
     <Stack direction="row" gap={1} sx={{ overflowX: 'auto', p: 0.5 }}>
-      {isCol1 && <Stack sx={{ flex: 1, maxWidth: 276 }} gap={1}>
-        <UnitsTable unitStats={ecoBuildings} category={ecoBuildKey} />
-        <UnitsTable unitStats={workers} category={workerKey} />
-      </Stack>}
-      {isCol2 && <Stack sx={{ flex: 1, maxWidth: 276 }} gap={1}>
-        <UnitsTable unitStats={prodBuildings} category={prodBuildKey} />
-        <UnitsTable unitStats={defBuildings} category={defBuildKey} />
-        <UnitsTable unitStats={gameplayBuildings} category={gameplayBuildKey} />
-      </Stack>}
-      {isCol3 && <Stack sx={{ flex: 1, maxWidth: 276 }} gap={1}>
-        <UnitsTable unitStats={land} category={landKey} />
-        <UnitsTable unitStats={air} category={airKey} />
-        <UnitsTable unitStats={fleet} category={fleetKey} />
-        <UnitsTable unitStats={other} category={otherKey} />
-      </Stack>}
+      {columns.reverse().map((column, i) => (
+        column.length > 0 &&
+        <Stack key={i} sx={{ flex: 1, maxWidth: 276 }} gap={1}>
+          {column.map((entry, j) => (
+            <UnitsSingleColumn key={j} units={entry.data[1]} category={entry.data[0]} />
+          ))}
+        </Stack>
+      ))}
     </Stack>
   );
 };
 
-const UnitsTable = ({ unitStats, category }) => {
-  const gameContext = useContext(GameDataContext);
+const UnitsSingleColumn = ({ units, category }) => {
   const { t } = useTranslation();
 
-  return unitStats
-    ? <TableContainer component={Paper}>
+  return (
+    <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
@@ -97,30 +96,30 @@ const UnitsTable = ({ unitStats, category }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {unitStats.map((unitStats) => {
-            const unit = gameContext.units[unitStats.id];
+          {units.map((unit) => {
+            const unitContext = unit.context;
             return (
-              <NoBottomBorderRow key={unitStats.id} hover>
+              <NoBottomBorderRow key={unit.id} hover>
                 <BodyCell>
                   <EntityInfo
                     clearLinkStyle
                     data={{
-                      primary: t(unit.name),
-                      secondary: unit.nation && Utils.localizeNation(t, unit.nation),
+                      primary: t(unitContext.name),
+                      secondary: unitContext.nation && Utils.localizeNation(t, unitContext.nation),
                       image: {
-                        path: unit.image,
+                        path: unitContext.image,
                         width: 35,
                         height: 35,
                       },
                       link: {
-                        id: unit.gameId,
+                        id: unitContext.gameId,
                         path: Utils.getEntityRoute('unit')
                       },
                       overflow: true
                     }} />
                 </BodyCell>
                 <BodyCell align='right'>
-                  <NumberTag label={unitStats.number} />
+                  <NumberTag label={unit.number} />
                 </BodyCell>
               </NoBottomBorderRow>
             );
@@ -128,5 +127,5 @@ const UnitsTable = ({ unitStats, category }) => {
         </TableBody>
       </Table>
     </TableContainer>
-    : null;
+  );
 };

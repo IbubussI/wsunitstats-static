@@ -43,6 +43,7 @@ public class Constants {
 
     public static final List<Integer> WALL_UNITS = Arrays.asList(
             182, 183, 184, 185, 186, 187, 188, 189,
+            198, 199,
             211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
             232, 375
     );
@@ -255,11 +256,12 @@ public class Constants {
         }
     }
 
-    public enum UnitCategory {
+    public enum SimpleUnitCategory {
         WORKER("unitCategoryWorker"),
         LAND("unitCategoryLand"),
         AIR("unitCategoryAir"),
         FLEET("unitCategoryFleet"),
+        TC("unitCategoryTC"),
         PRODUCTION_BUILDING("unitCategoryProdBuild"),
         DEFENCE_BUILDING("unitCategoryDefBuild"),
         ECO_BUILDING("unitCategoryEcoBuild"),
@@ -268,12 +270,49 @@ public class Constants {
 
         private final String name;
 
-        UnitCategory(String name) {
+        SimpleUnitCategory(String name) {
             this.name = name;
         }
 
         public String getName() {
             return name;
+        }
+    }
+
+    public enum AdvancedUnitCategory {
+        WORKER("worker"),
+        LAND("land"),
+        AIR("air"),
+        FLEET("fleet"),
+        WONDER("wonder"),
+        TC("tc"),
+        HOUSE("house"),
+        MINE("mine"),
+        WALL("wall"),
+        PRODUCTION_BUILDING("build-prod"),
+        DEFENCE_BUILDING("build-def"),
+        ECO_BUILDING("build-eco"),
+        SECONDARY_BUILDING("build-etc"),
+        GAMEPLAY_BUILDING("build-gameplay"),
+        OTHER("other");
+
+        private final String name;
+
+        AdvancedUnitCategory(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public static AdvancedUnitCategory fromName(String name) {
+            for (AdvancedUnitCategory cat : AdvancedUnitCategory.values()) {
+                if (cat.name.equals(name)) {
+                    return cat;
+                }
+            }
+            throw new IllegalArgumentException("AdvancedUnitCategory value not found for name: " + name);
         }
     }
 
@@ -291,6 +330,21 @@ public class Constants {
         private final String type;
 
         ResearchType(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+    }
+
+    public enum UnitCostSourceType {
+        ABILITY("unitCostSourceTypeAbility"),
+        BUILDING("unitCostSourceTypeBuilding");
+
+        private final String type;
+
+        UnitCostSourceType(String type) {
             this.type = type;
         }
 

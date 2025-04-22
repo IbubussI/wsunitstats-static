@@ -398,7 +398,6 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         BuildingModel buildingModel = new BuildingModel();
-        buildingModel.setBuildId(buildId);
         if (deathability != null) {
             buildingModel.setHealCost(transformResources(deathability.getHealMeCost()));
             if (buildJsonModel != null) {
@@ -406,6 +405,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             }
         }
         if (buildJsonModel != null) {
+            buildingModel.setBuildId(buildId);
             buildingModel.setRequirements(transformRequirements(buildJsonModel.getRequirements()));
             buildingModel.setInitCost(transformResources(buildJsonModel.getCostInit()));
             List<Integer> fullCost = Utils.add(buildJsonModel.getCostInit(), buildJsonModel.getCostBuilding());

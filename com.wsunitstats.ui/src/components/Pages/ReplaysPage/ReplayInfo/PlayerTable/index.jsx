@@ -113,7 +113,7 @@ export const PlayerTable = ({ replayInfo }) => {
 
                   {/* Color */}
                   <PlayerTableCell align="center" sx={{ width: '31px' }}>
-                  {replayInfo.match.isMapGen && <ColorIndicator color={player.color} sx={{
+                    {replayInfo.match.isMapGen && <ColorIndicator color={player.color} sx={{
                       height: '18px',
                       width: '18px'
                     }} />}
@@ -133,13 +133,13 @@ export const PlayerTable = ({ replayInfo }) => {
 
                   {/* MVP Rating */}
                   <PlayerTableCell align="right" sx={{ width: '30px' }}>
-                      {player.mvpScore != null &&
-                        <MVPTag bgColor="#bb6911" label={Number(player.mvpScore).toFixed(0)} />}
+                    {player.mvpScore != null &&
+                      <MVPTag bgColor="#bb6911" label={Number(player.mvpScore).toFixed(0)} />}
                   </PlayerTableCell>
 
                   {/* MVP Icon */}
                   <PlayerTableCell align="right" sx={{ px: 0, width: '18px' }}>
-                      {player.isMvp &&
+                    {player.isMvp &&
                       <MVPIcon fontSize='1rem'
                         sx={{
                           display: 'block',

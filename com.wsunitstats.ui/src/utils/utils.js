@@ -202,3 +202,31 @@ export const localizeNation = (t, nationName) => {
   }
   return "";
 };
+
+/**
+ * Solves multiway number partitioning problem.
+ * 
+ * Splits elements array into k groups that have the most possible close sum of 'num' member of element.
+ * Elements - array of values: { data, num } - data is arbitrary object, num is number
+ */ 
+export const solvePartitioning = (elements, k) => {
+  const result = [];
+  for (let i = 0; i < k; i++) {
+    result.push({
+      sum: 0,
+      values: [],
+    });
+  }
+
+  // copy to not mutate input array and sort desc
+  const elementsSorted = [...elements].sort((e1, e2) => e2.num - e1.num);
+  for (const elem of elementsSorted) {
+    // sort asc to find smallest group
+    const smallestGroup = result.sort((g1, g2) => g1.sum - g2.sum)[0];
+    // add next biggest value to the smalles group
+    smallestGroup.values.push(elem);
+    smallestGroup.sum += elem.num;
+  }
+
+  return result.map(g => g.values);
+}

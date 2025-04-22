@@ -17,6 +17,7 @@ public class UnitOption {
     private String image;
     private int gameId;
     private String category;
+    private double killValue;
 
     // filters
     private int nationId;
