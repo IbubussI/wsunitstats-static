@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { FormButton } from 'components/Atoms/FormButton';
 import { ReplayInfoParser } from 'components/Pages/ReplaysPage/ReplayInfo/replayInfoParser';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
 import { GameDataContext } from 'gameDataContext';
@@ -30,8 +30,11 @@ export const ReplayPage = () => {
   const gameContext = useContext(GameDataContext);
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const [replayCodeInput, setReplayCodeInput] = React.useState('');
   const [replayInfo, setReplayInfo] = React.useState({});
+  const [isLoading, setIsLoading] = React.useState(false);
+  const isDebug = searchParams.get('debug') || false;
 
   const openReplay = (replayCode) => {
     navigate(Utils.getUrlWithPathParams([
@@ -49,23 +52,26 @@ export const ReplayPage = () => {
     const replayCode = parseReplayCode(replayCodeParam);
     if (replayCode) {
       setReplayCodeInput(replayCode);
+      setIsLoading(true);
       Utils.fetchJson(Constants.WS_GAMES_API_REPLAY_BY_CODE + replayCode,
         (responseJson) => {
-          const parser = new ReplayInfoParser(gameContext, replayCode);
+          const parser = new ReplayInfoParser(gameContext, replayCode, isDebug);
           setReplayInfo(parser.parse(responseJson));
+          setIsLoading(false);
         },
         (errorResponse) => {
           setReplayInfo({ error: 255, message: errorResponse.message ? errorResponse.message : errorResponse });
+          setIsLoading(false);
         }
       );
     } else if (replayCodeParam) {
       setReplayInfo({ error: 255, message: "Submitted replay code is not valid." });
     }
-  }, [params.replayCode, gameContext]);
+  }, [params.replayCode, gameContext, isDebug]);
 
   const isSuccess = replayInfo && replayInfo.error === 0;
   return (
-    <Container maxWidth="md" component={Paper} sx={{ m: 4, p: '24px' }}>
+    <Container maxWidth="md" component={Paper} sx={{ my: 4, p: '24px' }}>
       <ReplayForm
         onSubmit={(event) => {
           // prevent page reload
@@ -80,7 +86,8 @@ export const ReplayPage = () => {
           }
         }}
         onInputChange={(event) => setReplayCodeInput(event.target.value)}
-        inputValue={replayCodeInput} />
+        inputValue={replayCodeInput}
+        isLoading={isLoading} />
 
       {isSuccess
         ? <Outlet context={replayInfo} />
@@ -89,7 +96,7 @@ export const ReplayPage = () => {
   );
 };
 
-const ReplayForm = ({ onSubmit, onInputChange, inputValue }) => {
+const ReplayForm = ({ onSubmit, onInputChange, inputValue, isLoading }) => {
   const { t } = useTranslation();
   return (
     <FormContainer component='form'
@@ -99,7 +106,7 @@ const ReplayForm = ({ onSubmit, onInputChange, inputValue }) => {
         variant="standard"
         value={inputValue}
         onChange={onInputChange} />
-      <FormButton type='submit'>
+      <FormButton type='submit' loading={isLoading}>
         {t('replayFormLoad')}
       </FormButton>
     </FormContainer>

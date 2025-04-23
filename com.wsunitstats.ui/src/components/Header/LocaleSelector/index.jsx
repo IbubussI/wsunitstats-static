@@ -2,21 +2,13 @@ import * as React from 'react';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import {
-  autocompleteClasses,
   Stack,
-  styled,
   Tooltip
 } from "@mui/material";
-import { DynamicSelect } from "components/Atoms/DynamicSelect";
+import { SingleSelect } from "components/Atoms/SingleSelect";
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-
-const StyledDynamicSelect = styled(DynamicSelect)({
-  [`& .${autocompleteClasses.inputRoot}, .${autocompleteClasses.input}`]: {
-    cursor: 'pointer'
-  },
-});
 
 export const LocaleSelector = (props) => {
   const {
@@ -45,8 +37,8 @@ export const LocaleSelector = (props) => {
 
   return (
     <Stack {...otherProps} style={{ gap: 1, alignItems: 'center', flexDirection: 'row', py: 1 }}>
-      <StyledDynamicSelect
-        onSelect={(locale) => onLocaleChange(locale, true)}
+      <SingleSelect
+        onChange={(locale) => onLocaleChange(locale, true)}
         getOptionLabel={(locale) => locale.toUpperCase()}
         value={value}
         options={options}

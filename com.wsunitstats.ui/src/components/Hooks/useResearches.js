@@ -136,7 +136,7 @@ function moveSpeed(unit, params) {
 function gatherSpeedAdd(unit, params) {
   const gatherId = tonumber(params.gather, null);
   const add = tonumber(params.add, 0);
-  unit.gather[gatherId].perSecond = unit.gather[gatherId].perSecond + add / Constants.TICK_RATE;
+  unit.gather[gatherId].perSecond = Number(unit.gather[gatherId].perSecond + add / Constants.TICK_RATE).toFixed(1);
 }
 
 function setDamageArea(unit, params) {

@@ -1,8 +1,11 @@
 package com.wsunitstats.exporter.service;
 
 import com.wsunitstats.exporter.model.exported.UnitModel;
-import com.wsunitstats.exporter.utils.Constants.UnitCategory;
+import com.wsunitstats.exporter.utils.Constants;
+import com.wsunitstats.exporter.utils.Constants.SimpleUnitCategory;
 
 public interface UnitCategoryService {
-    UnitCategory getUnitCategory(UnitModel unit);
+    SimpleUnitCategory getSimpleUnitCategory(UnitModel unit);
+
+    Constants.AdvancedUnitCategory getAdvancedUnitCategory(UnitModel unit);
 }

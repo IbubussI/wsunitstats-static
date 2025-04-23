@@ -21,5 +21,5 @@ public class ProjectileJsonModel {
     private Integer moveDistance;
     private Object passability;
     @JsonProperty("speed_")
-    private Integer speed;
+    private Long speed;
 }

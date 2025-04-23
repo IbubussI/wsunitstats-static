@@ -8,13 +8,14 @@ import {
   TableCell,
   TableContainer,
   Tooltip,
-  Typography
+  Typography,
+  useMediaQuery
 } from "@mui/material";
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
 import { ColorIndicator } from 'components/Atoms/ColorIndicator';
 import { TagChip } from "components/Atoms/TagChip";
-import { WinnerIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
+import { WinIcon } from 'components/Pages/ReplaysPage/ReplayInfo/svg';
 import { GameDataContext } from 'gameDataContext';
 import { useContext } from 'react';
 import { Image } from 'components/Atoms/Renderer';
@@ -41,6 +42,7 @@ const RatingTag = styled(TagChip)(() => ({
 }));
 
 export const GeneralTable = ({ player }) => {
+  const isWide = useMediaQuery('(min-width:800px)');
   const { t } = useTranslation();
   const gameContext = useContext(GameDataContext);
 
@@ -72,7 +74,7 @@ export const GeneralTable = ({ player }) => {
           {t('playerInfoWinner')}
         </CellText>}
       {player.isWinner &&
-        <WinnerIcon sx={{
+        <WinIcon sx={{
           display: 'inline-block',
           verticalAlign: 'middle',
           width: '18px',
@@ -143,13 +145,13 @@ export const GeneralTable = ({ player }) => {
   const rowsRight = [
     [t('playerInfoColorCell'), playerColor],
     [t('playerInfoMatchResultCell'), playerMatchResultIcon],
-    [t('playerInfoSurvivalTimeCell'), player.survivalAvailable ? Utils.formatDuration(player.survivalTime) : '-'],
-    [t('playerInfoWonderCell'), player.researchAvailable && player.isWonderBuilt ? wonderIcon : '-'],
-    [t('playerInfoLatestAgeCell'), player.researchAvailable ? latestAge : '-'],
+    [t('playerInfoSurvivalTimeCell'), player.survivalOn ? Utils.formatDuration(player.survivalTime) : '-'],
+    [t('playerInfoWonderCell'), player.researchOn && player.isWonderBuilt ? wonderIcon : '-'],
+    [t('playerInfoLatestAgeCell'), player.researchOn ? latestAge : '-'],
   ];
 
   return (
-    <Stack direction="row" gap={1} sx={{ py: 1 }}>
+    <Stack direction={isWide ? 'row' : 'column'} gap={1} sx={{ py: 1 }}>
       <TableContainer component={Paper}>
         <Table>
           <TableBody>

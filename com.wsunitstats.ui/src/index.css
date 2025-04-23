@@ -28,7 +28,7 @@ body {
 .body-root {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: safe center;
   justify-content: normal;
   flex: 1;
 }

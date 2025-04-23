@@ -47,6 +47,16 @@ export const WorkAbilityTable = ({ abilityContainer, overflowMinWidth }) => {
       column: 1,
       renderer: FlexibleTableDoubleCellRow,
       childData: {
+        label: t('workAbilityWeaponCell'),
+        value: ability.weapon,
+        widthRight: FLEX_TABLE_RIGHT_WIDTH,
+        widthLeft: FLEX_TABLE_LEFT_WIDTH
+      }
+    },
+    {
+      column: 1,
+      renderer: FlexibleTableDoubleCellRow,
+      childData: {
         label: t('workAbilityMakeTimeCell'),
         value: work.makeTime && work.makeTime + t(Constants.SECONDS_END_MARKER),
         widthRight: FLEX_TABLE_RIGHT_WIDTH,

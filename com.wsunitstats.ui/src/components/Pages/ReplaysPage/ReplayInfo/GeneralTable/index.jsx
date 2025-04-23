@@ -6,10 +6,12 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer
+  TableContainer,
+  useMediaQuery
 } from "@mui/material";
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from 'components/Atoms/Table';
+import { CopyText } from 'components/Atoms/CopyText';
 
 const GeneralTableCell = styled(TableCell)(({ theme }) => ({
   fontSize: theme.typography.body2.fontSize,
@@ -17,6 +19,7 @@ const GeneralTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 export const GeneralTable = ({ replayInfo }) => {
+  const isWide = useMediaQuery('(min-width:800px)');
   const { t } = useTranslation();
 
   const match = replayInfo.match;
@@ -24,7 +27,7 @@ export const GeneralTable = ({ replayInfo }) => {
     ? t('replayVictoryWonder')
     : t('replayVictoryPlayers');
   const rowsLeft = [
-    [t('replayRepCodeCell'), "rep-" + match.replayCode],
+    [t('replayRepCodeCell'), <CopyText sx={{ alignItems: 'center', justifyContent: 'flex-end' }} text={"rep-" + match.replayCode} />],
     [t('replayModeCell'), t(match.mode)],
     [t('replayMatchStartCell'), Utils.formatTimeLong(match.startTime)],
     [t('replayDurationCell'), Utils.formatDuration(match.duration)],
@@ -42,7 +45,7 @@ export const GeneralTable = ({ replayInfo }) => {
   ];
 
   return (
-    <Stack direction="row" gap={2} sx={{ py: 1 }}>
+    <Stack direction={isWide ? 'row' : 'column'} gap={1}>
       <TableContainer component={Paper}>
         <Table>
           <TableBody>

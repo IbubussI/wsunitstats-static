@@ -179,6 +179,17 @@ export const formatDuration = (durationMillis) => {
   return dayjs.duration(durationMillis).format('HH:mm:ss').replace(/^(00:00:)|^(00:)|^(0)/, "");
 };
 
+export const formatDurationChartShort = (durationMillis) => {
+  const x = dayjs.duration(durationMillis).format('HH[h]mm[m]')
+  return x.replace(/^(00h0)|^(00h)|^(0)/, "");
+};
+
+export const formatDurationChartLong = (durationMillis) => {
+  const x = dayjs.duration(durationMillis).format('HH[h] mm[m] ss[s]')
+  return x.replace(/^(00h 00m 0)|^(00h 00m )|^(00h 0)|^(00h )|^(0)/, "");
+};
+
+
 export const formatTimeLong = (timeSec) => {
   return dayjs.unix(timeSec).format('DD/MM/YYYY HH:mm:ss');
 };
@@ -191,3 +202,31 @@ export const localizeNation = (t, nationName) => {
   }
   return "";
 };
+
+/**
+ * Solves multiway number partitioning problem.
+ * 
+ * Splits elements array into k groups that have the most possible close sum of 'num' member of element.
+ * Elements - array of values: { data, num } - data is arbitrary object, num is number
+ */ 
+export const solvePartitioning = (elements, k) => {
+  const result = [];
+  for (let i = 0; i < k; i++) {
+    result.push({
+      sum: 0,
+      values: [],
+    });
+  }
+
+  // copy to not mutate input array and sort desc
+  const elementsSorted = [...elements].sort((e1, e2) => e2.num - e1.num);
+  for (const elem of elementsSorted) {
+    // sort asc to find smallest group
+    const smallestGroup = result.sort((g1, g2) => g1.sum - g2.sum)[0];
+    // add next biggest value to the smalles group
+    smallestGroup.values.push(elem);
+    smallestGroup.sum += elem.num;
+  }
+
+  return result.map(g => g.values);
+}

@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as Constants from 'utils/constants';
 import * as Utils from 'utils/utils';
 import { Box, styled } from "@mui/material";
-import { CheckmarksSelect } from 'components/Atoms/CheckmarksSelect';
+import { MultiSelect } from 'components/Atoms/MultiSelect';
 import { useValuesToQueryStringSync } from 'components/Hooks/useValuesToQueryStringSync';
 import { useOptionsController } from 'components/Hooks/useOptionsController';
 import { FormButton } from 'components/Atoms/FormButton';
@@ -40,35 +40,36 @@ export const UnitFilters = ({ filterOptions }) => {
     || unitTagOptionsController.hasQueryString
     || searchTagOptionsController.hasQueryString;
 
+  // TODO: fix ripple effect breaks after button click
   return (
     <FilterPanel>
-      <CheckmarksSelect
+      <MultiSelect
         sx={{ width: '350px' }}
         label={t('filtersUnitTags')}
         values={unitTagOptionsController.values}
         options={unitTagOptionsController.options}
         onChange={unitTagOptionsController.setValues}
         limitTags={1}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
-        localizeFunc={t} />
-      <CheckmarksSelect
+        getOptionLabel={(option) => t(option.name)}
+        isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
+      <MultiSelect
         sx={{ width: '350px' }}
         label={t('filtersSearchTags')}
         values={searchTagOptionsController.values}
         options={searchTagOptionsController.options}
         onChange={searchTagOptionsController.setValues}
         limitTags={1}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
-        localizeFunc={t} />
-      <CheckmarksSelect
+        getOptionLabel={(option) => t(option.name)}
+        isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
+      <MultiSelect
         sx={{ width: '350px' }}
         label={t('filtersNations')}
         values={nationOptionsController.values}
         options={nationOptionsController.options}
         onChange={nationOptionsController.setValues}
         limitTags={1}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
-        localizeFunc={(key) => Utils.localizeNation(t, key)} />
+        getOptionLabel={(option) => Utils.localizeNation(t, option.name)}
+        isOptionEqualToValue={(option, value) => option.gameId === value.gameId} />
       <FilterButtonGroup>
         <FormButton
           onClick={() => {

@@ -13,6 +13,7 @@ import com.wsunitstats.exporter.model.exported.submodel.SupplyModel;
 import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.model.exported.submodel.TransportingModel;
 import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
+import com.wsunitstats.exporter.model.exported.submodel.UnitSourceModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
@@ -48,6 +49,10 @@ public class UnitModel extends GenericEntityModel {
     private List<WeaponModel> weapons;
     private List<TurretModel> turrets;
     private List<ArmorModel> armor;
+    private List<UnitSourceModel> sources;
+    private String category;
+    private String advancedCategory;
+    private double killValue;
 
     // Technical data to render research selector
     private Collection<UnitResearchModel> applicableResearches;

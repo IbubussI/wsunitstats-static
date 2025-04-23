@@ -3,10 +3,12 @@ package com.wsunitstats.exporter;
 import com.wsunitstats.exporter.model.exported.LocalizationModel;
 import com.wsunitstats.exporter.model.exported.ResearchModel;
 import com.wsunitstats.exporter.model.exported.ContextModel;
+import com.wsunitstats.exporter.model.exported.ResearchSelectorModel;
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.UnitSelectorModel;
 import com.wsunitstats.exporter.model.exported.option.NationOption;
 import com.wsunitstats.exporter.model.exported.option.ResearchOption;
+import com.wsunitstats.exporter.model.exported.option.ResearchTypeOption;
 import com.wsunitstats.exporter.model.exported.option.TagOption;
 import com.wsunitstats.exporter.model.exported.option.UnitOption;
 import com.wsunitstats.exporter.service.FileContentService;
@@ -74,11 +76,15 @@ public class UnitStatsExporterApplication {
             Collection<TagOption> unitTagOptions = optionsBuilder.buildUnitTagOptions(unitModels);
             Collection<TagOption> searchTagOptions = optionsBuilder.buildSearchTagOptions(unitModels);
             Collection<NationOption> nationOptions = optionsBuilder.buildNationsOptions(unitModels);
+            Collection<ResearchTypeOption> researchTypeOptions = optionsBuilder.buildResearchTypeOptions();
 
             UnitSelectorModel unitSelector = new UnitSelectorModel();
             unitSelector.setUnitTags(unitTagOptions);
             unitSelector.setSearchTags(searchTagOptions);
             unitSelector.setNations(nationOptions);
+
+            ResearchSelectorModel researchSelector = new ResearchSelectorModel();
+            researchSelector.setResearchTypes(researchTypeOptions);
 
             ContextModel context = new ContextModel();
             context.setResearches(researchOptions);
@@ -92,6 +98,7 @@ public class UnitStatsExporterApplication {
             payload.setLocalization(localizationModels);
             payload.setImages(fileContentService.getImages());
             payload.setUnitSelector(new FileExportPayloadEntry<>("unitSelector", unitSelector));
+            payload.setResearchSelector(new FileExportPayloadEntry<>("researchSelector", researchSelector));
             payload.setContext(new FileExportPayloadEntry<>("context", context));
             taskExecutionPool.executeTasks(tasks, payload);
             LOG.info("Exiting...");

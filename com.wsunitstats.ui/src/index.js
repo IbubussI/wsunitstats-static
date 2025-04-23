@@ -31,6 +31,8 @@ import { ThemeContext } from 'themeContext';
 import { PlayerInfo } from 'components/Pages/ReplaysPage/PlayerInfo';
 import { ReplayPage } from 'components/Pages/ReplaysPage';
 import { GameDataContext } from 'gameDataContext';
+import './chartJsInit.js';
+
 
 const lightTheme = createTheme({
   palette: {
@@ -54,7 +56,6 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     docs: {
-      main: 'initial',
       input: {
         gStart: '#181818',
         gEnd: '#fff0'
