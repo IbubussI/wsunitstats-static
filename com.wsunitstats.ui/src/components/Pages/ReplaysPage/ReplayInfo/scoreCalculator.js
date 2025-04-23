@@ -191,7 +191,8 @@ export function calcMVPScore(options, debug = false, nickname = '') {
     firstWonderTime,
     isWinWonder,
     isWinTeam,
-    survivalTime
+    survivalTime,
+    matchTime = 1
   } = options;
 
   const wonderK = isWonder ? 1 : 0;
@@ -217,11 +218,12 @@ export function calcMVPScore(options, debug = false, nickname = '') {
   const indirectPoints = ter + res;
   const bonusPoints = wdp + arm + tec;
   const winTeamK = isWinTeam ? MVP_CONST.winTeamK : MVP_CONST.looseTeamK;
-  const result = winTeamK * (directPoints + indirectPoints + bonusPoints);
+  const result = winTeamK * (directPoints + indirectPoints + bonusPoints) * 1000 / matchTime;
 
   if (debug) {
     console.log(`=================================
     Player: ${nickname}
+    Match time divider: ${matchTime / 1000}
     'Components:'
     Wonder flags (winTeam-firstWonder-winWonder): ${winTeamWonderK}-${firstWonderK}-${winWonderK}
     First Wonder Time: ${firstWonderTimeValue.toFixed(0)}

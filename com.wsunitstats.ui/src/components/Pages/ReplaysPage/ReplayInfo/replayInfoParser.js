@@ -260,6 +260,7 @@ export class ReplayInfoParser {
           researchPoints: 0,
           unitKillPointsArray: player.unitsKilledPlain && Array.from(player.unitsKilledPlain.values()).flatMap(v => v),
           survivalTime: player.survivalTime,
+          matchTime: this.#matchData.duration,
           ...mvpScoreData[playerId]
         }, this.#isDebug, player.nickname);
         mvp.score = mvp.score > player.mvpScore ? mvp.score : player.mvpScore;
