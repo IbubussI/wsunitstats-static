@@ -580,6 +580,7 @@ export class ReplayInfoParser {
             });
 
             for (let i = 0; i < playersCount; i++) {
+              // i - player from a team opposite to one whose player dead
               const team = metadata[i].teamId;
               // if player was alive at the start of timeframe - he is counted as contributor
               if (i !== playerId && this.#isPlayerAlive(i, startTime) && team === killerTeam) {
@@ -603,7 +604,8 @@ export class ReplayInfoParser {
                   playerInstantMvpScore: instantMVPScore,
                   playerArmyScore: unitCreatePointsData.players[i].values,
                   teamInstantMvpScore: killerTeamInstantMvpScore,
-                  teamArmyScore: killerTeamArmyScore
+                  teamArmyScore: killerTeamArmyScore,
+                  deathTime: this.#playerSurvival.get(playerId)
                 };
 
                 const entries = playerKillsDataMap.get(i) || [];

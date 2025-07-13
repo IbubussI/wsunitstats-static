@@ -168,13 +168,14 @@ export const MVP_CONST = {
   firstWonderPointsDecayRate: 1/2000000,
   winWonderPoints: 250,
   wonderPoints: 150,
-  wonderRefTime: 1590000,
+  wonderRefTime: 1590000, // ms
   winTeamK: 1.2,
   looseTeamK: 1,
   armySizeK: 0.2,
   researchPointsK: 1,
   indirectGrowRate: 1/750000,
-  armyScoreTimeFrames: 5
+  armyScoreTimeFrames: 5,
+  killScoreMinTime: 240000 // ms
 };
 
 export function calcMVPScore(options, debug = false, nickname = '') {
@@ -249,6 +250,11 @@ export function calcMVPScore(options, debug = false, nickname = '') {
 function calcPlayerKillValue(playerKillsData) {
   let playerValue = 0;
   playerKillsData.forEach((killEntry, killIndex) => {
+    if (killEntry.deathTime <= MVP_CONST.killScoreMinTime) {
+      // don't count leavers at the match start
+      // and prevent issues when we don't have any timeline slice yet
+      return;
+    }
     const playerArmyScore = findLatestArmyScore(killEntry.playerArmyScore);
     const teamArmyScore = Array.from(killEntry.teamArmyScore.values())
       .reduce((acc, score) => acc + findLatestArmyScore(score), 0);

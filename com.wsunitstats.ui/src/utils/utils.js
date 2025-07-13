@@ -176,7 +176,7 @@ export const localize = (target, localeData) => {
 };
 
 export const formatDuration = (durationMillis) => {
-  return dayjs.duration(durationMillis).format('HH:mm:ss').replace(/^(00:00:)|^(00:)|^(0)/, "");
+  return dayjs.duration(durationMillis).format('HH:mm:ss').replace(/^(00:)|^(0)/, "");
 };
 
 export const formatDurationChartShort = (durationMillis) => {
