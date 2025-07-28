@@ -43,7 +43,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 10 // upgr workers
       },
       boat: {
-        value: [6, 0, 0]
+        value: [5.4, 0, 0]
       },
       whEff: {
         value: 1.1,
@@ -56,7 +56,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 10 // upgr workers
       },
       boat: {
-        value: [4.7, 0, 0]
+        value: [4.4, 0, 0]
       },
       whEff: {
         value: 1.1,
@@ -71,7 +71,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 60 // upgr wood/iron
       },
       boat: {
-        value: [6, 0, 0]
+        value: [5.4, 0, 0]
       },
       whEff: {
         value: 1.1
@@ -83,7 +83,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 60 // upgr wood/iron
       },
       boat: {
-        value: [4.7, 0, 0]
+        value: [4.4, 0, 0]
       },
       whEff: {
         value: 1.1
@@ -97,7 +97,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 60 // upgr workers + stone/iron
       },
       boat: {
-        value: [7.2, 0, 0],
+        value: [9, 0, 0],
         upTime: 30 // upgr port + fisher
       },
       whEff: {
@@ -111,7 +111,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 60 // upgr workers + stone/iron
       },
       boat: {
-        value: [7.2, 0, 0],
+        value: [9, 0, 0],
         upTime: 30 // upgr port + fisher
       },
       whEff: {
@@ -125,7 +125,7 @@ export const gatherEfficiencyLookupTable = {
         upTime: 10 // upgr workers
       },
       boat: {
-        value: [4.7, 0, 0]
+        value: [6, 0, 0]
       },
       whEff: {
         value: 1.3,
@@ -137,7 +137,7 @@ export const gatherEfficiencyLookupTable = {
         value: [1.6, 1.4, 0.8]
       },
       boat: {
-        value: [6, 0, 0],
+        value: [7, 0, 0],
         upTime: 40 // upgr port + fisher
       },
       whEff: {
@@ -152,7 +152,7 @@ export const gatherEfficiencyLookupTable = {
         value: [1.5, 1.6, 1.0]
       },
       boat: {
-        value: [7.2, 0, 0]
+        value: [9, 0, 0]
       },
       whEff: {
         value: 1.4,
@@ -164,7 +164,7 @@ export const gatherEfficiencyLookupTable = {
         value: [1.5, 1.5, 0.8]
       },
       boat: {
-        value: [7.2, 0, 0]
+        value: [9, 0, 0]
       },
       whEff: {
         value: 1.4,
@@ -176,7 +176,7 @@ export const gatherEfficiencyLookupTable = {
         value: [1.6, 1.4, 0.8]
       },
       boat: {
-        value: [4.7, 0, 0]
+        value: [6, 0, 0]
       },
       whEff: {
         value: 1.4,
@@ -188,7 +188,7 @@ export const gatherEfficiencyLookupTable = {
         value: [1.6, 1.4, 0.8]
       },
       boat: {
-        value: [6, 0, 0]
+        value: [7, 0, 0]
       },
       whEff: {
         value: 1.4,

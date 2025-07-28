@@ -19,7 +19,7 @@ public class Constants {
     public static final double POPULATION_VALUE_MULTIPLIER = 10d;
     public static final int LONG_SIZE = 64;
     public static final int LIVESTOCK_LIMIT = 50;
-    public static final List<Integer> LIVESTOCK_IDS = List.of(62, 130);
+    public static final List<Integer> LIVESTOCK_IDS = List.of(62, 130); // fowl, goat
     public static final double INIT_HEALTH_MODIFIER = 1.5; // calculated by experiment
     public static final double BUILD_SPEED_MODIFIER = 0.238095; // calculated by experiment
     public static final int ACTIVE_RESOURCES = 3;

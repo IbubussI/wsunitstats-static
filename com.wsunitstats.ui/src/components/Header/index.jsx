@@ -62,10 +62,10 @@ export const Header = () => {
             }
           }}>
             <Typography fontSize='12px' mr={2}>
-              {t('headerLastUpdated', { value: '15.04.2025' })}
+              {t('headerLastUpdated', { value: '24.07.2025' })}
             </Typography>
             <Typography fontSize='12px' mr={2}>
-              {t('headerGameVersion', { value: 'v178.3416_28557' })}
+              {t('headerGameVersion', { value: 'v186.3530_28763' })}
             </Typography>
           </Stack>
           <NavigationMenu pages={pages} />

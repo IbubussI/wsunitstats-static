@@ -109,7 +109,11 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     }
 
     private GenericAbilityContainer mapContainer(UnitJsonModel unitJsonModel, Integer abilityId) {
-        Constants.AbilityType abilityType = getAbilityType(unitJsonModel.getAbility().getAbilities().get(abilityId));
+        AbilityJsonModel abilitySource = unitJsonModel.getAbility().getAbilities().get(abilityId);
+        if (abilitySource == null) {
+            return null;
+        }
+        Constants.AbilityType abilityType = getAbilityType(abilitySource);
         switch (abilityType) {
             case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV, SCRIPT -> {
                 GenericAbilityContainer workAbility = mapWorkAbility(unitJsonModel, abilityId);
@@ -313,7 +317,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private int getWorkId(UnitJsonModel unitJsonModel, int abilityId) {
         List<WorkJsonModel> work = unitJsonModel.getAbility().getWork();
         return IntStream.range(0, work.size())
-                .filter(i -> abilityId == work.get(i).getAbility())
+                .filter(i -> work.get(i) != null && abilityId == work.get(i).getAbility())
                 .findFirst()
                 .orElse(-1);
     }
