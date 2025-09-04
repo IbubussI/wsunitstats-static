@@ -17,6 +17,8 @@ import { NoBottomBorderRow } from 'components/Atoms/Table';
 import { EntityInfo } from 'components/Atoms/Renderer';
 import { useTranslation } from 'react-i18next';
 import { TagChip } from 'components/Atoms/TagChip';
+import { MVP_CONST } from 'components/Pages/ReplaysPage/ReplayInfo/scoreCalculator';
+import { useSearchParams } from 'react-router-dom';
 
 const HeaderCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: alpha(theme.palette.background.default, 0.4),
@@ -84,6 +86,8 @@ export const UnitsInfo = ({ unitStatsMap }) => {
 
 const UnitsSingleColumn = ({ units, category }) => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const isDebug = searchParams.get('debug') || false;
 
   return (
     <TableContainer component={Paper}>
@@ -99,8 +103,9 @@ const UnitsSingleColumn = ({ units, category }) => {
           {units.map((unit) => {
             const unitContext = unit.context;
             return (
-              <NoBottomBorderRow key={unit.id} hover>
+              <NoBottomBorderRow key={unit.id} hover sx={{ position: 'relative' }}>
                 <BodyCell>
+                  {isDebug && <UnitScorePointsDebug num={unit.number} killValue={unitContext.killValue} />}
                   <EntityInfo
                     clearLinkStyle
                     data={{
@@ -129,3 +134,9 @@ const UnitsSingleColumn = ({ units, category }) => {
     </TableContainer>
   );
 };
+
+const UnitScorePointsDebug = ({ num, killValue }) => (
+  <div style={{ position: 'absolute', right: '50px', fontSize: '11px' }}>
+    {(num * killValue * MVP_CONST.unitKillK).toFixed(1)}
+  </div>
+);
