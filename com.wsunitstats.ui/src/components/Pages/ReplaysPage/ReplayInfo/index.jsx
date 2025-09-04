@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 export const ReplayInfo = () => {
   const { t } = useTranslation();
   const replayInfo = useOutletContext();
+  const id = `replay-info-${replayInfo.match.replayCode}`;
 
   return (
     <Stack gap={1}>
@@ -27,7 +28,8 @@ export const ReplayInfo = () => {
         <Typography variant="h5" gutterBottom>
           {t('replayChartsTitle')}
         </Typography>
-        <ChartViewer id={'replay-info'} replayInfo={replayInfo} />
+        {/* remount charts to have a default view when replay changes */}
+        <ChartViewer key={id} id={id} replayInfo={replayInfo} />
       </Box>
     </Stack>
   );

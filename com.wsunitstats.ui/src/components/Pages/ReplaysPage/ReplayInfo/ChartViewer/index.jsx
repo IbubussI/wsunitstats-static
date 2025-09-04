@@ -8,35 +8,31 @@ const maxCharts = 15;
 const minCharts = 1;
 export const ChartViewer = ({ id, replayInfo }) => {
   const [boxNum, setBoxNum] = React.useState(1);
-  const [chartBoxes] = React.useState(() =>
+  const [chartBoxes, setChartBoxes] = React.useState(() =>
     [<ChartBox key={0} id={`${id}-${0}`}
       timeLine={replayInfo.timeLine}
       stepTime={replayInfo.timeLinePeriod}
     />]);
 
+  React.useEffect(() => {
+    const newBoxes = [];
+    for (let i = 0; i < boxNum; i++) {
+      newBoxes.push(<ChartBox key={i} id={`${id}-${boxNum}`}
+        timeLine={replayInfo.timeLine}
+        stepTime={replayInfo.timeLinePeriod}
+      />);
+    }
+    setChartBoxes(newBoxes);
+  }, [boxNum, id, replayInfo]);
+
   return (
     <Stack gap={1}>
       {[...chartBoxes]}
       <Stack gap={1} direction="row" sx={{ justifyContent: 'center' }}>
-        <Button variant="contained" onClick={() => {
-          const currBoxNum = Math.min(boxNum + 1, maxCharts);
-          if (currBoxNum > boxNum) {
-            chartBoxes.push(<ChartBox key={boxNum} id={`${id}-${boxNum}`}
-              timeLine={replayInfo.timeLine}
-              stepTime={replayInfo.timeLinePeriod}
-            />);
-          }
-          setBoxNum(currBoxNum);
-        }}>
+        <Button variant="contained" onClick={() => setBoxNum(Math.min(boxNum + 1, maxCharts))}>
           <AddIcon />
         </Button>
-        <Button variant="contained" onClick={() => {
-          const currBoxNum = Math.max(boxNum - 1, minCharts);
-          if (currBoxNum < boxNum) {
-            chartBoxes.pop();
-          }
-          setBoxNum(currBoxNum);
-        }}>
+        <Button variant="contained" onClick={() => setBoxNum(Math.max(boxNum - 1, minCharts))}>
           <RemoveIcon />
         </Button>
       </Stack>
