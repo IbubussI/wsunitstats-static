@@ -86,7 +86,7 @@ export const PlayerTable = ({ replayInfo }) => {
             <PlayerTableHeaderCell colSpan={2} align='center'>{t('replayPlayerTableMVPHeader')}</PlayerTableHeaderCell>
             {/* Squad */}
             <PlayerTableHeaderCell align='center'>{t('replayPlayerTableSquadHeader')}</PlayerTableHeaderCell>
-            {/* Lastest Age Reached, Survival Time, Win/Death, Wonder */}
+            {/* Lastest Age Reached, Survival Time, Win/loose, Death, Wonder */}
             <PlayerTableHeaderCell colSpan={4} align='center'>{t('replayPlayerTableSurvivalHeader')}</PlayerTableHeaderCell>
             {/* Rating */}
             <PlayerTableHeaderCell align='right'>{t('replayPlayerTableRatingHeader')}</PlayerTableHeaderCell>
@@ -186,19 +186,20 @@ export const PlayerTable = ({ replayInfo }) => {
 
                   {/* Survival Time */}
                   <PlayerTableCell align="right" sx={{ width: '80px' }}>
-                    {player.isDead && Utils.formatDuration(player.survivalTime)}
+                    {player.isDead && <>
+                      <span style={{ marginRight: '5px' }}>{Utils.formatDuration(player.survivalTime)}</span>
+                      <DeadIcon style={{
+                        color: '#dd1d1dd4'
+                      }} />
+                    </>}
                   </PlayerTableCell>
 
-                  {/* Win/Death */}
+                  {/* Win */}
                   <PlayerTableCell align="center" sx={{
                     width: '18px',
                     paddingRight: 0,
                     paddingLeft: 0
                   }}>
-                    {player.isDead &&
-                      <DeadIcon style={{
-                        color: '#dd1d1dd4'
-                      }} />}
                     {player.isWinner &&
                       <WinIcon sx={{
                         width: '20px',
