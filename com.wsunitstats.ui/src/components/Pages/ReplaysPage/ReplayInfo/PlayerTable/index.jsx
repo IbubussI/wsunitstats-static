@@ -185,7 +185,7 @@ export const PlayerTable = ({ replayInfo }) => {
                   </PlayerTableCell>
 
                   {/* Survival Time */}
-                  <PlayerTableCell align="right" sx={{ width: '80px' }}>
+                  <PlayerTableCell align="right" sx={{ width: '100px' }}>
                     {player.isDead && <>
                       <span style={{ marginRight: '5px' }}>{Utils.formatDuration(player.survivalTime)}</span>
                       <DeadIcon style={{
