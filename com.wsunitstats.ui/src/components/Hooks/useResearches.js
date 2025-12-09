@@ -121,7 +121,8 @@ function collectWorks(unit) {
 // -------------------------------- SCRIPTS --------------------------------
 
 function moveSpeed(unit, params) {
-  const add = tonumber(params.add, 0);
+  // in engine move-speed UI value represented by internal num divided by 16
+  const add = tonumber(params.add, 0) / 16;
   const mult = tonumber(params.mult, 100);
   const addR = tonumber(params.addRotation, 0);
   const multR = tonumber(params.multRotation, 100);

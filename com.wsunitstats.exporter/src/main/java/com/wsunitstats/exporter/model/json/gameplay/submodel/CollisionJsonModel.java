@@ -9,7 +9,7 @@ import lombok.ToString;
 @ToString
 public class CollisionJsonModel {
     private Integer elasticity;
-    private Integer tags;
+    private Long tags;
     private Integer radius;
     private Integer weight;
 }

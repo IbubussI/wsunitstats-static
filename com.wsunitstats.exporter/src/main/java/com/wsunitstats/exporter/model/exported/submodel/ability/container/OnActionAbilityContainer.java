@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
@@ -14,5 +16,5 @@ public class OnActionAbilityContainer extends GenericAbilityContainer {
     private Boolean onAgro;
     private Boolean enabled;
     private Double rechargeTime;
-    private GenericAbility ability;
+    private List<GenericAbility> abilities;
 }

@@ -195,7 +195,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         MovementModel movementModel = new MovementModel();
-        movementModel.setSpeed(movementJsonModel.getSpeed());
+        movementModel.setSpeed(movementJsonModel.getSpeed() / Constants.MOVEMENT_SPEED_MODIFIER);
         movementModel.setRotationSpeed(Utils.intToDoubleShift(movementJsonModel.getRotationSpeed()));
         return movementModel;
     }
@@ -217,18 +217,11 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         RequirementsModel requirementsModel = new RequirementsModel();
-        List<Integer> researches = requirementsJsonModel.getResearches();
-        List<ResearchRequirementModel> researchRequirementModels = emptyIfNull(researches)
-                .stream()
-                .map(researchId -> {
-                    ResearchRequirementModel result = new ResearchRequirementModel();
-                    result.setResearchId(researchId);
-                    result.setResearchImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), researchId));
-                    result.setResearchName(localization.getResearchNames().get(researchId));
-                    return result;
-                })
-                .toList();
-        List<UnitRequirementJsonModel> units = requirementsJsonModel.getUnits();
+        List<Integer> researchesAny = requirementsJsonModel.getResearchAny();
+        List<Integer> researchesAll = requirementsJsonModel.getResearchAll();
+        List<ResearchRequirementModel> researchAnyRequirementModels = researchesToRequirements(researchesAny);
+        List<ResearchRequirementModel> researchAllRequirementModels = researchesToRequirements(researchesAll);
+                List < UnitRequirementJsonModel > units = requirementsJsonModel.getUnits();
         List<UnitRequirementModel> unitRequirementModels = emptyIfNull(units)
                 .stream()
                 .map(unitJson -> {
@@ -242,9 +235,9 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                     return result;
                 })
                 .toList();
-        requirementsModel.setResearches(researchRequirementModels);
+        requirementsModel.setResearchAny(researchAnyRequirementModels);
+        requirementsModel.setResearchAll(researchAllRequirementModels);
         requirementsModel.setUnits(unitRequirementModels);
-        requirementsModel.setResearchesAll(Utils.getDirectBoolean(requirementsJsonModel.getResearchesAll()));
         requirementsModel.setUnitsAll(Utils.getInvertedBoolean(requirementsJsonModel.getUnitsAll()));
         return requirementsModel;
     }
@@ -570,6 +563,19 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 .map(p -> p.split("="))
                 .collect(Collectors.toMap(p -> p[0], p -> p[1]))
                 : new HashMap<>();
+    }
+
+    private List<ResearchRequirementModel> researchesToRequirements(List<Integer> researches) {
+        return emptyIfNull(researches)
+                .stream()
+                .map(researchId -> {
+                    ResearchRequirementModel result = new ResearchRequirementModel();
+                    result.setResearchId(researchId);
+                    result.setResearchImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), researchId));
+                    result.setResearchName(localization.getResearchNames().get(researchId));
+                    return result;
+                })
+                .toList();
     }
 
     private int getMultipliable(Integer i) {

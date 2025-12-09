@@ -23,7 +23,11 @@ public class GameplayFileJsonModel {
     private ResearchesJsonModel researches;
     private ScenesJsonModel scenes;
     private Map<String, Object> scripts;
+    private Integer searcherChunkSizeEnvs;
+    private Integer searcherChunkSizeProjectiles;
+    private Integer searcherChunkSizeUnits;
     private List<Object> springs;
     private UpgradesScriptsJsonModel upgradesScripts;
     private Integer version;
+
 }

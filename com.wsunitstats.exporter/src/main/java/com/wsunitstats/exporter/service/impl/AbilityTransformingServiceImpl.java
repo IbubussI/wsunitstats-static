@@ -77,13 +77,13 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
 
         AbilityOnActionJsonModel abilityOnActionJsonModel = unitJsonModel.getAbility().getAbilityOnAction();
         if (abilityOnActionJsonModel != null) {
-            specialIdList.add(abilityOnActionJsonModel.getAbility());
+            specialIdList.addAll(abilityOnActionJsonModel.getAbilities());
             GenericAbilityContainer onActionAbility = mapOnActionAbility(unitJsonModel);
             onActionAbility.setContainerName(Constants.AbilityContainerType.ACTION.getName());
             onActionAbility.setContainerType(Constants.AbilityContainerType.ACTION.getType());
             result.add(onActionAbility);
         }
-        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getZoneEvent();
+        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getAbility().getZoneEvent();
         if (zoneEventJsonModel != null) {
             specialIdList.addAll(zoneEventJsonModel.getAbilities());
             GenericAbilityContainer zoneEventAbility = mapZoneEventAbility(unitJsonModel);
@@ -145,9 +145,11 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private OnActionAbilityContainer mapOnActionAbility(UnitJsonModel unitJsonModel) {
         OnActionAbilityContainer onActionAbilityContainer = new OnActionAbilityContainer();
         AbilityOnActionJsonModel abilityOnActionJsonModel = unitJsonModel.getAbility().getAbilityOnAction();
-        Integer abilityId = abilityOnActionJsonModel.getAbility();
-        AbilityJsonModel abilityJsonModel = unitJsonModel.getAbility().getAbilities().get(abilityId);
-        onActionAbilityContainer.setAbility(mapAbility(unitJsonModel, abilityJsonModel, abilityId));
+        List<GenericAbility> abilities = abilityOnActionJsonModel.getAbilities().stream()
+                .map(id -> mapAbility(unitJsonModel, unitJsonModel.getAbility().getAbilities().get(id), id))
+                .filter(Objects::nonNull)
+                .toList();
+        onActionAbilityContainer.setAbilities(abilities);
         onActionAbilityContainer.setDistance(modelTransformingService.transformDistance(abilityOnActionJsonModel.getDistance()));
         onActionAbilityContainer.setOnAgro(abilityOnActionJsonModel.getOnAgro());
         onActionAbilityContainer.setEnabled(abilityOnActionJsonModel.getEnabled() != null ? abilityOnActionJsonModel.getEnabled() : true );
@@ -157,7 +159,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
 
     private ZoneEventAbilityContainer mapZoneEventAbility(UnitJsonModel unitJsonModel) {
         ZoneEventAbilityContainer zoneEventAbilityContainer = new ZoneEventAbilityContainer();
-        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getZoneEvent();
+        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getAbility().getZoneEvent();
         List<Integer> abilityIds = zoneEventJsonModel.getAbilities();
         zoneEventAbilityContainer.setAbilities(abilityIds.stream()
                 .map(abilityId -> mapAbility(unitJsonModel, unitJsonModel.getAbility().getAbilities().get(abilityId), abilityId))

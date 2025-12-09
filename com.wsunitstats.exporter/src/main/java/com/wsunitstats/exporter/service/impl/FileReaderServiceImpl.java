@@ -3,7 +3,8 @@ package com.wsunitstats.exporter.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wsunitstats.exporter.exception.FileReadingException;
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+import com.wsunitstats.exporter.model.lua.CulturesFileModel;
+import com.wsunitstats.exporter.model.lua.OnProjectLoadFileModel;
 import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
 import com.wsunitstats.exporter.service.FileReaderService;
 import org.apache.commons.lang3.StringUtils;
@@ -94,11 +95,19 @@ public class FileReaderServiceImpl implements FileReaderService {
     }
 
     @Override
-    public MainStartupFileModel readMainStartupLua(String path) {
-        LOG.debug("Reading main/startup.lua file at path: {}", path);
-        MainStartupFileModel mainStartupModel = new MainStartupFileModel();
-        mainStartupModel.setAll(readLuaArrays(path, MainStartupFileModel.ARRAY_NAMES));
-        return mainStartupModel;
+    public OnProjectLoadFileModel readOnProjectLoadLua(String path) {
+        LOG.debug("Reading main/onProjectLoad.lua file at path: {}", path);
+        OnProjectLoadFileModel onProjectLoadFileModel = new OnProjectLoadFileModel();
+        onProjectLoadFileModel.setAll(readLuaArrays(path, OnProjectLoadFileModel.ARRAY_NAMES));
+        return onProjectLoadFileModel;
+    }
+
+    @Override
+    public CulturesFileModel readCulturesLua(String path) {
+        LOG.debug("Reading common/cultures.lua file at path: {}", path);
+        CulturesFileModel culturesFileModel = new CulturesFileModel();
+        culturesFileModel.setAll(readLuaArrays(path, CulturesFileModel.ARRAY_NAMES));
+        return culturesFileModel;
     }
 
     private List<List<String>> readLuaArrays(String path, List<String> arrayNames) {

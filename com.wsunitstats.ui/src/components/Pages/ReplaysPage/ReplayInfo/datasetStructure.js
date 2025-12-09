@@ -11,7 +11,7 @@ export class DatasetContainer {
     this.containerDescription = locKeyPrefix + 'Description';
     this.valueType = valueType;
     // possible events type list
-    if (containerType = 'events' && eventTypes) {
+    if (containerType === 'events' && eventTypes) {
       this.eventTypes = eventTypes;
       this.eventFilterLabel = locKeyPrefix + 'FiltersLabel';
     }

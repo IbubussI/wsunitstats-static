@@ -13,6 +13,7 @@ public class FilePathWrapper {
     private String mainFilePath;
     private String visualFilePath;
     private String localizationFolderPath;
-    private String mainStartupFilePath;
+    private String culturesFilePath;
+    private String onProjectLoadFilePath;
     private String sessionInitFilePath;
 }

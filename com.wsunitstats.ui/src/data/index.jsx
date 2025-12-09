@@ -5,7 +5,6 @@ import { FlexibleTableDoubleCellRow } from "components/Layout/FlexibleTable";
 
 export const getRequirementsData = (requirements, t) => {
   const unitsAll = requirements.unitsAll ? t('requirementsAll') : t('requirementsOne');
-  const researchesAll = requirements.researchesAll ? t('requirementsAll') : t('requirementsOne');
   const unitRequirements = requirements.units?.map((unit) => {
     return [
       {
@@ -37,7 +36,33 @@ export const getRequirementsData = (requirements, t) => {
     ]
   });
 
-  const researchRequirements = requirements.researches?.map((research) => {
+  const researchAllRequirements = requirements.researchesAll?.map((research) => {
+    return [
+      {
+        renderer: Text,
+        align: 'center',
+        data: research.researchId
+      },
+      {
+        renderer: EntityInfo,
+        data: {
+          primary: t(research.researchName),
+          image: {
+            path: research.researchImage,
+            width: 35,
+            height: 35,
+          },
+          link: {
+            id: research.researchId,
+            path: Utils.getEntityRoute('research')
+          },
+          overflow: true
+        }
+      },
+    ]
+  });
+
+  const researchAnyRequirements = requirements.researchesAny?.map((research) => {
     return [
       {
         renderer: Text,
@@ -75,19 +100,28 @@ export const getRequirementsData = (requirements, t) => {
       ],
       body: unitRequirements
     },
-    researchData: {
+    researchAllData: {
       label: t('requirementsResearchesLabel'),
-      subLabel: researchesAll,
+      subLabel: t('requirementsAll'),
       head: [
         t('gameID').replace(" ", Constants.JS_NBSP),
         t('requirementsResearchesResearch').replace(" ", Constants.JS_NBSP)
       ],
-      body: researchRequirements
+      body: researchAllRequirements
+    },
+    researchAnyData: {
+      label: t('requirementsResearchesLabel'),
+      subLabel: t('requirementsOne'),
+      head: [
+        t('gameID').replace(" ", Constants.JS_NBSP),
+        t('requirementsResearchesResearch').replace(" ", Constants.JS_NBSP)
+      ],
+      body: researchAnyRequirements
     }
   }
 }
 
-export const getDamagesData = (damages, attacksNumber, t) => {
+export const getDamagesData = (damages, attacksNumber, t, width) => {
   const damageData = damages ? damages.map((damage) => {
     let damageValue = attacksNumber > 1 && damage.value > 0 ? attacksNumber + 'x' + damage.value : damage.value;
     return { leftCell: t(damage.type), rightCell: damageValue }
@@ -96,7 +130,7 @@ export const getDamagesData = (damages, attacksNumber, t) => {
   return {
     label: t('damagesLabel'),
     variant: 'damage',
-    width: '150px',
+    width: width || '150px',
     rowStyle: {
       leftRowWidth: 'max-content',
       rightRowWidth: '47px',

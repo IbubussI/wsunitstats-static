@@ -26,7 +26,7 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
 
     static {
         CATEGORY_VALUES.put(AdvancedUnitCategory.TC, 12);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.WORKER, 14);
+        CATEGORY_VALUES.put(AdvancedUnitCategory.WORKER, 11);
         CATEGORY_VALUES.put(AdvancedUnitCategory.SECONDARY_BUILDING, 1);
         CATEGORY_VALUES.put(AdvancedUnitCategory.HOUSE, 5);
         CATEGORY_VALUES.put(AdvancedUnitCategory.DEFENCE_BUILDING, 1);

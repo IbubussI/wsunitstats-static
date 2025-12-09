@@ -28,4 +28,5 @@ public class MainFileJsonModel {
     private Object visual;
     private VisualSessionContentJsonModel visualSessionContent;
     private Object window;
+    private Object scriptingLibrary;
 }

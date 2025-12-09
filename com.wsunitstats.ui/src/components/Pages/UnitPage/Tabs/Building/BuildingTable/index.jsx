@@ -104,7 +104,8 @@ export const BuildingTable = ({ build, overflowMinWidth }) => {
       {requirementsData &&
         <InfoButtonPopper label={requirementsData.label}>
           {requirementsData.unitData.body && <ClassicTable data={requirementsData.unitData} />}
-          {requirementsData.researchData.body && <ClassicTable data={requirementsData.researchData} />}
+          {requirementsData.researchAnyData.body && <ClassicTable data={requirementsData.researchAnyData} />}
+          {requirementsData.researchAllData.body && <ClassicTable data={requirementsData.researchAllData} />}
         </InfoButtonPopper>}
     </DoubleColumnFrame>
   );

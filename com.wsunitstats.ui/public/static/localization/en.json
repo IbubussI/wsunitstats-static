@@ -136,7 +136,7 @@
   "workAbilityCostLabel": "Cost",
   "zoneAbilitySizeCell": "Size",
   "zoneAbilityEnvSearchDistanceCell": "Env search distance",
-  "zoneAbilityAssociatedAbilitiesTitle": "Associated Abilities",
+  "triggerAbilitiesTitle": "Trigger abilities",
   "airplaneTitle": "Airplane",
   "airplaneFuelCell": "Fuel",
   "airplaneFuelSubCell": "(fly time)",

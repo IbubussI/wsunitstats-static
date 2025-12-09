@@ -7,7 +7,8 @@ import com.wsunitstats.exporter.model.json.gameplay.GameplayFileJsonModel;
 import com.wsunitstats.exporter.model.json.main.MainFileJsonModel;
 import com.wsunitstats.exporter.model.json.visual.VisualFileJsonModel;
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+import com.wsunitstats.exporter.model.lua.CulturesFileModel;
+import com.wsunitstats.exporter.model.lua.OnProjectLoadFileModel;
 import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
 import com.wsunitstats.exporter.service.FileContentService;
 import com.wsunitstats.exporter.service.FilePathResolver;
@@ -48,8 +49,11 @@ public class FileContentServiceImpl implements FileContentService {
     private GameplayFileJsonModel gameplayFileModel;
     private MainFileJsonModel mainFileModel;
     private VisualFileJsonModel visualFileModel;
+
     private SessionInitFileModel sessionInitFileModel;
-    private MainStartupFileModel mainStartupFileModel;
+    private CulturesFileModel culturesFileModel;
+    private OnProjectLoadFileModel onProjectLoadFileModel;
+
     private List<LocalizationFileModel> localizationFileModels;
     private Map<String, BufferedImage> images;
     private LocalizationKeyModel localizationKeyModel;
@@ -85,8 +89,13 @@ public class FileContentServiceImpl implements FileContentService {
     }
 
     @Override
-    public MainStartupFileModel getMainStartupFileModel() {
-        return mainStartupFileModel;
+    public OnProjectLoadFileModel getOnProjectLoadFileModel() {
+        return onProjectLoadFileModel;
+    }
+
+    @Override
+    public CulturesFileModel getCulturesFileModel() {
+        return culturesFileModel;
     }
 
     @Override
@@ -115,26 +124,27 @@ public class FileContentServiceImpl implements FileContentService {
         mainFileModel = fileReaderService.readJson(filePathWrapper.getMainFilePath(), MainFileJsonModel.class);
         visualFileModel= fileReaderService.readJson(filePathWrapper.getVisualFilePath(), VisualFileJsonModel.class);
         sessionInitFileModel = fileReaderService.readSessionInitLua(filePathWrapper.getSessionInitFilePath());
-        mainStartupFileModel = fileReaderService.readMainStartupLua(filePathWrapper.getMainStartupFilePath());
+        onProjectLoadFileModel = fileReaderService.readOnProjectLoadLua(filePathWrapper.getOnProjectLoadFilePath());
+        culturesFileModel = fileReaderService.readCulturesLua(filePathWrapper.getCulturesFilePath());
         localizationFileModels = fileReaderService.readLocalizations(filePathWrapper.getLocalizationFolderPath());
         images = imageService.resolveImages(mainFileModel, filePathWrapper.getRootFolderPath());
-        localizationKeyModel = getLocalizationKeyModel(sessionInitFileModel, mainStartupFileModel);
+        localizationKeyModel = generateLocalizationKeyModel();
     }
 
-    private LocalizationKeyModel getLocalizationKeyModel(SessionInitFileModel sessionInitSource, MainStartupFileModel mainStartupSource) {
+    private LocalizationKeyModel generateLocalizationKeyModel() {
         LocalizationKeyModel localizationModel = new LocalizationKeyModel();
-        localizationModel.setNationNames(convertToNationNames(mainStartupSource.getUnitGroupsNames()));
+        localizationModel.setNationNames(convertToNationNames(culturesFileModel.getNationNames()));
         localizationModel.setResearchNames(generateByIds(RESEARCH_NAME_LOCALIZATION_PREFIX, RESEARCH_NAME_LOCALIZATION_POSTFIX));
         localizationModel.setResearchTexts(generateByIds(RESEARCH_TEXT_LOCALIZATION_PREFIX, RESEARCH_TEXT_LOCALIZATION_POSTFIX));
         localizationModel.setUnitNames(generateByIds(UNIT_NAME_LOCALIZATION_PREFIX, UNIT_NAME_LOCALIZATION_POSTFIX));
         localizationModel.setUnitTexts(generateByIds(UNIT_TEXT_LOCALIZATION_PREFIX, UNIT_TEXT_LOCALIZATION_POSTFIX));
-        localizationModel.setUnitTagNames(convertToLocalizationTags(mainStartupSource.getUnitTagNames()));
-        localizationModel.setUnitSearchTagNames(convertToLocalizationTags(mainStartupSource.getUnitSearchTagNames()));
-        localizationModel.setEnvNames(convertToLocalizationTagMap(mainStartupSource.getEnvNames()));
-        localizationModel.setEnvTagNames(convertToLocalizationTags(mainStartupSource.getEnvTagNames()));
-        localizationModel.setEnvSearchTagNames(convertToLocalizationTags(mainStartupSource.getEnvSearchTagNames()));
-        localizationModel.setAgeNames(convertToLocalizationTags(sessionInitSource.getAgeNames()));
-        localizationModel.setResourceNames(convertToLocalizationTags(mainStartupSource.getResourceNames()));
+        localizationModel.setUnitTagNames(convertToLocalizationTags(onProjectLoadFileModel.getUnitTagNames()));
+        localizationModel.setUnitSearchTagNames(convertToLocalizationTags(onProjectLoadFileModel.getUnitSearchTagNames()));
+        localizationModel.setEnvNames(convertToLocalizationTagMap(onProjectLoadFileModel.getEnvNames()));
+        localizationModel.setEnvTagNames(convertToLocalizationTags(onProjectLoadFileModel.getEnvTagNames()));
+        localizationModel.setEnvSearchTagNames(convertToLocalizationTags(onProjectLoadFileModel.getEnvSearchTagNames()));
+        localizationModel.setAgeNames(convertToLocalizationTags(sessionInitFileModel.getAgeNames()));
+        localizationModel.setResourceNames(convertToLocalizationTags(onProjectLoadFileModel.getResourceNames()));
         return localizationModel;
     }
 

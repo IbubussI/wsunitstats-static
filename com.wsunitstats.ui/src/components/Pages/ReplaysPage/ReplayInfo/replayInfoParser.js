@@ -237,8 +237,8 @@ export class ReplayInfoParser {
       }
 
       if (this.#isStatsOn) {
-        player.unitsCreatedOn = true;
         player.unitsCreated = this.#parsePlayerUnitsCreated(factionId);
+        player.unitsCreatedOn = player.unitsCreated.size;
       }
 
       if (this.#isUnitsKilledOn) {

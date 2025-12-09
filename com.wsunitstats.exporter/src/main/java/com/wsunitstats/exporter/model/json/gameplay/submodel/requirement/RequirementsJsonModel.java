@@ -11,7 +11,7 @@ import java.util.List;
 @ToString
 public class RequirementsJsonModel {
     private List<UnitRequirementJsonModel> units;
-    private List<Integer> researches;
-    private Boolean researchesAll;
+    private List<Integer> researchAny;
+    private List<Integer> researchAll;
     private Boolean unitsAll;
 }

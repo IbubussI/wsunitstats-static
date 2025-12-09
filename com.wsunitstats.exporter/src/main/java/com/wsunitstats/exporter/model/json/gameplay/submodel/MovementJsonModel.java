@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.json.gameplay.submodel;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AirplaneJsonModel;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ public class MovementJsonModel {
     private Map<String, Object> randomMove;
     private Integer rotationSpeed;
     private Boolean runOnDamage;
+    @JsonProperty("speed_")
     private Integer speed;
     private TransportingJsonModel transporting;
     private Integer weight;

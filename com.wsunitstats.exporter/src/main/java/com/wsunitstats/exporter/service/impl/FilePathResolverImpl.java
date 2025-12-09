@@ -58,8 +58,10 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String wsLocalizationFolderPath;
     @Value("${warselection.interfaces.session.init.file}")
     private String wsInterfacesSessionInitFilePath;
-    @Value("${warselection.main.startup.file}")
-    private String wsMainStartupFilePath;
+    @Value("${warselection.on.project.load.file}")
+    private String wsOnProjectLoadFilePath;
+    @Value("${warselection.cultures.file}")
+    private String wsCulturesFilePath;
 
     @Override
     public FilePathWrapper resolve() throws GameFilesResolvingException {
@@ -101,9 +103,13 @@ public class FilePathResolverImpl implements FilePathResolver {
         validateFile(wsInterfacesSessionInitAbsFilePath);
         result.setSessionInitFilePath(wsInterfacesSessionInitAbsFilePath);
 
-        String wsMainStartupAbsFilePath = wsRootAbsFolderPath + wsMainStartupFilePath;
-        validateFile(wsMainStartupAbsFilePath);
-        result.setMainStartupFilePath(wsMainStartupAbsFilePath);
+        String wsOnProjectLoadAbsFilePath = wsRootAbsFolderPath + wsOnProjectLoadFilePath;
+        validateFile(wsOnProjectLoadAbsFilePath);
+        result.setOnProjectLoadFilePath(wsOnProjectLoadAbsFilePath);
+
+        String wsCulturesAbsFilePath = wsRootAbsFolderPath + wsCulturesFilePath;
+        validateFile(wsCulturesAbsFilePath);
+        result.setCulturesFilePath(wsCulturesAbsFilePath);
         return result;
     }
 

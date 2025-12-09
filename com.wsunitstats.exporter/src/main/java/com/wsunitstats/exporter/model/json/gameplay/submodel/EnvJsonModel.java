@@ -21,6 +21,7 @@ public class EnvJsonModel {
     private Integer lifeTime;
     private Map<String, Object> passability;
     private Integer regeneration;
+    private Integer regenerationDelay;
     private Integer searchTags;
     private Integer size;
     private Integer tags;

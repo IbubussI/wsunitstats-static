@@ -1,7 +1,8 @@
 package com.wsunitstats.exporter.service;
 
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+import com.wsunitstats.exporter.model.lua.CulturesFileModel;
+import com.wsunitstats.exporter.model.lua.OnProjectLoadFileModel;
 import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
 
 import java.io.File;
@@ -16,5 +17,7 @@ public interface FileReaderService {
 
     SessionInitFileModel readSessionInitLua(String path);
 
-    MainStartupFileModel readMainStartupLua(String path);
+    OnProjectLoadFileModel readOnProjectLoadLua(String path);
+
+    CulturesFileModel readCulturesLua(String path);
 }

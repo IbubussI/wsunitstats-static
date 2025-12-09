@@ -5,13 +5,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
 public class AbilityOnActionJsonModel {
-    private Integer ability;
+    private List<Integer> abilities;
     private DistanceJsonModel distance;
     private Boolean enabled;
     private Boolean onAgro;
     private Integer restore;
+    private Boolean strict;
+    private Integer action;
 }

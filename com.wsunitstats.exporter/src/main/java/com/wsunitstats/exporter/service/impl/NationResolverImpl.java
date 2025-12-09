@@ -3,7 +3,7 @@ package com.wsunitstats.exporter.service.impl;
 import com.wsunitstats.exporter.model.NationName;
 import com.wsunitstats.exporter.model.exported.submodel.NationModel;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+import com.wsunitstats.exporter.model.lua.CulturesFileModel;
 import com.wsunitstats.exporter.service.FileContentService;
 import com.wsunitstats.exporter.service.NationResolver;
 import jakarta.annotation.PostConstruct;
@@ -26,10 +26,10 @@ public class NationResolverImpl implements NationResolver {
     @PostConstruct
     protected void postConstruct() {
         LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
-        MainStartupFileModel mainModel = fileContentService.getMainStartupFileModel();
+        CulturesFileModel mainModel = fileContentService.getCulturesFileModel();
         List<NationName> nationNames = localizationKeyModel.getNationNames();
 
-        unitNations = mainModel.getUnitGroups();
+        unitNations = mainModel.getUnitNations();
         nations = new ArrayList<>();
 
         for (int i = 0; i < nationNames.size(); i++) {

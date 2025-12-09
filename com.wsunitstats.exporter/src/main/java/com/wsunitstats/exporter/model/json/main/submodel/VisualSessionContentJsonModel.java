@@ -36,4 +36,5 @@ public class VisualSessionContentJsonModel {
     @JsonSerialize(using = IndexedArrayDataModelSerializer.class)
     private Map<Integer, TextureJsonModel> textures;
     private Object skeletons;
+    private Object billboards3D;
 }

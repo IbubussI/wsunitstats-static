@@ -27,6 +27,7 @@ public class Constants {
     public static final double DEFAULT_GATHER_FIND_STORAGE_DISTANCE = 16640d;
     public static final double STORAGE_MULTIPLIER_MODIFIER = 100d / 65536d;
     public static final double STORAGE_MULTIPLIER_DEFAULT = 65536d;
+    public static final int MOVEMENT_SPEED_MODIFIER = 16;
 
     private static final String UNDEF = "N/A";
 
@@ -74,6 +75,7 @@ public class Constants {
         //SELF_STUN(5, "abilityDance"),
         DAMAGE(6, "abilityDamage"),
         SCRIPT(7, "abilityScript");
+        //SEARCH_UNITS_CIRCLE(8, ""); - need to clarify what is it responsible for
 
         private final int type;
         private final String name;

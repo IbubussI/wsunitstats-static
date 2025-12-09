@@ -5,7 +5,8 @@ import com.wsunitstats.exporter.model.json.gameplay.GameplayFileJsonModel;
 import com.wsunitstats.exporter.model.json.main.MainFileJsonModel;
 import com.wsunitstats.exporter.model.json.visual.VisualFileJsonModel;
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
-import com.wsunitstats.exporter.model.lua.MainStartupFileModel;
+import com.wsunitstats.exporter.model.lua.CulturesFileModel;
+import com.wsunitstats.exporter.model.lua.OnProjectLoadFileModel;
 import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
 
 import java.awt.image.BufferedImage;
@@ -21,7 +22,9 @@ public interface FileContentService {
 
     SessionInitFileModel getSessionInitFileModel();
 
-    MainStartupFileModel getMainStartupFileModel();
+    OnProjectLoadFileModel getOnProjectLoadFileModel();
+
+    CulturesFileModel getCulturesFileModel();
 
     List<LocalizationFileModel> getLocalizationFileModels();
 

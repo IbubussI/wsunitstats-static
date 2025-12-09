@@ -36,7 +36,6 @@ public class UnitJsonModel {
     private Long tags;
     private TransportJsonModel transport;
     private Integer viewRange;
-    private ZoneEventJsonModel zoneEvent;
     private Object paths;
     private Integer lifeTime;
 }

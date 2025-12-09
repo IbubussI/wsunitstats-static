@@ -37,4 +37,6 @@ public class VisualFileJsonModel {
     @JsonSerialize(using = IndexedArrayDataModelSerializer.class)
     private Map<Integer, UnitTypeJsonModel> unitTypes;
     private Object upgradesScripts;
+    private Object searcherChunkSizeFlashbacks;
+    private Object searcherChunkSizeParticles;
 }

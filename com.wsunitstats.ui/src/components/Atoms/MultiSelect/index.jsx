@@ -67,7 +67,7 @@ export const MultiSelect = (props) => {
               checkedIcon={<CheckBox fontSize="small" />}
               style={{ marginRight: 8 }}
               checked={option.selectAll ? isAllSelected : selected}
-              disableRipple
+              disableRipple={disableRipple}
             />
             <Stack direction='row' alignItems='center'>
               {option.image &&

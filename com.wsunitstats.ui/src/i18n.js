@@ -13,8 +13,8 @@ i18n.use(Backend)
     fallbackNS: 'static',
     parseMissingKeyHandler: (key) => {
       if (key.match(Utils.LOCALIZATION_REGEX)) {
-        // return empty string in case of the key is game localization token and it is not found
-        return "";
+        // return this string in case of the key is game localization token and it is not found
+        return "?";
       }
       return key;
     },

@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.json.gameplay.submodel;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -14,5 +15,6 @@ public class ZoneEventJsonModel {
     private Integer envSearchDistance;
     private Long envTags;
     private Integer levels;
+    @JsonProperty("size_")
     private Integer size;
 }

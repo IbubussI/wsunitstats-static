@@ -1,9 +1,13 @@
 package com.wsunitstats.exporter.model.json.gameplay.submodel.ability;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.DamageJsonModel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.List;
 
 // extends damage json model because can have all it props for damage ability
 @Getter
@@ -34,4 +38,11 @@ public class AbilityDataJsonModel extends DamageJsonModel {
     //paratroopers
     private String parameters;
     private Integer enoughDistance;
+
+    //unit damage circle
+    private List<Integer> displacement;
+    private Integer moveDistance;
+    @JsonAlias({"radius", "radius_"})
+    private Integer radius;
+    private Long tags;
 }
