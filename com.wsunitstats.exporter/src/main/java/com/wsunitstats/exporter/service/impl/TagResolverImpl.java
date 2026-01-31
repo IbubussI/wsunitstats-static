@@ -37,7 +37,7 @@ public class TagResolverImpl implements TagResolver {
         List<String> envSearchTagNames = localizationKeyModel.getEnvSearchTagNames();
 
         unitTags = generateTagsMap(TagGroupName.UNIT_TAGS,
-                i -> i == 0 ? Constants.GENERIC_UNIT_TAG : i - 1 < unitTagNames.size() ? unitTagNames.get(i - 1) : "null");
+                i -> i == 0 ? Constants.GENERIC_UNIT_TAG : i < unitTagNames.size() ? unitTagNames.get(i) : "null");
         unitSearchTags = generateTagsMap(TagGroupName.UNIT_SEARCH_TAGS,
                 i -> i < unitSearchTagNames.size() ? unitSearchTagNames.get(i) : "null");
         envSearchTags = generateTagsMap(TagGroupName.ENV_SEARCH_TAGS,
