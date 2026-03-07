@@ -67,7 +67,7 @@ export const CommonTable = ({ unit, overflowMinWidth }) => {
           }}>{t(unit.name)}</h4>
           <EntityImage image={unit.image} width='150px' height='150px'/>
           <Typography variant='body2' align='center' sx={{maxWidth: '150px'}}>
-            {t(unit.description)}
+            {t("<*unitText293>")}
           </Typography>
           {unit.armor?.length > 0 &&
             <>

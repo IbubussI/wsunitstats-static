@@ -14,7 +14,7 @@ i18n.use(Backend)
     parseMissingKeyHandler: (key) => {
       if (key.match(Utils.LOCALIZATION_REGEX)) {
         // return this string in case of the key is game localization token and it is not found
-        return "?";
+        return "";
       }
       return key;
     },
