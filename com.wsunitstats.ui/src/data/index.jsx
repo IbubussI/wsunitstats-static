@@ -36,7 +36,7 @@ export const getRequirementsData = (requirements, t) => {
     ]
   });
 
-  const researchAllRequirements = requirements.researchesAll?.map((research) => {
+  const researchAllRequirements = requirements.researchAll?.map((research) => {
     return [
       {
         renderer: Text,
@@ -62,7 +62,7 @@ export const getRequirementsData = (requirements, t) => {
     ]
   });
 
-  const researchAnyRequirements = requirements.researchesAny?.map((research) => {
+  const researchAnyRequirements = requirements.researchAny?.map((research) => {
     return [
       {
         renderer: Text,
