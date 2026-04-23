@@ -13,11 +13,11 @@ public class CreateEnvJsonModel {
     private Integer createEvent;
     private Integer endingLifeTime;
     private Integer probability;
-    private Integer randomDirection;
+    private Long randomDir;
     private Integer startEndingEvent;
     private String tag;
     private Integer scale;
-    private Integer direction;
+    private Long dir;
     private Integer count;
     private List<Integer> position;
     private Integer findPositionSize;

@@ -29,5 +29,5 @@ public class GameplayFileJsonModel {
     private List<Object> springs;
     private UpgradesScriptsJsonModel upgradesScripts;
     private Integer version;
-
+    private Object auras;
 }

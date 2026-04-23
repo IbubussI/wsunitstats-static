@@ -22,4 +22,5 @@ public class ProjectileJsonModel {
     private Object passability;
     @JsonProperty("speed_")
     private Long speed;
+    private Long homingAng;
 }

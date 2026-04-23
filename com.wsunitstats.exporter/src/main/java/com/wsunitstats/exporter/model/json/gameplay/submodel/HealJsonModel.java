@@ -8,7 +8,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class HealJsonModel {
-    private Integer angle;
+    private Long ang;
     private Integer distance;
     private Integer minimumTime;
     private Integer perTick;

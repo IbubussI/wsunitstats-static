@@ -18,11 +18,11 @@ public class MovementJsonModel {
     private CollisionJsonModel collision;
     private Map<String, Object> holdPassability;
     private List<GatherJsonModel> gather;
-    private Integer moveAngle;
+    private Long moveAng;
     private Integer pathTracker;
     private Integer radius;
     private Map<String, Object> randomMove;
-    private Integer rotationSpeed;
+    private Long rotationSpd;
     private Boolean runOnDamage;
     @JsonProperty("speed_")
     private Integer speed;

@@ -11,7 +11,7 @@ import java.util.List;
 @Setter
 @ToString
 public class DamageJsonModel {
-    private Integer angle;
+    private Long ang;
     private Integer area;
     private BuffJsonModel buff;
     private Boolean damageFriendly;

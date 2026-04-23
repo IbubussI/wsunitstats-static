@@ -8,7 +8,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class BuildingJsonModel {
-    private Integer angle;
+    private Long ang;
     private Integer distance;
     private Integer id;
     // ticks for 1 hp

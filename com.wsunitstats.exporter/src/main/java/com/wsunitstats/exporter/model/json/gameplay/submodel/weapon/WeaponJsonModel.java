@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class WeaponJsonModel {
-    private Integer angle;
+    private Long ang;
     private Boolean autoAttack;
     private Integer attackscount;
     private Integer charges;

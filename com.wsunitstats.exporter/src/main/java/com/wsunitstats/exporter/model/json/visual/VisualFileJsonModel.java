@@ -39,4 +39,6 @@ public class VisualFileJsonModel {
     private Object upgradesScripts;
     private Object searcherChunkSizeFlashbacks;
     private Object searcherChunkSizeParticles;
+    private Object decorTypes;
+    private Object searcherChunkSizeDecors;
 }

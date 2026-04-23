@@ -38,4 +38,5 @@ public class UnitJsonModel {
     private Integer viewRange;
     private Object paths;
     private Integer lifeTime;
+    private Object aura;
 }

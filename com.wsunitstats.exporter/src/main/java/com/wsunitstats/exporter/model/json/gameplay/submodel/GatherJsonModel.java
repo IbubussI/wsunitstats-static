@@ -8,7 +8,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class GatherJsonModel {
-    private Integer angle;
+    private Long ang;
     private Integer bagsize;
     private Long envtags;
     private Integer findLevels;

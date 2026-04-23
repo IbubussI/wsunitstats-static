@@ -135,7 +135,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         }
         GatherModel gatherModel = new GatherModel();
         gatherModel.setGatherId(index);
-        gatherModel.setAngle(Utils.intToDoubleShift(gatherJsonModel.getAngle()));
+        gatherModel.setAngle(Utils.getAngle(gatherJsonModel.getAng()));
         gatherModel.setBagSize(Utils.intToDoubleShift(gatherJsonModel.getBagsize()));
         Double gatherDistance = Utils.intToDoubleShift(gatherJsonModel.getGatherdistance());
         gatherModel.setGatherDistance(gatherDistance != null ? gatherDistance : 0);
@@ -196,7 +196,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         }
         MovementModel movementModel = new MovementModel();
         movementModel.setSpeed(movementJsonModel.getSpeed() / Constants.MOVEMENT_SPEED_MODIFIER);
-        movementModel.setRotationSpeed(Utils.intToDoubleShift(movementJsonModel.getRotationSpeed()));
+        movementModel.setRotationSpeed(Utils.getAngle(movementJsonModel.getRotationSpd()));
         return movementModel;
     }
 
@@ -272,7 +272,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         weaponModel.setAttacksPerAction(attacksPerAction);
         weaponModel.setAttacksPerAttack(getMultipliable(weaponJsonModel.getAttackscount()));
         weaponModel.setCharges(weaponJsonModel.getCharges());
-        weaponModel.setAngle(Utils.intToDoubleShift(weaponJsonModel.getAngle()));
+        weaponModel.setAngle(Utils.getAngle(weaponJsonModel.getAng()));
         weaponModel.setDamage(transformDamage(weaponJsonModel.getDamage()));
         weaponModel.setWeaponType(getWeaponType(isTurret, weaponModel, onDeathId));
         return weaponModel;
@@ -282,7 +282,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     public DamageWrapperModel transformDamage(DamageJsonModel damageJsonModel) {
         DamageWrapperModel damageWrapperModel = new DamageWrapperModel();
         damageWrapperModel.setAreaType(Constants.DamageAreaType.get(damageJsonModel.getArea()).getName());
-        damageWrapperModel.setAngle(Utils.intToDoubleShift(damageJsonModel.getAngle()));
+        damageWrapperModel.setAngle(Utils.getAngle(damageJsonModel.getAng()));
         damageWrapperModel.setBuff(transformBuff(damageJsonModel.getBuff()));
         damageWrapperModel.setDamageFriendly(Utils.getDirectBoolean(damageJsonModel.getDamageFriendly()));
         damageWrapperModel.setDamages(transformDamages(damageJsonModel.getDamages()));
@@ -301,7 +301,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             int value = damageList.get(1);
 
             DamageModel damage = new DamageModel();
-            damage.setType(unitTag == 0 ? Constants.BASIC_DAMAGE_TYPE : localization.getUnitTagNames().get(unitTag - 1));
+            damage.setType(unitTag == 0 ? Constants.BASIC_DAMAGE_TYPE : localization.getUnitTagNames().get(unitTag));
             damage.setValue(Utils.intToDoubleShift(value));
             damages.add(damage);
         }
@@ -357,7 +357,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         }
         TurretModel turretModel = new TurretModel();
         turretModel.setTurretId(turretId);
-        turretModel.setRotationSpeed(Utils.intToDoubleShift(turretJsonModel.getRotationSpeed()));
+        turretModel.setRotationSpeed(Utils.getAngle(turretJsonModel.getRotationSpd()));
         turretModel.setWeapons(turretWeapons);
         return turretModel;
     }

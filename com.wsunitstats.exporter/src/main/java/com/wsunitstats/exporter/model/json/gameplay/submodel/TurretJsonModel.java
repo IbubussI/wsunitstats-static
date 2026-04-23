@@ -13,11 +13,11 @@ import java.util.Map;
 @ToString
 public class TurretJsonModel {
     private Object aimer;
-    private Integer defaultDirection;
+    private Long defaultDir;
     private Integer idleMode;
-    private Map<String, Object> maxDeviation;
+    private Map<String, Long> maxDev;
     private List<Integer> parentPoint;
-    private Integer rotationSpeed;
+    private Long rotationSpd;
     private Integer scale;
     private List<WeaponJsonModel> weapons;
 }

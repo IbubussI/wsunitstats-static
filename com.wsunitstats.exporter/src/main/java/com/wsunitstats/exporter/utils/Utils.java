@@ -208,7 +208,7 @@ public class Utils {
     /**
      * Rounds given double value to closest neighbor that have specified number of digits at decimal portion
      *
-     * @param value to be rounded
+     * @param value  to be rounded
      * @param places numbers behind the dot
      * @return rounded double
      */
@@ -265,5 +265,17 @@ public class Utils {
             return null;
         }
         return value / divider;
+    }
+
+    /**
+     * Convert engine angle / rotation value to readable format (used in old system)
+     */
+    public static Double getAngle(Long engineAngle) {
+        if (engineAngle == null) {
+            return null;
+        }
+
+        // old system used values 4096 times less than current one
+        return Utils.intToDoubleShift((int) (engineAngle / 4096.f));
     }
 }
