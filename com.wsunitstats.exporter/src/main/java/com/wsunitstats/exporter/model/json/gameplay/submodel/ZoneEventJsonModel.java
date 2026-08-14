@@ -17,4 +17,5 @@ public class ZoneEventJsonModel {
     private Integer levels;
     @JsonProperty("size_")
     private Integer size;
+    private Boolean byHull;
 }

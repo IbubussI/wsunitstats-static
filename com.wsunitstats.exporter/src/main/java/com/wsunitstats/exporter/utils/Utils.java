@@ -9,15 +9,10 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
-
-import static com.wsunitstats.exporter.utils.Constants.LOCALIZATION_MAP_ENTRY_PATTERN;
-import static com.wsunitstats.exporter.utils.Constants.LOCALIZATION_PATTERN;
 
 public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -137,54 +132,20 @@ public class Utils {
     }
 
     /**
-     * Converts list of next format: {[0]=localize("<*sample_tag/0>"), ...} to map where key - env id, value - localization key
+     * Converts localization keys of every nation, one per period, to nation names
      */
-    public static Map<Integer, String> convertToLocalizationTagMap(List<String> list) {
-        Map<Integer, String> result = new HashMap<>();
-        list.forEach(item -> {
-            Matcher matcher = LOCALIZATION_MAP_ENTRY_PATTERN.matcher(item);
-            if (matcher.find()) {
-                result.put(Integer.parseInt(matcher.group(1)), matcher.group(2));
-            }
-        });
-        return result;
-    }
-
-    /**
-     * Converts localize("<*sample_tag/10>") to <*sample_tag/10>
-     */
-    public static List<String> convertToLocalizationTags(List<String> values) {
-        List<String> result = new ArrayList<>();
-        values.forEach(value -> result.add(convertToLocalizationTag(value)));
-        return result;
-    }
-
-    /**
-     * Converts localize("<*sample_tag/10>") to <*sample_tag/10>
-     */
-    public static String convertToLocalizationTag(String value) {
-        Matcher matcher = LOCALIZATION_PATTERN.matcher(value);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        LOG.error("Value {} does not match pattern {}", value, LOCALIZATION_PATTERN);
-        throw new IllegalStateException("Localization Tag expected");
-    }
-
-    public static List<NationName> convertToNationNames(List<String> rawNationNames) {
+    public static List<NationName> convertToNationNames(List<List<String>> rawNationNames) {
         List<NationName> result = new ArrayList<>();
-        for (int i = 0; i < rawNationNames.size(); ++i) {
-            String ir1 = rawNationNames.get(i);
-            String ir2 = null;
-            if (ir1.contains("{")) {
-                ++i;
-                ir2 = rawNationNames.get(i);
+        for (List<String> periodKeys : rawNationNames) {
+            if (periodKeys.isEmpty()) {
+                LOG.error("Nation {} has no localization keys", result.size());
+                throw new IllegalStateException("Localization Tag expected");
             }
 
             NationName nationName = new NationName();
-            nationName.setIr1(convertToLocalizationTag(ir1));
-            if (ir2 != null) {
-                nationName.setIr2(convertToLocalizationTag(ir2));
+            nationName.setIr1(periodKeys.get(0));
+            if (periodKeys.size() > 1) {
+                nationName.setIr2(periodKeys.get(1));
             }
             result.add(nationName);
         }

@@ -11,4 +11,5 @@ public class BuffJsonModel {
     private Integer period;
     private Integer research;
     private Long targetsTags;
+    private Long targetsTagsExclude;
 }

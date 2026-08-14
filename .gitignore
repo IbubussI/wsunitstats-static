@@ -34,6 +34,7 @@ build/
 /game-files/
 /output/
 /entities.json
+/entities_compare.json
 /files/
 /com.wsunitstats.ui/public/files/
 /com.wsunitstats.service/src/main/resources/static/

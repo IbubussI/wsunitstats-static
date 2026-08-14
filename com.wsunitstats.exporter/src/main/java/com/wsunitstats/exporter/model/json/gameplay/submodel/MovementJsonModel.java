@@ -16,7 +16,8 @@ public class MovementJsonModel {
     private AirplaneJsonModel airplane;
     private List<BuildingJsonModel> building;
     private CollisionJsonModel collision;
-    private Map<String, Object> holdPassability;
+    private Object holdPassability;
+    private Object idlePassability;
     private List<GatherJsonModel> gather;
     private Long moveAng;
     private Integer pathTracker;
@@ -28,4 +29,7 @@ public class MovementJsonModel {
     private Integer speed;
     private TransportingJsonModel transporting;
     private Integer weight;
+    @JsonProperty("accel_")
+    private Integer accel;
+    private Boolean smoothTurn;
 }

@@ -305,6 +305,7 @@ public class ModelBuilderImpl implements ModelBuilder {
     private BuildingModel getBuildModel(UnitJsonModel unitJsonModel, GameplayFileJsonModel gameplayJsonModel, int unitId) {
         List<BuildJsonModel> buildJsonModels = gameplayJsonModel.getBuild();
         int buildId = IntStream.range(0, buildJsonModels.size())
+                .filter(index -> buildJsonModels.get(index) != null)
                 .filter(index -> buildJsonModels.get(index).getUnit() == unitId)
                 .findFirst()
                 .orElse(-1);

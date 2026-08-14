@@ -12,4 +12,5 @@ public class CollisionJsonModel {
     private Long tags;
     private Integer radius;
     private Integer weight;
+    private Integer halfLength;
 }

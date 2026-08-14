@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.wsunitstats.exporter.utils.Utils.convertToLocalizationTagMap;
-import static com.wsunitstats.exporter.utils.Utils.convertToLocalizationTags;
 import static com.wsunitstats.exporter.utils.Utils.convertToNationNames;
 
 @Service
@@ -138,13 +136,13 @@ public class FileContentServiceImpl implements FileContentService {
         localizationModel.setResearchTexts(generateByIds(RESEARCH_TEXT_LOCALIZATION_PREFIX, RESEARCH_TEXT_LOCALIZATION_POSTFIX));
         localizationModel.setUnitNames(generateByIds(UNIT_NAME_LOCALIZATION_PREFIX, UNIT_NAME_LOCALIZATION_POSTFIX));
         localizationModel.setUnitTexts(generateByIds(UNIT_TEXT_LOCALIZATION_PREFIX, UNIT_TEXT_LOCALIZATION_POSTFIX));
-        localizationModel.setUnitTagNames(convertToLocalizationTags(onProjectLoadFileModel.getUnitTagNames()));
-        localizationModel.setUnitSearchTagNames(convertToLocalizationTags(onProjectLoadFileModel.getUnitSearchTagNames()));
-        localizationModel.setEnvNames(convertToLocalizationTagMap(onProjectLoadFileModel.getEnvNames()));
-        localizationModel.setEnvTagNames(convertToLocalizationTags(onProjectLoadFileModel.getEnvTagNames()));
-        localizationModel.setEnvSearchTagNames(convertToLocalizationTags(onProjectLoadFileModel.getEnvSearchTagNames()));
-        localizationModel.setAgeNames(convertToLocalizationTags(sessionInitFileModel.getAgeNames()));
-        localizationModel.setResourceNames(convertToLocalizationTags(onProjectLoadFileModel.getResourceNames()));
+        localizationModel.setUnitTagNames(onProjectLoadFileModel.getUnitTagNames());
+        localizationModel.setUnitSearchTagNames(onProjectLoadFileModel.getUnitSearchTagNames());
+        localizationModel.setEnvNames(onProjectLoadFileModel.getEnvNames());
+        localizationModel.setEnvTagNames(onProjectLoadFileModel.getEnvTagNames());
+        localizationModel.setEnvSearchTagNames(onProjectLoadFileModel.getEnvSearchTagNames());
+        localizationModel.setAgeNames(sessionInitFileModel.getAgeNames());
+        localizationModel.setResourceNames(onProjectLoadFileModel.getResourceNames());
         return localizationModel;
     }
 

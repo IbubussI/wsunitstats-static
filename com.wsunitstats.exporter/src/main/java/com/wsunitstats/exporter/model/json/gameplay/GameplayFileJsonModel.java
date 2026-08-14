@@ -30,4 +30,5 @@ public class GameplayFileJsonModel {
     private UpgradesScriptsJsonModel upgradesScripts;
     private Integer version;
     private Object auras;
+    private Object collisionSolver;
 }

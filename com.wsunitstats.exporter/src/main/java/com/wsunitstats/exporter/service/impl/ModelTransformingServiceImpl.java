@@ -144,7 +144,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         gatherModel.setFindTargetDistance(findTargetDistance != null ? Utils.intToDoubleShift(findTargetDistance) : Constants.DEFAULT_GATHER_FIND_TARGET_DISTANCE);
         // present only in game, probably hardcoded in the engine
         gatherModel.setFindStorageDistance(Constants.DEFAULT_GATHER_FIND_STORAGE_DISTANCE);
-        gatherModel.setPutDistance(Utils.intToDoubleShift(gatherJsonModel.getPutdistance()));
+        gatherModel.setPutDistance(Utils.intToDoubleShift(gatherJsonModel.getPutDistance()));
         gatherModel.setEnvTags(transformEnvTags(gatherJsonModel.getEnvtags()));
         gatherModel.setStorageTags(tagResolver.getUnitSearchTags(gatherJsonModel.getStoragetags()));
         gatherModel.setUnitTags(tagResolver.getUnitSearchTags(gatherJsonModel.getUnitTags()));

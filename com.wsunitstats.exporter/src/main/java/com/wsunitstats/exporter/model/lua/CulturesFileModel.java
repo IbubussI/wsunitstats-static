@@ -10,20 +10,7 @@ import java.util.List;
 @Setter
 @ToString
 public class CulturesFileModel {
-    public static final List<String> ARRAY_NAMES = List.of(
-            "nationNames",
-            "unitNations"
-    );
-
-    private List<String> nationNames;
+    /** Localization keys of every nation: some nations have a separate key for each of the two periods */
+    private List<List<String>> nationNames;
     private List<String> unitNations;
-
-    public void setAll(List<List<String>> lists) {
-        if (lists.size() == ARRAY_NAMES.size()) {
-            nationNames = lists.get(0);
-            unitNations = lists.get(1);
-        } else {
-            throw new IllegalStateException("List sizes don't match. They should be equal and in the same orders as arrays in the file");
-        }
-    }
 }

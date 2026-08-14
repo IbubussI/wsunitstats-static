@@ -39,4 +39,5 @@ public class UnitJsonModel {
     private Object paths;
     private Integer lifeTime;
     private Object aura;
+    private Integer halfLength;
 }

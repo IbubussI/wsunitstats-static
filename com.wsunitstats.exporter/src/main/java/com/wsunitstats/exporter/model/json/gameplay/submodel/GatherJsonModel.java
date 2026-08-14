@@ -17,7 +17,7 @@ public class GatherJsonModel {
     private Integer findtargetdistance;
     private Integer gatherdistance;
     private Integer pertick;
-    private Integer putdistance;
+    private Integer putDistance;
     private Integer resource;
     private Long storagetags;
     private Long unitTags;
