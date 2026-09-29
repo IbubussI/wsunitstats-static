@@ -856,8 +856,9 @@ export class ReplayInfoParser {
       let unescapedValue = match[2].replaceAll(/"name":"([^"]+)"/g, (_, g1) =>
         `"name":"${hexToString(g1)}"`);
       // crutches for different data recorded in different game versions with different API versions and etc
-      if (unescapedValue.startsWith('"') && unescapedValue.endsWith('"')) {
-        // trime double quote characters from the string
+      if (unescapedValue.startsWith('"') && unescapedValue.endsWith('"')
+        || unescapedValue.startsWith("'") && unescapedValue.endsWith("'")) {
+        // trim quote/double-quote characters from the string
         unescapedValue = unescapedValue.slice(1, -1);
       }
       if (key === 'data') {
