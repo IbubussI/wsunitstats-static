@@ -13,9 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.wsunitstats.exporter.utils.Constants.CLOSING_ANGLE_BRACKET;
-import static com.wsunitstats.exporter.utils.Constants.LOCALIZATION_INDEX_DELIMITER;
-
 @Service
 public class LocalizationModelBuilderImpl implements LocalizationModelBuilder {
     private static final Pattern LOC_FILENAME_PATTERN = Pattern.compile("(.+)\\.loc");
@@ -34,11 +31,8 @@ public class LocalizationModelBuilderImpl implements LocalizationModelBuilder {
             if (filter(key)) {
                 int listSize = list.size();
                 for (int i = 0; i < listSize; ++i) {
-                    StringBuilder keyBuilder = new StringBuilder(key);
-                    if (listSize > 1) {
-                        keyBuilder.insert(keyBuilder.indexOf(CLOSING_ANGLE_BRACKET), LOCALIZATION_INDEX_DELIMITER + i);
-                    }
-                    entryMap.put(keyBuilder.toString(), Utils.clearCurlyBraces(list.get(i)));
+                    String partKey = listSize > 1 ? Utils.getLocalizationPartKey(key, i) : key;
+                    entryMap.put(partKey, Utils.clearCurlyBraces(list.get(i)));
                 }
             }
         }

@@ -1,5 +1,8 @@
 package com.wsunitstats.exporter.model.json.gameplay.submodel.researches;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.service.serializer.EntityRefDeserializer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -10,5 +13,6 @@ import java.util.List;
 @Setter
 @ToString
 public class ResearchJsonModel {
-    private List<Integer> upgrades;
+    @JsonDeserialize(contentUsing = EntityRefDeserializer.Upgrade.class)
+    private List<EntityId> upgrades;
 }

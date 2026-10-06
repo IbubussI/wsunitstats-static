@@ -50,8 +50,6 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String wsRootFolderPath;
     @Value("${warselection.gameplay.file}")
     private String wsGameplayFilePath;
-    @Value("${warselection.main.file}")
-    private String wsMainFilePath;
     @Value("${warselection.visual.file}")
     private String wsVisualFilePath;
     @Value("${warselection.localization.folder}")
@@ -62,6 +60,18 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String wsOnProjectLoadFilePath;
     @Value("${warselection.cultures.file}")
     private String wsCulturesFilePath;
+    @Value("${warselection.env.names.file}")
+    private String wsEnvNamesFilePath;
+    @Value("${warselection.research.icons.file}")
+    private String wsResearchIconsFilePath;
+    @Value("${warselection.content.units.folder}")
+    private String wsUnitsContentFolderPath;
+    @Value("${warselection.content.envs.folder}")
+    private String wsEnvsContentFolderPath;
+    @Value("${warselection.content.projectiles.folder}")
+    private String wsProjectilesContentFolderPath;
+    @Value("${warselection.content.ui.folder}")
+    private String wsUiContentFolderPath;
 
     @Override
     public FilePathWrapper resolve() throws GameFilesResolvingException {
@@ -83,34 +93,25 @@ public class FilePathResolverImpl implements FilePathResolver {
         validateFile(wsRootAbsFolderPath);
         result.setRootFolderPath(wsRootAbsFolderPath);
 
-        String wsGameplayAbsFilePath = wsRootAbsFolderPath + wsGameplayFilePath;
-        validateFile(wsGameplayAbsFilePath);
-        result.setGameplayFilePath(wsGameplayAbsFilePath);
-
-        String wsMainAbsFilePath = wsRootAbsFolderPath + wsMainFilePath;
-        validateFile(wsMainAbsFilePath);
-        result.setMainFilePath(wsMainAbsFilePath);
-
-        String wsVisualAbsFilePath = wsRootAbsFolderPath + wsVisualFilePath;
-        validateFile(wsVisualAbsFilePath);
-        result.setVisualFilePath(wsVisualAbsFilePath);
-
-        String wsLocalizationAbsFolderPath = wsRootAbsFolderPath + wsLocalizationFolderPath;
-        validateFile(wsLocalizationAbsFolderPath);
-        result.setLocalizationFolderPath(wsLocalizationAbsFolderPath);
-
-        String wsInterfacesSessionInitAbsFilePath = wsRootAbsFolderPath + wsInterfacesSessionInitFilePath;
-        validateFile(wsInterfacesSessionInitAbsFilePath);
-        result.setSessionInitFilePath(wsInterfacesSessionInitAbsFilePath);
-
-        String wsOnProjectLoadAbsFilePath = wsRootAbsFolderPath + wsOnProjectLoadFilePath;
-        validateFile(wsOnProjectLoadAbsFilePath);
-        result.setOnProjectLoadFilePath(wsOnProjectLoadAbsFilePath);
-
-        String wsCulturesAbsFilePath = wsRootAbsFolderPath + wsCulturesFilePath;
-        validateFile(wsCulturesAbsFilePath);
-        result.setCulturesFilePath(wsCulturesAbsFilePath);
+        result.setGameplayFilePath(resolveRequired(wsRootAbsFolderPath, wsGameplayFilePath));
+        result.setVisualFilePath(resolveRequired(wsRootAbsFolderPath, wsVisualFilePath));
+        result.setLocalizationFolderPath(resolveRequired(wsRootAbsFolderPath, wsLocalizationFolderPath));
+        result.setSessionInitFilePath(resolveRequired(wsRootAbsFolderPath, wsInterfacesSessionInitFilePath));
+        result.setOnProjectLoadFilePath(resolveRequired(wsRootAbsFolderPath, wsOnProjectLoadFilePath));
+        result.setCulturesFilePath(resolveRequired(wsRootAbsFolderPath, wsCulturesFilePath));
+        result.setEnvNamesFilePath(resolveRequired(wsRootAbsFolderPath, wsEnvNamesFilePath));
+        result.setResearchIconsFilePath(resolveRequired(wsRootAbsFolderPath, wsResearchIconsFilePath));
+        result.setUnitsContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsUnitsContentFolderPath));
+        result.setEnvsContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsEnvsContentFolderPath));
+        result.setProjectilesContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsProjectilesContentFolderPath));
+        result.setUiContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsUiContentFolderPath));
         return result;
+    }
+
+    private String resolveRequired(String rootFolderPath, String relativePath) throws GameFilesResolvingException {
+        String absPath = rootFolderPath + relativePath;
+        validateFile(absPath);
+        return absPath;
     }
 
     private String resolveSteamDir() throws GameFilesResolvingException {

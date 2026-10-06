@@ -28,7 +28,7 @@ public class ExportUnitsJsonTask extends BulkFileJsonExportTask<UnitModel> {
 
     @Override
     protected String getFilename(UnitModel unitModel) {
-        return String.valueOf(unitModel.getGameId());
+        return unitModel.getGameId().toString();
     }
 
     @Override

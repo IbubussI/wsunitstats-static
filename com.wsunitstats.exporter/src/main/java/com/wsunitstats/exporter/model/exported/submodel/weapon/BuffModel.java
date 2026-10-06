@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported.submodel.weapon;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import java.util.List;
 @Setter
 @ToString
 public class BuffModel {
-    private int buffId;
+    private EntityId buffId;
     private EntityInfoModel entityInfo;
     private Double period;
     private List<TagModel> affectedUnits;

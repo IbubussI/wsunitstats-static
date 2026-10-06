@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.service;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
@@ -20,7 +21,7 @@ import java.util.function.Consumer;
 
 public class UnitSourceFinder {
     // inner map here required to avoid repeats when calc upgrade sources in several iterations
-    public Map<Integer, List<UnitSourceModel>> sourcesLookupMap = new HashMap<>();
+    public Map<EntityId, List<UnitSourceModel>> sourcesLookupMap = new HashMap<>();
 
     public UnitSourceFinder(List<UnitModel> units) {
         // initial walkthrough to collect create/build sources
@@ -55,18 +56,18 @@ public class UnitSourceFinder {
         });
 
         // collect map of unit transformation parents in format <unit ID: list of parent IDs>
-        Map<Integer, List<Integer>> unitParentsMap = new HashMap<>();
+        Map<EntityId, List<EntityId>> unitParentsMap = new HashMap<>();
         units.forEach(unit -> forEachWorkAbility(unit, TransformAbilityModel.class, workAbilityContainer -> {
             TransformAbilityModel ability = (TransformAbilityModel) workAbilityContainer.getAbility();
-            int childId = ability.getEntityInfo().getEntityId();
+            EntityId childId = ability.getEntityInfo().getEntityId();
             unitParentsMap.compute(childId, (k, v) -> {
-                List<Integer> entry = v == null ? new ArrayList<>() : v;
+                List<EntityId> entry = v == null ? new ArrayList<>() : v;
                 entry.add(unit.getGameId());
                 return entry;
             });
         }));
 
-        Map<Integer, List<UnitSourceModel>> transformSourcesMap = new HashMap<>();
+        Map<EntityId, List<UnitSourceModel>> transformSourcesMap = new HashMap<>();
         units.forEach(unit -> {
             EntityInfoModel entityInfo = new EntityInfoModel();
             entityInfo.setEntityId(unit.getGameId());
@@ -92,7 +93,7 @@ public class UnitSourceFinder {
         mergeSourceMaps(sourcesLookupMap, transformSourcesMap);
     }
 
-    private void addToSourceMap(Map<Integer, List<UnitSourceModel>> sourceMap, int unitId, UnitSourceModel unitSourceModel) {
+    private void addToSourceMap(Map<EntityId, List<UnitSourceModel>> sourceMap, EntityId unitId, UnitSourceModel unitSourceModel) {
         sourceMap.compute(unitId, (k, v) -> {
             List<UnitSourceModel> entry = v == null ? new ArrayList<>() : v;
             entry.add(unitSourceModel);
@@ -100,7 +101,7 @@ public class UnitSourceFinder {
         });
     }
 
-    private void mergeSourceMaps(Map<Integer, List<UnitSourceModel>> target, Map<Integer, List<UnitSourceModel>> source) {
+    private void mergeSourceMaps(Map<EntityId, List<UnitSourceModel>> target, Map<EntityId, List<UnitSourceModel>> source) {
         source.forEach((m, n) -> {
             target.compute(m, (k, v) -> {
                 if (v == null) {
@@ -138,34 +139,45 @@ public class UnitSourceFinder {
         }
     }
 
-    private List<ResourceModel> findParentTreeCost(int unitId, Map<Integer, List<Integer>> unitParentsMap, Map<String, Boolean> visitedMap) {
+    /**
+     * @return the cheapest cost of creating or building the unit, or (if it can only be obtained by transformation)
+     * the cheapest such cost among its nearest ancestors; null if there is none. Every candidate is considered,
+     * so the result does not depend on the order units and sources are processed in.
+     */
+    private List<ResourceModel> findParentTreeCost(EntityId unitId, Map<EntityId, List<EntityId>> unitParentsMap, Map<String, Boolean> visitedMap) {
         List<UnitSourceModel> currentCreateSources = getUnitSources(unitId);
-        if (currentCreateSources.size() > 0) {
-            // use first available cost
-            return currentCreateSources.get(0).getCost();
+        if (!currentCreateSources.isEmpty()) {
+            return getCheapestCost(currentCreateSources);
         }
 
-        List<Integer> unitParents = unitParentsMap.get(unitId);
+        List<List<ResourceModel>> parentCosts = new ArrayList<>();
+        List<EntityId> unitParents = unitParentsMap.get(unitId);
         if (unitParents != null) {
-            for (Integer parentId : unitParents) {
+            for (EntityId parentId : unitParents) {
                 List<UnitSourceModel> parentCreateSources = getUnitSources(parentId);
                 String visitedKey = unitId + "-" + parentId;
-                if (parentCreateSources.size() > 0) {
-                    // use first available cost
-                    return parentCreateSources.get(0).getCost();
-                } else if (!visitedMap.getOrDefault(unitId + "-" + parentId, false)) {
+                if (!parentCreateSources.isEmpty()) {
+                    parentCosts.add(getCheapestCost(parentCreateSources));
+                } else if (!visitedMap.getOrDefault(visitedKey, false)) {
                     visitedMap.put(visitedKey, true);
                     List<ResourceModel> subTreeCost = findParentTreeCost(parentId, unitParentsMap, visitedMap);
                     if (subTreeCost != null) {
-                        return subTreeCost;
+                        parentCosts.add(subTreeCost);
                     }
                 }
             }
         }
-        return null;
+        return parentCosts.stream().min(Utils.COST_COMPARATOR).orElse(null);
     }
 
-    public List<UnitSourceModel> getUnitSources(int unitId) {
+    private List<ResourceModel> getCheapestCost(List<UnitSourceModel> sources) {
+        return sources.stream()
+                .map(UnitSourceModel::getCost)
+                .min(Utils.COST_COMPARATOR)
+                .orElseThrow();
+    }
+
+    public List<UnitSourceModel> getUnitSources(EntityId unitId) {
         return sourcesLookupMap.getOrDefault(unitId, new ArrayList<>());
     }
 }

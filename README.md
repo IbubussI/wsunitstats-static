@@ -35,7 +35,7 @@ For exportEngineData task two files inside _input_ folder are used. These files 
 
 ### How to build and run exporter module
 
-To build exporter Java 17 and Maven required
+To build exporter Java 21 and Maven required
 
 Build:
 - Download sources

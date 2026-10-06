@@ -12,6 +12,7 @@ public class ExternalDataModel {
     private Object work;
     private Object disableMindButton;
     private Object customAbility;
+    private Object weaponAbility;
 
     @Getter
     @Setter

@@ -1,12 +1,17 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.entity.EntityReferences;
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.submodel.ResourceModel;
 import com.wsunitstats.exporter.model.exported.submodel.UnitSourceModel;
+import com.wsunitstats.exporter.service.FileContentService;
 import com.wsunitstats.exporter.service.UnitCategoryService;
 import com.wsunitstats.exporter.service.UnitValueCalculator;
 
 import com.wsunitstats.exporter.utils.Constants.AdvancedUnitCategory;
+import com.wsunitstats.exporter.utils.Utils;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +25,14 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
     private static final int WONDER_COST = 5000;
     private static final Map<AdvancedUnitCategory, Integer> CATEGORY_VALUES = new HashMap<>();
     private static final Map<Integer, Integer> NATION_VALUES = new HashMap<>();
-    private static final Map<Integer, Integer> EXCEPTION_COSTS = new HashMap<>();
+    /** Costs by unit reference, resolved by the unit provider */
+    private static final Map<String, Integer> EXCEPTION_COST_UNITS = new HashMap<>();
     private static final double GLOBAL_SCALE = 1d / 180;
     private static final double HIGH_VALUE_REDUCTION_RATE = 1d / 16000;
 
     static {
-        CATEGORY_VALUES.put(AdvancedUnitCategory.TC, 12);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.WORKER, 11);
+        CATEGORY_VALUES.put(AdvancedUnitCategory.TC, 11);
+        CATEGORY_VALUES.put(AdvancedUnitCategory.WORKER, 10);
         CATEGORY_VALUES.put(AdvancedUnitCategory.SECONDARY_BUILDING, 1);
         CATEGORY_VALUES.put(AdvancedUnitCategory.HOUSE, 5);
         CATEGORY_VALUES.put(AdvancedUnitCategory.DEFENCE_BUILDING, 1);
@@ -52,18 +58,27 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
         NATION_VALUES.put(20, 0); // other
         NATION_VALUES.put(-1, 1); // rest (any IR)
 
-        EXCEPTION_COSTS.put(410, 450); // immortal
-        EXCEPTION_COSTS.put(201, 100); // ir worker
-        EXCEPTION_COSTS.put(31, 65); // asia worker
-        EXCEPTION_COSTS.put(81, 140); // eu fisher (mid-age)
-        EXCEPTION_COSTS.put(169, 180); // east-asia fisher
-        EXCEPTION_COSTS.put(240, 800); // tractor
-        EXCEPTION_COSTS.put(244, 250); // trawler
-        EXCEPTION_COSTS.put(353, 180); // chinese fisher
+        EXCEPTION_COST_UNITS.put("WarSelection/4/ps/immortal", 450); // immortal
+        EXCEPTION_COST_UNITS.put("WarSelection/5/worker", 100); // ir worker
+        EXCEPTION_COST_UNITS.put("WarSelection/2/a/worker1", 65); // asia worker
+        EXCEPTION_COST_UNITS.put("WarSelection/3/e/fisher", 140); // eu fisher (mid-age)
+        EXCEPTION_COST_UNITS.put("WarSelection/3/a/fisher", 180); // east-asia fisher
+        EXCEPTION_COST_UNITS.put("WarSelection/5/tractor", 800); // tractor
+        EXCEPTION_COST_UNITS.put("WarSelection/5/fisher", 250); // trawler
+        EXCEPTION_COST_UNITS.put("WarSelection/4/chn/fisher", 180); // chinese fisher
     }
 
     @Autowired
     private UnitCategoryService unitCategoryService;
+    @Autowired
+    private FileContentService fileContentService;
+
+    private Map<EntityId, Integer> exceptionCosts;
+
+    @PostConstruct
+    protected void postConstruct() {
+        exceptionCosts = EntityReferences.resolveKeys(fileContentService.getUnits(), EXCEPTION_COST_UNITS);
+    }
 
     @Override
     public double calcKillValue(UnitModel unit) {
@@ -90,7 +105,7 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
         if (category.equals(AdvancedUnitCategory.TC)) {
             return TC_COST;
         }
-        Integer exceptionCost = EXCEPTION_COSTS.get(unit.getGameId());
+        Integer exceptionCost = exceptionCosts.get(unit.getGameId());
         if (exceptionCost != null) {
             return exceptionCost;
         }
@@ -105,7 +120,6 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
         if (cost == null) {
             System.out.println(source);
         }
-        // iron has bigger value due to lower mining speed
-        return (cost.get(0).getValue() + cost.get(1).getValue() + cost.get(2).getValue() * 1.5);
+        return Utils.getCostValue(cost);
     }
 }

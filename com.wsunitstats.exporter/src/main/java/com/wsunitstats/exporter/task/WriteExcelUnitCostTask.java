@@ -97,7 +97,7 @@ public class WriteExcelUnitCostTask implements ExecutionTask {
             Row row = sheet.createRow(i + 1);
             int counter = 0;
 
-            addNumericCell(row, counter, unitModel.getGameId());
+            addStringCell(row, counter, unitModel.getGameId().toString(), localizationModel);
             counter++;
 
             addStringCell(row, counter, unitModel.getNation().getName().getIr1(), localizationModel);

@@ -1,26 +1,32 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wsunitstats.exporter.content.GemPackReader;
 import com.wsunitstats.exporter.exception.FileReadingException;
 import com.wsunitstats.exporter.lua.LuaBytecodeReader;
 import com.wsunitstats.exporter.lua.LuaFunctionCall;
 import com.wsunitstats.exporter.lua.LuaPrototype;
+import com.wsunitstats.exporter.lua.LuaSourceReader;
 import com.wsunitstats.exporter.lua.LuaTable;
 import com.wsunitstats.exporter.lua.LuaTableExtractor;
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
 import com.wsunitstats.exporter.model.lua.CulturesFileModel;
+import com.wsunitstats.exporter.model.lua.EnvNamesFileModel;
 import com.wsunitstats.exporter.model.lua.OnProjectLoadFileModel;
+import com.wsunitstats.exporter.model.lua.ResearchIconsFileModel;
 import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
 import com.wsunitstats.exporter.service.FileReaderService;
+import com.wsunitstats.exporter.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,10 +35,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import static com.wsunitstats.exporter.utils.Constants.CLOSING_ANGLE_BRACKET;
 import static com.wsunitstats.exporter.utils.Constants.LOCALIZATION_MULTI_VALUE_DELIMITER_REGEX;
-import static com.wsunitstats.exporter.utils.Constants.NIL;
+import static com.wsunitstats.exporter.utils.Constants.SLASH;
 
 @Service
 public class FileReaderServiceImpl implements FileReaderService {
@@ -42,13 +52,26 @@ public class FileReaderServiceImpl implements FileReaderService {
     private static final String LOC_FILENAME_SUFFIX = ".loc";
     /** Lua function wrapping every localization key in the game scripts */
     private static final String LOCALIZE_FUNCTION = "localize";
+    /** Key of a part of a multipart localization entry the way the game scripts write it: "<*key/N>" */
+    private static final Pattern GAME_LOCALIZATION_PART_KEY_PATTERN = Pattern.compile("^(<\\*.*)/(\\d+)>$");
+    /** Signature compiled Lua chunks start with */
+    private static final byte[] LUA_BYTECODE_SIGNATURE = {0x1B, 'L', 'u', 'a'};
 
     @Override
     public <T> T readJson(String path, Class<T> clazz) {
         LOG.debug("Reading json file at path: {}", path);
-        try (FileReader fileReader = new FileReader(path)) {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(fileReader, clazz);
+        try {
+            return new ObjectMapper().readValue(new File(path), clazz);
+        } catch (IOException e) {
+            throw new FileReadingException("Reading json file failed", e);
+        }
+    }
+
+    @Override
+    public JsonNode readJsonTree(String path) {
+        LOG.debug("Reading json file at path: {}", path);
+        try {
+            return new ObjectMapper().readTree(new File(path));
         } catch (IOException e) {
             throw new FileReadingException("Reading json file failed", e);
         }
@@ -78,9 +101,11 @@ public class FileReaderServiceImpl implements FileReaderService {
         try (Scanner scanner = new Scanner(file, StandardCharsets.UTF_8)) {
             LocalizationFileModel localizationModel = new LocalizationFileModel();
             Map<String, List<String>> localizationValues = new HashMap<>();
+            // trailing empty parts are kept: "<*upgrade66>Next country|" is a name with an empty description,
+            // so its name must be the part 0 like the names of other researches
             scanner.findAll(LOC_VALUE_PATTERN)
                     .forEach(match -> localizationValues.put(match.group(1),
-                            Arrays.asList(match.group(2).split(LOCALIZATION_MULTI_VALUE_DELIMITER_REGEX))));
+                            Arrays.asList(match.group(2).split(LOCALIZATION_MULTI_VALUE_DELIMITER_REGEX, -1))));
             localizationModel.setValues(localizationValues);
             localizationModel.setFilename(file.getName());
             return localizationModel;
@@ -103,13 +128,11 @@ public class FileReaderServiceImpl implements FileReaderService {
         LOG.debug("Reading main/onProjectLoad.lua file at path: {}", path);
         Map<String, Object> values = readLuaValues(path);
         OnProjectLoadFileModel onProjectLoadFileModel = new OnProjectLoadFileModel();
-        onProjectLoadFileModel.setEnvNames(readIndexedLocalizationKeys(values, "envNames", path));
         onProjectLoadFileModel.setEnvTagNames(readLocalizationKeys(values, "envTagNames", path));
         onProjectLoadFileModel.setEnvSearchTagNames(readLocalizationKeys(values, "envSearchTagNames", path));
         onProjectLoadFileModel.setUnitTagNames(readLocalizationKeys(values, "unitTagNames", path));
         onProjectLoadFileModel.setUnitSearchTagNames(readLocalizationKeys(values, "unitSearchTagNames", path));
         onProjectLoadFileModel.setResourceNames(readLocalizationKeys(values, "resourceNames", path));
-        onProjectLoadFileModel.setProjectileNames(readStrings(values, "projectileNames", path));
         return onProjectLoadFileModel;
     }
 
@@ -119,20 +142,98 @@ public class FileReaderServiceImpl implements FileReaderService {
         Map<String, Object> values = readLuaValues(path);
         CulturesFileModel culturesFileModel = new CulturesFileModel();
         culturesFileModel.setNationNames(readNationNames(values, path));
-        culturesFileModel.setUnitNations(readStrings(values, "unitNations", path));
+        Map<String, Integer> unitNations = new LinkedHashMap<>();
+        readTable(values, "nationsByAddress", path).getEntries().forEach((address, nation) -> {
+            if (!(address instanceof String) || !(nation instanceof Long)) {
+                throw malformed("nationsByAddress", path, "expected unit path -> nation id but got " + address + " -> " + nation);
+            }
+            unitNations.put((String) address, ((Long) nation).intValue());
+        });
+        culturesFileModel.setUnitNationsByAddress(unitNations);
         return culturesFileModel;
     }
 
+    @Override
+    public EnvNamesFileModel readEnvNamesLua(String path) {
+        LOG.debug("Reading common/envNames.lua file at path: {}", path);
+        Map<String, Object> values = readLuaValues(path);
+        Map<String, String> envNameKeys = new LinkedHashMap<>();
+        // the table of keys is local to localizedEnvNames(): a string is a shared localization key,
+        // false means the env is named by its own key, anything else means no name
+        readTable(values, "tags", path).getEntries().forEach((address, key) -> {
+            if (!(address instanceof String)) {
+                throw malformed("tags", path, "expected env path but got " + address);
+            }
+            if (key instanceof String) {
+                envNameKeys.put((String) address, (String) key);
+            } else if (Boolean.FALSE.equals(key)) {
+                envNameKeys.put((String) address, null);
+            }
+        });
+        EnvNamesFileModel envNamesFileModel = new EnvNamesFileModel();
+        envNamesFileModel.setEnvNameKeys(envNameKeys);
+        return envNamesFileModel;
+    }
+
+    @Override
+    public ResearchIconsFileModel readResearchIconsLua(String path) {
+        LOG.debug("Reading researchIcons.lua file at path: {}", path);
+        Map<String, Object> values = readLuaValues(path);
+        Map<Integer, String> researchIcons = new TreeMap<>();
+        readTable(values, "assets", path).getIndexedEntries().forEach((researchId, asset) -> {
+            if (!(asset instanceof String)) {
+                throw malformed("assets", path, "expected image asset name but got " + asset);
+            }
+            researchIcons.put(researchId, (String) asset);
+        });
+        ResearchIconsFileModel researchIconsFileModel = new ResearchIconsFileModel();
+        researchIconsFileModel.setResearchIcons(researchIcons);
+        return researchIconsFileModel;
+    }
+
+    @Override
+    public Map<String, Map<String, byte[]>> readPacks(String folderPath, String addressPrefix) {
+        LOG.debug("Reading content packs at path: {}", folderPath);
+        Path folder = Paths.get(folderPath);
+        Map<String, Map<String, byte[]>> result = new TreeMap<>();
+        try (Stream<Path> files = Files.walk(folder)) {
+            List<Path> packs = files
+                    .filter(Files::isRegularFile)
+                    .filter(file -> file.getFileName().toString().endsWith(GemPackReader.PACK_FILE_EXTENSION))
+                    .toList();
+            for (Path pack : packs) {
+                String relativePath = folder.relativize(pack).toString().replace(File.separatorChar, '/');
+                String address = addressPrefix + SLASH
+                        + relativePath.substring(0, relativePath.length() - GemPackReader.PACK_FILE_EXTENSION.length());
+                try {
+                    result.put(address, GemPackReader.read(Files.readAllBytes(pack)));
+                } catch (IllegalArgumentException e) {
+                    throw new FileReadingException("Malformed content pack: " + pack, e);
+                }
+            }
+        } catch (IOException e) {
+            throw new FileReadingException("Reading content packs failed", e);
+        }
+        LOG.debug("Read {} content packs at path: {}", result.size(), folderPath);
+        return result;
+    }
+
     /**
-     * Reads the values the compiled LUA chunk assigns to its named places, by name
+     * Reads the values a Lua chunk (either source or compiled) assigns to its named places, by name
      */
     private Map<String, Object> readLuaValues(String path) {
         try {
             byte[] bytes = Files.readAllBytes(Paths.get(path));
-            LuaPrototype main = LuaBytecodeReader.read(bytes);
-            return LuaTableExtractor.extractNamedValues(main);
+            if (Arrays.equals(bytes, 0, Math.min(bytes.length, LUA_BYTECODE_SIGNATURE.length),
+                    LUA_BYTECODE_SIGNATURE, 0, LUA_BYTECODE_SIGNATURE.length)) {
+                LuaPrototype main = LuaBytecodeReader.read(bytes);
+                return LuaTableExtractor.extractNamedValues(main);
+            }
+            return LuaSourceReader.extractNamedValues(new String(bytes, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new FileReadingException("Reading LUA file failed", e);
+        } catch (IllegalArgumentException e) {
+            throw new FileReadingException("Parsing LUA file failed: " + path, e);
         }
     }
 
@@ -143,16 +244,6 @@ public class FileReaderServiceImpl implements FileReaderService {
         List<String> result = new ArrayList<>();
         readTable(values, name, path).getValues()
                 .forEach(value -> result.add(getLocalizationKey(value, name, path)));
-        return result;
-    }
-
-    /**
-     * Reads a table of explicitly indexed {@code localize("<*key>")} calls as localization keys by index
-     */
-    private Map<Integer, String> readIndexedLocalizationKeys(Map<String, Object> values, String name, String path) {
-        Map<Integer, String> result = new LinkedHashMap<>();
-        readTable(values, name, path).getIndexedEntries()
-                .forEach((index, value) -> result.put(index, getLocalizationKey(value, name, path)));
         return result;
     }
 
@@ -174,23 +265,6 @@ public class FileReaderServiceImpl implements FileReaderService {
         return result;
     }
 
-    /**
-     * Reads a table of plain values as strings, keeping the {@code nil} ones
-     */
-    private List<String> readStrings(Map<String, Object> values, String name, String path) {
-        List<String> result = new ArrayList<>();
-        for (Object value : readTable(values, name, path).getValues()) {
-            if (value == null) {
-                result.add(NIL);
-            } else if (value == LuaTableExtractor.UNKNOWN) {
-                throw malformed(name, path, "value cannot be resolved");
-            } else {
-                result.add(String.valueOf(value));
-            }
-        }
-        return result;
-    }
-
     private LuaTable readTable(Map<String, Object> values, String name, String path) {
         Object value = values.get(name);
         if (!(value instanceof LuaTable table)) {
@@ -204,9 +278,20 @@ public class FileReaderServiceImpl implements FileReaderService {
                 && LOCALIZE_FUNCTION.equals(call.getFunctionName())
                 && call.getArguments().size() == 1
                 && call.getArguments().get(0) instanceof String key) {
-            return key;
+            return toExporterLocalizationKey(key);
         }
         throw malformed(name, path, "expected a " + LOCALIZE_FUNCTION + " call but got " + value);
+    }
+
+    /**
+     * Game scripts address a part of a multipart localization entry as "<*key/N>",
+     * the exporter uses its own part delimiter (e.g. "<*nationName13/0>" -> "<*nationName13#0>")
+     */
+    private String toExporterLocalizationKey(String gameKey) {
+        Matcher matcher = GAME_LOCALIZATION_PART_KEY_PATTERN.matcher(gameKey);
+        return matcher.matches()
+                ? Utils.getLocalizationPartKey(matcher.group(1) + CLOSING_ANGLE_BRACKET, Integer.parseInt(matcher.group(2)))
+                : gameKey;
     }
 
     private FileReadingException malformed(String name, String path, String reason) {

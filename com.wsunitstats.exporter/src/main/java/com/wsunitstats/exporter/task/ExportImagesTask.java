@@ -40,6 +40,8 @@ public class ExportImagesTask implements ExecutionTask {
                 for (Map.Entry<String, BufferedImage> entry : payload.getImages().entrySet()) {
                     String filename = entry.getKey();
                     File file = new File(path + "/" + filename);
+                    // image names derived from entity ids may contain folders
+                    file.getParentFile().mkdirs();
                     LOG.info("Writing image {} to file...", filename);
                     ImageIO.write(entry.getValue(), imageExtension, file);
                 }

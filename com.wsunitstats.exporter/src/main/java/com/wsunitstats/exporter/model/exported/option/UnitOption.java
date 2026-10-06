@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported.option;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wsunitstats.exporter.model.NationName;
 import lombok.Getter;
@@ -15,7 +16,7 @@ public class UnitOption {
     private NationName nation;
     private String name;
     private String image;
-    private int gameId;
+    private EntityId gameId;
     private String category;
     private double killValue;
 

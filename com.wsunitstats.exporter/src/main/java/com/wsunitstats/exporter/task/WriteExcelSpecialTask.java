@@ -10,6 +10,7 @@ import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageWrapperMode
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
 import com.wsunitstats.exporter.service.LocalizationService;
 import com.wsunitstats.exporter.service.ModelExporterService;
+import com.wsunitstats.exporter.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
@@ -41,16 +42,17 @@ public class WriteExcelSpecialTask implements ExecutionTask {
     private static final String LOCALE = "en";
     private static final int COLUMNS_PER_WEAPON = 19;
     private static final int WEAPONS_MAX = 10;
+    private static final String UNIT_TAG_LOCALIZATION_KEY = "<*unitTag>";
 
     private static final List<String> DAMAGE_NAMES_LIST = List.of(
             BASIC_DAMAGE_TYPE, //base
-            "<*unitTag/1>", //building
-            "<*unitTag/14>", //land forces
-            "<*unitTag/13>", //aviation
-            "<*unitTag/19>", //underwater
-            "<*unitTag/15>", //fleet
-            "<*unitTag/5>", //repairable
-            "<*unitTag/7>" //disassemblable
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 1), //building
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 14), //land forces
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 13), //aviation
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 19), //underwater
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 15), //fleet
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 5), //repairable
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 7) //disassemblable
     );
     private static final List<String> COLUMNS = List.of(
             "Nation",
@@ -332,7 +334,7 @@ public class WriteExcelSpecialTask implements ExecutionTask {
             addStringCell(row, counter, unitModel.getName(), localizationModel);
             counter++;
 
-            addNumericCell(row, counter, unitModel.getGameId());
+            addStringCell(row, counter, unitModel.getGameId().toString(), localizationModel);
             counter++;
 
             addNumericCell(row, counter, unitModel.getHealth());
@@ -359,7 +361,7 @@ public class WriteExcelSpecialTask implements ExecutionTask {
             }
             counter += 2;
 
-            List<ArmorModel> armor = unitModel.getArmor();
+            List<ArmorModel> armor = unitModel.getArmorZonal();
             if (armor != null && !armor.isEmpty()) {
                 addNumericCell(row, counter, armor.get(0).getValue());
                 addStringCell(row, counter + 1, armor.get(0).getProbability() + "%", localizationModel);

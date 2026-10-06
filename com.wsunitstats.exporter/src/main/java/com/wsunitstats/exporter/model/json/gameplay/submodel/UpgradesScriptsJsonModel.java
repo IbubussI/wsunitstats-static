@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @ToString
 public class UpgradesScriptsJsonModel {
-    private List<UpgradeScriptJsonModel> list;
+    /** Script files by program id, relative to the upgrade scripts folder */
+    private List<String> list;
     private String path;
 }

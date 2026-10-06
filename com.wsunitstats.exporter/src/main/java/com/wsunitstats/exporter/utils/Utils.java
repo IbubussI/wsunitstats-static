@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -103,6 +104,37 @@ public class Utils {
      * @param localizationFunction function to get localization value by key, found in given input
      * @return localized string
      */
+    /**
+     * Orders costs from the cheapest by their value ({@link #getCostValue(List)}); costs of equal value
+     * are ordered by their resource values, so the order never depends on the order costs are met in
+     */
+    public static final Comparator<List<ResourceModel>> COST_COMPARATOR = Comparator
+            .comparingDouble(Utils::getCostValue)
+            .thenComparing((first, second) -> {
+                for (int i = 0; i < Math.min(first.size(), second.size()); i++) {
+                    int result = Integer.compare(first.get(i).getValue(), second.get(i).getValue());
+                    if (result != 0) {
+                        return result;
+                    }
+                }
+                return Integer.compare(first.size(), second.size());
+            });
+
+    /**
+     * @return single value of a cost: food + wood + metal, metal is worth more due to its lower mining speed
+     */
+    public static double getCostValue(List<ResourceModel> cost) {
+        return cost.get(0).getValue() + cost.get(1).getValue() + cost.get(2).getValue() * 1.5;
+    }
+
+    /**
+     * @return key of a part of a multipart localization entry, e.g. ("<*upgrade12>", 1) -> "<*upgrade12#1>"
+     */
+    public static String getLocalizationPartKey(String key, int part) {
+        int end = key.lastIndexOf(Constants.CLOSING_ANGLE_BRACKET);
+        return key.substring(0, end) + Constants.LOCALIZATION_INDEX_DELIMITER + part + key.substring(end);
+    }
+
     public static String localizeAll(String input, UnaryOperator<String> localizationFunction) {
         Matcher matcher = Constants.LOCALIZATION_KEY_PATTERN.matcher(input);
         StringBuilder output = new StringBuilder();

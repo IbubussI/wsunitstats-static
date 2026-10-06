@@ -9,6 +9,8 @@ import lombok.ToString;
 @ToString
 public class MovementModel {
     private Integer speed;
+    // absent if the unit can't move backwards
+    private Integer speedReverse;
     private Double rotationSpeed;
     private Integer weight;
 }

@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported.submodel.requirement;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -8,7 +9,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ResearchRequirementModel {
-    private int researchId;
+    private EntityId researchId;
     private String researchName;
     private String researchImage;
 }

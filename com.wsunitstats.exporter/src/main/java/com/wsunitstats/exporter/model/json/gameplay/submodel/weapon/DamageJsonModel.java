@@ -23,4 +23,6 @@ public class DamageJsonModel {
     private Integer id;
     @JsonProperty("radius_")
     private Integer radius;
+    /** Damage type, armor of the target may have a multiplier for it */
+    private Integer type;
 }

@@ -6,47 +6,70 @@ import com.wsunitstats.exporter.service.UnitCategoryService;
 import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Constants.AdvancedUnitCategory;
 import com.wsunitstats.exporter.utils.Constants.SimpleUnitCategory;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.entity.EntityProvider;
+import com.wsunitstats.exporter.entity.EntityReferences;
+import com.wsunitstats.exporter.service.FileContentService;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import static com.wsunitstats.exporter.utils.Constants.WALL_UNITS;
 
 @Service
 public class UnitCategoryServiceImpl implements UnitCategoryService {
-    public static final Map<Integer, SimpleUnitCategory> SIMPLE_EXCEPTIONS = new HashMap<>();
-    public static final Map<Integer, AdvancedUnitCategory> ADVANCED_EXCEPTIONS = new HashMap<>();
+    /** Categories by unit reference, resolved by the unit provider */
+    private static final Map<String, SimpleUnitCategory> SIMPLE_EXCEPTION_UNITS = new HashMap<>();
+    private static final Map<String, AdvancedUnitCategory> ADVANCED_EXCEPTION_UNITS = new HashMap<>();
 
     static {
-        SIMPLE_EXCEPTIONS.put(194, SimpleUnitCategory.ECO_BUILDING); // university
-        SIMPLE_EXCEPTIONS.put(124, SimpleUnitCategory.WORKER); // cargo elephant
-        SIMPLE_EXCEPTIONS.put(270, SimpleUnitCategory.LAND); // fury of durga
-        SIMPLE_EXCEPTIONS.put(288, SimpleUnitCategory.LAND); // Goliath operator
-        SIMPLE_EXCEPTIONS.put(289, SimpleUnitCategory.LAND); // Goliath
-        SIMPLE_EXCEPTIONS.put(106, SimpleUnitCategory.LAND); // Scout
-        SIMPLE_EXCEPTIONS.put(313, SimpleUnitCategory.LAND); // Pathfinder
-        SIMPLE_EXCEPTIONS.put(376, SimpleUnitCategory.LAND); // Saboteur
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/4/university", SimpleUnitCategory.ECO_BUILDING);
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/3/aw/elephant_depot", SimpleUnitCategory.WORKER); // cargo elephant
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/4/ind/truck", SimpleUnitCategory.LAND); // fury of durga
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/4/de/agent_placer", SimpleUnitCategory.LAND); // Goliath operator
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/4/de/agent", SimpleUnitCategory.LAND); // Goliath
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/3/ew/scout", SimpleUnitCategory.LAND);
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/1/pathfinder", SimpleUnitCategory.LAND);
+        SIMPLE_EXCEPTION_UNITS.put("WarSelection/4/pl/saboteur", SimpleUnitCategory.LAND);
 
-        ADVANCED_EXCEPTIONS.put(194, AdvancedUnitCategory.ECO_BUILDING); // university
-        ADVANCED_EXCEPTIONS.put(124, AdvancedUnitCategory.WORKER); // cargo elephant
-        ADVANCED_EXCEPTIONS.put(270, AdvancedUnitCategory.LAND); // fury of durga
-        ADVANCED_EXCEPTIONS.put(288, AdvancedUnitCategory.LAND); // Goliath operator
-        ADVANCED_EXCEPTIONS.put(289, AdvancedUnitCategory.LAND); // Goliath
-        ADVANCED_EXCEPTIONS.put(106, AdvancedUnitCategory.LAND); // Scout
-        ADVANCED_EXCEPTIONS.put(313, AdvancedUnitCategory.LAND); // Pathfinder
-        ADVANCED_EXCEPTIONS.put(376, AdvancedUnitCategory.LAND); // Saboteur
-        ADVANCED_EXCEPTIONS.put(46, AdvancedUnitCategory.SECONDARY_BUILDING); // observing tower
-        ADVANCED_EXCEPTIONS.put(301, AdvancedUnitCategory.OTHER); // engineer
-        ADVANCED_EXCEPTIONS.put(400, AdvancedUnitCategory.OTHER); // medic
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/4/university", AdvancedUnitCategory.ECO_BUILDING);
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/3/aw/elephant_depot", AdvancedUnitCategory.WORKER); // cargo elephant
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/4/ind/truck", AdvancedUnitCategory.LAND); // fury of durga
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/4/de/agent_placer", AdvancedUnitCategory.LAND); // Goliath operator
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/4/de/agent", AdvancedUnitCategory.LAND); // Goliath
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/3/ew/scout", AdvancedUnitCategory.LAND);
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/1/pathfinder", AdvancedUnitCategory.LAND);
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/4/pl/saboteur", AdvancedUnitCategory.LAND);
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/2/a/tower_scout", AdvancedUnitCategory.SECONDARY_BUILDING); // observation tower
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/4/engineer", AdvancedUnitCategory.OTHER);
+        ADVANCED_EXCEPTION_UNITS.put("WarSelection/5/doctor", AdvancedUnitCategory.OTHER); // medic
+    }
+
+    @Autowired
+    private FileContentService fileContentService;
+
+    private Map<EntityId, SimpleUnitCategory> simpleExceptions;
+    private Map<EntityId, AdvancedUnitCategory> advancedExceptions;
+    private Set<EntityId> wallUnits;
+
+    @PostConstruct
+    protected void postConstruct() {
+        EntityProvider<?> units = fileContentService.getUnits();
+        simpleExceptions = EntityReferences.resolveKeys(units, SIMPLE_EXCEPTION_UNITS);
+        advancedExceptions = EntityReferences.resolveKeys(units, ADVANCED_EXCEPTION_UNITS);
+        wallUnits = EntityReferences.resolveAll(units, WALL_UNITS);
     }
 
     @Override
     public SimpleUnitCategory getSimpleUnitCategory(UnitModel unit) {
         if (simpleExceptionPredicate.test(unit)) {
-            return SIMPLE_EXCEPTIONS.get(unit.getGameId());
+            return simpleExceptions.get(unit.getGameId());
         }
         if (!buildingPredicate.test(unit)) {
             if (workerPredicate.test(unit)) {
@@ -83,7 +106,7 @@ public class UnitCategoryServiceImpl implements UnitCategoryService {
     @Override
     public AdvancedUnitCategory getAdvancedUnitCategory(UnitModel unit) {
         if (advancedExceptionPredicate.test(unit)) {
-            return ADVANCED_EXCEPTIONS.get(unit.getGameId());
+            return advancedExceptions.get(unit.getGameId());
         }
         if (!buildingPredicate.test(unit)) {
             if (workerPredicate.test(unit)) {
@@ -160,10 +183,10 @@ public class UnitCategoryServiceImpl implements UnitCategoryService {
     private final Predicate<UnitModel> popPredicate = unit -> unit.getSupply() != null && unit.getSupply().getProduce() != null && unit.getSupply().getProduce() > 0;
     private final Predicate<UnitModel> incomePredicate = unit -> unit.getBuild() != null && unit.getBuild().getIncome() != null;
 
-    private final Predicate<UnitModel> wallPredicate = unit -> WALL_UNITS.contains(unit.getGameId());
+    private final Predicate<UnitModel> wallPredicate = unit -> wallUnits.contains(unit.getGameId());
     private final Predicate<UnitModel> landCapturePredicate = unit -> unit.getSearchTags().stream().anyMatch(tag -> tag.getGameId() == 7); // land capture
     private final Predicate<UnitModel> attackPredicate = unit -> CollectionUtils.isNotEmpty(unit.getWeapons()) || CollectionUtils.isNotEmpty(unit.getTurrets());
 
-    private final Predicate<UnitModel> simpleExceptionPredicate = unit -> SIMPLE_EXCEPTIONS.get(unit.getGameId()) != null;
-    private final Predicate<UnitModel> advancedExceptionPredicate = unit -> ADVANCED_EXCEPTIONS.get(unit.getGameId()) != null;
+    private final Predicate<UnitModel> simpleExceptionPredicate = unit -> simpleExceptions.containsKey(unit.getGameId());
+    private final Predicate<UnitModel> advancedExceptionPredicate = unit -> advancedExceptions.containsKey(unit.getGameId());
 }

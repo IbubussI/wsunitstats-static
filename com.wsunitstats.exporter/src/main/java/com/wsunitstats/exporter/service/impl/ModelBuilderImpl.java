@@ -1,5 +1,8 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.entity.EntityProvider;
+import com.wsunitstats.exporter.entity.EntityReferences;
 import com.wsunitstats.exporter.model.exported.ResearchModel;
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
@@ -7,6 +10,7 @@ import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
 import com.wsunitstats.exporter.model.exported.submodel.ConstructionModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
 import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
+import com.wsunitstats.exporter.model.exported.submodel.TypedArmorModel;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchUpgrade;
 import com.wsunitstats.exporter.model.exported.submodel.research.UpgradeModel;
@@ -22,14 +26,12 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildingJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.DeathabilityJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.GatherJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.MovementJsonModel;
-import com.wsunitstats.exporter.model.json.gameplay.submodel.ScenesJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TurretJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AirplaneJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.researches.ResearchJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.researches.UpgradeJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.WeaponJsonModel;
-import com.wsunitstats.exporter.model.json.visual.VisualFileJsonModel;
 import com.wsunitstats.exporter.model.json.visual.submodel.UnitTypeJsonModel;
 import com.wsunitstats.exporter.service.AbilityTransformingService;
 import com.wsunitstats.exporter.service.FileContentService;
@@ -44,6 +46,7 @@ import com.wsunitstats.exporter.service.UnitValueCalculator;
 import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Constants.ResearchType;
 import com.wsunitstats.exporter.utils.Utils;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -53,6 +56,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -80,42 +85,51 @@ public class ModelBuilderImpl implements ModelBuilder {
     @Autowired
     private UnitValueCalculator unitValueCalculator;
 
+    // research groups, as references to researches
     @Value("${researches.ageTransitionResearches}")
-    private List<Integer> ageTransitionResearches;
+    private List<String> ageTransitionResearches;
     @Value("${researches.ecoResearches}")
-    private List<Integer> ecoResearches;
+    private List<String> ecoResearches;
     @Value("${researches.popResearches}")
-    private List<Integer> popResearches;
+    private List<String> popResearches;
     @Value("${researches.territoryResearches}")
-    private List<Integer> territoryResearches;
+    private List<String> territoryResearches;
     @Value("${researches.combatResearches}")
-    private List<Integer> combatResearches;
+    private List<String> combatResearches;
     @Value("${researches.unitResearches}")
-    private List<Integer> unitResearches;
+    private List<String> unitResearches;
     @Value("${researches.buffResearches}")
-    private List<Integer> buffResearches;
+    private List<String> buffResearches;
     @Value("${researches.wonderTransitionResearches}")
-    private List<Integer> wonderTransitionResearches;
+    private List<String> wonderTransitionResearches;
+
+    private final Map<ResearchType, Set<EntityId>> researchTypes = new LinkedHashMap<>();
+    private Set<EntityId> livestockUnits;
+
+    @PostConstruct
+    protected void postConstruct() {
+        EntityProvider<ResearchJsonModel> researches = fileContentService.getResearches();
+        researchTypes.put(ResearchType.AGE_TRANSITION, EntityReferences.resolveAll(researches, ageTransitionResearches));
+        researchTypes.put(ResearchType.ECO, EntityReferences.resolveAll(researches, ecoResearches));
+        researchTypes.put(ResearchType.POP, EntityReferences.resolveAll(researches, popResearches));
+        researchTypes.put(ResearchType.TERRITORY, EntityReferences.resolveAll(researches, territoryResearches));
+        researchTypes.put(ResearchType.COMBAT, EntityReferences.resolveAll(researches, combatResearches));
+        researchTypes.put(ResearchType.UNIT, EntityReferences.resolveAll(researches, unitResearches));
+        researchTypes.put(ResearchType.BUFF, EntityReferences.resolveAll(researches, buffResearches));
+        researchTypes.put(ResearchType.WONDER_TRANSITION, EntityReferences.resolveAll(researches, wonderTransitionResearches));
+        livestockUnits = EntityReferences.resolveAll(fileContentService.getUnits(), Constants.LIVESTOCK_UNITS);
+    }
 
     @Override
     public List<UnitModel> buildUnits() {
         GameplayFileJsonModel gameplayModel = fileContentService.getGameplayFileModel();
-        VisualFileJsonModel visualModel = fileContentService.getVisualFileModel();
         LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
+        EntityProvider<UnitTypeJsonModel> unitTypes = fileContentService.getUnitTypes();
 
-        ScenesJsonModel scenes = gameplayModel.getScenes();
-        Map<Integer, UnitJsonModel> unitMap = scenes.getUnits();
-        Map<Integer, UnitTypeJsonModel> unitTypeMap = visualModel.getUnitTypes();
-
-        List<ResearchJsonModel> researches = gameplayModel.getResearches().getList();
-        List<UpgradeJsonModel> upgrades = gameplayModel.getResearches().getUpgrades();
-
-        Map<Integer, List<UnitResearchModel>> unitResearchesMap = generateUnitResearchesMap(researches, upgrades);
+        Map<EntityId, List<UnitResearchModel>> unitResearchesMap = generateUnitResearchesMap();
 
         List<UnitModel> units = new ArrayList<>();
-        for (Map.Entry<Integer, UnitJsonModel> entry : unitMap.entrySet()) {
-            Integer id = entry.getKey();
-            UnitJsonModel unitJsonModel = entry.getValue();
+        fileContentService.getUnits().forEach((id, unitJsonModel) -> {
             UnitModel unit = new UnitModel();
 
             // Generic traits
@@ -152,7 +166,8 @@ public class ModelBuilderImpl implements ModelBuilder {
 
             DeathabilityJsonModel deathability = unitJsonModel.getDeathability();
             if (deathability != null) {
-                unit.setArmor(getArmorList(deathability.getArmor()));
+                unit.setArmorZonal(getArmorList(deathability.getArmor()));
+                unit.setArmorTyped(getTypedArmor(deathability.getArmor()));
                 unit.setRegenerationSpeed(Utils.intToDoubleTick(deathability.getRegeneration()));
                 unit.setThreat(deathability.getThreat());
                 unit.setReceiveFriendlyDamage(Utils.getInvertedBoolean(deathability.getReceiveFriendlyDamage()));
@@ -160,7 +175,7 @@ public class ModelBuilderImpl implements ModelBuilder {
             }
 
             AttackJsonModel attack = unitJsonModel.getAttack();
-            String externalDataString = unitTypeMap.get(id).getExternalData();
+            String externalDataString = unitTypes.get(id).getExternalData();
             ExternalDataModel externalData = transformingService.transformExternalData(externalDataString);
             if (attack != null) {
                 Integer onDeathId = attack.getWeaponUseOnDeath();
@@ -183,7 +198,7 @@ public class ModelBuilderImpl implements ModelBuilder {
                 unit.setTransporting(transformingService.transformTransport(null, unitJsonModel.getTransport()));
             }
 
-            if (Constants.LIVESTOCK_IDS.contains(id)) {
+            if (livestockUnits.contains(id)) {
                 unit.setLimit(LIVESTOCK_LIMIT);
             }
 
@@ -192,7 +207,7 @@ public class ModelBuilderImpl implements ModelBuilder {
             unit.setAdvancedCategory(unitCategoryService.getAdvancedUnitCategory(unit).getName());
 
             units.add(unit);
-        }
+        });
 
         // second iteration to find unit sources
         UnitSourceFinder unitSourceFinder = new UnitSourceFinder(units);
@@ -205,84 +220,58 @@ public class ModelBuilderImpl implements ModelBuilder {
 
     @Override
     public List<ResearchModel> buildResearches() {
-        GameplayFileJsonModel gameplayModel = fileContentService.getGameplayFileModel();
         LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
 
-        List<ResearchJsonModel> researches = gameplayModel.getResearches().getList();
-        List<UpgradeJsonModel> upgrades = gameplayModel.getResearches().getUpgrades();
-
-        List<ResearchModel> result = new ArrayList<>(researches.size());
-        for (int id = 0; id < researches.size(); id++) {
-            ResearchJsonModel researchJsonModel = researches.get(id);
+        List<ResearchModel> result = new ArrayList<>();
+        // insertion order here is crucial, since in Replay Info UI we have a retrieval of research by index in this array
+        fileContentService.getResearches().forEach((id, researchJsonModel) -> {
             ResearchModel researchModel = new ResearchModel();
             researchModel.setGameId(id);
             researchModel.setImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), id));
             researchModel.setName(localizationKeyModel.getResearchNames().get(id));
             researchModel.setDescription(localizationKeyModel.getResearchTexts().get(id));
-            researchModel.setUpgrades(getUpgrades(researchJsonModel, upgrades));
+            researchModel.setUpgrades(getUpgrades(researchJsonModel));
             researchModel.setType(getResearchType(id));
-            // insertion order here is crucial, since in Replay Info UI we have a retrieval of research by index in this array
             result.add(researchModel);
-        }
+        });
         return result;
     }
 
-    private String getResearchType(int id) {
-        if (ageTransitionResearches.contains(id)) {
-            return ResearchType.AGE_TRANSITION.getType();
-        }
-        if (ecoResearches.contains(id)) {
-            return ResearchType.ECO.getType();
-        }
-        if (popResearches.contains(id)) {
-            return ResearchType.POP.getType();
-        }
-        if (territoryResearches.contains(id)) {
-            return ResearchType.TERRITORY.getType();
-        }
-        if (combatResearches.contains(id)) {
-            return ResearchType.COMBAT.getType();
-        }
-        if (unitResearches.contains(id)) {
-            return ResearchType.UNIT.getType();
-        }
-        if (buffResearches.contains(id)) {
-            return ResearchType.BUFF.getType();
-        }
-        if (wonderTransitionResearches.contains(id)) {
-            return ResearchType.WONDER_TRANSITION.getType();
-        }
-        return ResearchType.OTHER.getType();
+    private String getResearchType(EntityId id) {
+        return researchTypes.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(id))
+                .map(entry -> entry.getKey().getType())
+                .findFirst()
+                .orElse(ResearchType.OTHER.getType());
     }
 
-    private List<UpgradeModel> getUpgrades(ResearchJsonModel research, List<UpgradeJsonModel> upgrades) {
+    private List<UpgradeModel> getUpgrades(ResearchJsonModel research) {
+        EntityProvider<UpgradeJsonModel> upgrades = fileContentService.getUpgrades();
         return research.getUpgrades() == null ? null : research.getUpgrades().stream()
                 .map(upgradeId -> transformingService.transformUpgrade(upgradeId, upgrades.get(upgradeId)))
                 .collect(Collectors.toList());
     }
 
-    private Map<Integer, List<UnitResearchModel>> generateUnitResearchesMap(List<ResearchJsonModel> researches,
-                                                                           List<UpgradeJsonModel> upgrades) {
+    private Map<EntityId, List<UnitResearchModel>> generateUnitResearchesMap() {
         LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
-        Map<Integer, List<UnitResearchModel>> unitResearchesMap = new LinkedHashMap<>();
-        for (int researchId = 0; researchId < researches.size(); researchId++) {
-            ResearchJsonModel research = researches.get(researchId);
-            List<Integer> researchUpgrades = research.getUpgrades();
+        EntityProvider<UpgradeJsonModel> upgrades = fileContentService.getUpgrades();
+        Map<EntityId, List<UnitResearchModel>> unitResearchesMap = new LinkedHashMap<>();
+        fileContentService.getResearches().forEach((researchId, research) -> {
+            List<EntityId> researchUpgrades = research.getUpgrades();
             if (researchUpgrades == null) {
-                continue;
+                return;
             }
 
-            for (int researchUpgrade : researchUpgrades) {
+            for (EntityId researchUpgrade : researchUpgrades) {
                 UpgradeJsonModel upgrade = upgrades.get(researchUpgrade);
-                Integer unitId = upgrade.getUnit();
+                EntityId unitId = upgrade.getUnit();
                 if (unitId == null) {
                     continue;
                 }
 
                 List<UnitResearchModel> unitResearches = unitResearchesMap.getOrDefault(unitId, new ArrayList<>());
-                int finalResearchId = researchId;
                 UnitResearchModel unitResearch = unitResearches.stream()
-                        .filter(unitResearchExistent -> unitResearchExistent.getGameId() == finalResearchId)
+                        .filter(unitResearchExistent -> researchId.equals(unitResearchExistent.getGameId()))
                         .findFirst()
                         .orElse(null);
                 if (unitResearch == null) {
@@ -298,15 +287,15 @@ public class ModelBuilderImpl implements ModelBuilder {
                 unitResearch.addUpgrade(unitResearchUpgrade);
                 unitResearchesMap.put(unitId, unitResearches);
             }
-        }
+        });
         return unitResearchesMap;
     }
 
-    private BuildingModel getBuildModel(UnitJsonModel unitJsonModel, GameplayFileJsonModel gameplayJsonModel, int unitId) {
+    private BuildingModel getBuildModel(UnitJsonModel unitJsonModel, GameplayFileJsonModel gameplayJsonModel, EntityId unitId) {
         List<BuildJsonModel> buildJsonModels = gameplayJsonModel.getBuild();
         int buildId = IntStream.range(0, buildJsonModels.size())
                 .filter(index -> buildJsonModels.get(index) != null)
-                .filter(index -> buildJsonModels.get(index).getUnit() == unitId)
+                .filter(index -> unitId.equals(buildJsonModels.get(index).getUnit()))
                 .findFirst()
                 .orElse(-1);
         return transformingService.transformBuilding(buildId, unitJsonModel, buildId >= 0 ? buildJsonModels.get(buildId) : null);
@@ -319,13 +308,31 @@ public class ModelBuilderImpl implements ModelBuilder {
                         .toList();
     }
 
+    /**
+     * @return armor multiplier (in percent) by damage type, ordered by damage type,
+     * or null if the armor does not depend on damage type
+     */
+    private List<TypedArmorModel> getTypedArmor(ArmorJsonModel armorJsonModel) {
+        Map<Integer, Integer> typed = armorJsonModel != null ? armorJsonModel.getTyped() : null;
+        if (typed == null) {
+            return null;
+        }
+        return new TreeMap<>(typed).entrySet().stream()
+                .map(entry -> {
+                    TypedArmorModel typedArmor = new TypedArmorModel();
+                    typedArmor.setType(entry.getKey());
+                    typedArmor.setProbability((int) Math.round(entry.getValue() / Constants.TYPED_ARMOR_MAX * 100));
+                    return typedArmor;
+                })
+                .toList();
+    }
+
     private List<ArmorModel> getArmorList(ArmorJsonModel armorJsonModel) {
-        //Armor should not be null for every unit
-        List<ArmorJsonModel.Entry> entries = armorJsonModel.getData();
+        List<ArmorJsonModel.Entry> entries = armorJsonModel != null ? armorJsonModel.getZonal() : null;
         if (entries == null) {
             return null;
         }
-        int probabilitiesSum = Utils.sum(armorJsonModel.getData().stream().map(ArmorJsonModel.Entry::getProbability).toList());
+        int probabilitiesSum = Utils.sum(entries.stream().map(ArmorJsonModel.Entry::getProbability).toList());
         return entries.stream()
                 .map(entry -> transformingService.transformArmor(entry, probabilitiesSum))
                 .toList();

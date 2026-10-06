@@ -65,8 +65,15 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.26</version>
+            <version>1.18.36</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- zstd decompression of KTX2 textures -->
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>aircompressor</artifactId>
+            <version>0.27</version>
         </dependency>
 
         <!-- excel dependencies -->

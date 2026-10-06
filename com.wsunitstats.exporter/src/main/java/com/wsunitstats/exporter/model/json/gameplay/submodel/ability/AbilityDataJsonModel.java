@@ -2,7 +2,10 @@ package com.wsunitstats.exporter.model.json.gameplay.submodel.ability;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.DamageJsonModel;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.service.serializer.EntityRefDeserializer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -14,6 +17,10 @@ import java.util.List;
 @Setter
 @ToString
 public class AbilityDataJsonModel extends DamageJsonModel {
+    // targets of the ability
+    private Boolean ally;
+    private Boolean enemy;
+
     private Integer count;
     private String clearTasks;
 
@@ -21,9 +28,11 @@ public class AbilityDataJsonModel extends DamageJsonModel {
     private Integer duration;
 
     //One of next ids is present
-    private Integer id;         //env id (for e.g. wheat) or damage id - ??? for damage
-    private Integer research;   //research id
-    private Integer unit;       //unit id
+    private Integer id;         //index in the unit createEnvs (for e.g. wheat) or damage id - ??? for damage
+    @JsonDeserialize(using = EntityRefDeserializer.Research.class)
+    private EntityId research;  //research id
+    @JsonDeserialize(using = EntityRefDeserializer.Unit.class)
+    private EntityId unit;       //unit id
 
     //Wall-specific
     private Integer checkPassability;

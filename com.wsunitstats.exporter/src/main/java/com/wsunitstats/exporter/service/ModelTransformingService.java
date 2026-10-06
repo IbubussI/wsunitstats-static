@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.service;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
 import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
@@ -78,7 +79,7 @@ public interface ModelTransformingService {
 
     DistanceModel transformDistance(DistanceJsonModel distanceSource);
 
-    ProjectileModel transformProjectile(int id, ProjectileJsonModel projectileSource);
+    ProjectileModel transformProjectile(EntityId id, ProjectileJsonModel projectileSource);
 
     BuffModel transformBuff(BuffJsonModel buffSource);
 
@@ -102,7 +103,7 @@ public interface ModelTransformingService {
 
     ExternalDataModel transformExternalData(String attackGroundString);
 
-    UpgradeModel transformUpgrade(int id, UpgradeJsonModel upgradeSource);
+    UpgradeModel transformUpgrade(EntityId id, UpgradeJsonModel upgradeSource);
 
     Map<String, String> transformParameters(String parametersSource);
 }

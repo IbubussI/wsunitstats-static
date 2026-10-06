@@ -26,7 +26,9 @@ public class GameplayFileJsonModel {
     private Integer searcherChunkSizeEnvs;
     private Integer searcherChunkSizeProjectiles;
     private Integer searcherChunkSizeUnits;
+    private Boolean sessionUnits;
     private List<Object> springs;
+    private String startPositionEnv;
     private UpgradesScriptsJsonModel upgradesScripts;
     private Integer version;
     private Object auras;

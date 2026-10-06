@@ -1,6 +1,8 @@
 package com.wsunitstats.exporter.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.entity.EntityProvider;
 import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
@@ -85,6 +87,8 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 @Service
 public class ModelTransformingServiceImpl implements ModelTransformingService {
     private static final int PROBABILITY_MAX = 100;
+    /** Folder of the upgrade scripts, relative to the project scripts folder */
+    private static final String DEFAULT_UPGRADES_SCRIPTS_PATH = "gameplay/upgrades";
 
     @Autowired
     private ImageService imageService;
@@ -96,15 +100,15 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     private TagResolver tagResolver;
 
     private LocalizationKeyModel localization;
-    private Map<Integer, EnvJsonModel> envMap;
-    private Map<Integer, ProjectileJsonModel> projectileMap;
+    private EntityProvider<EnvJsonModel> envs;
+    private EntityProvider<ProjectileJsonModel> projectiles;
     private UpgradesScriptsJsonModel upgradesScripts;
 
     @PostConstruct
     protected void postConstruct() {
         localization = fileContentService.getLocalizationKeyModel();
-        envMap = fileContentService.getGameplayFileModel().getScenes().getEnvs();
-        projectileMap = fileContentService.getGameplayFileModel().getScenes().getProjectiles();
+        envs = fileContentService.getEnvs();
+        projectiles = fileContentService.getProjectiles();
         upgradesScripts = fileContentService.getGameplayFileModel().getUpgradesScripts();
     }
 
@@ -196,6 +200,8 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         }
         MovementModel movementModel = new MovementModel();
         movementModel.setSpeed(movementJsonModel.getSpeed() / Constants.MOVEMENT_SPEED_MODIFIER);
+        Integer speedReverse = movementJsonModel.getSpeedReverse();
+        movementModel.setSpeedReverse(speedReverse == null ? null : speedReverse / Constants.MOVEMENT_SPEED_MODIFIER);
         movementModel.setRotationSpeed(Utils.getAngle(movementJsonModel.getRotationSpd()));
         return movementModel;
     }
@@ -217,8 +223,8 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         RequirementsModel requirementsModel = new RequirementsModel();
-        List<Integer> researchesAny = requirementsJsonModel.getResearchAny();
-        List<Integer> researchesAll = requirementsJsonModel.getResearchAll();
+        List<EntityId> researchesAny = requirementsJsonModel.getResearchAny();
+        List<EntityId> researchesAll = requirementsJsonModel.getResearchAll();
         List<ResearchRequirementModel> researchAnyRequirementModels = researchesToRequirements(researchesAny);
         List<ResearchRequirementModel> researchAllRequirementModels = researchesToRequirements(researchesAll);
                 List < UnitRequirementJsonModel > units = requirementsJsonModel.getUnits();
@@ -226,7 +232,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 .stream()
                 .map(unitJson -> {
                     UnitRequirementModel result = new UnitRequirementModel();
-                    int unitId = unitJson.getType();
+                    EntityId unitId = unitJson.getType();
                     setQuantity(result, unitJson.getMin(), unitJson.getMax());
                     result.setUnitImage(imageService.getImageName(Constants.EntityType.UNIT.getName(), unitId));
                     result.setUnitId(unitId);
@@ -257,8 +263,8 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         weaponModel.setAutoAttack(Utils.getInvertedBoolean(weaponJsonModel.getAutoAttack()));
         weaponModel.setDistance(transformDistance(weaponJsonModel.getDistance()));
         weaponModel.setEnabled(weaponJsonModel.getEnabled());
-        Integer projectileId = weaponJsonModel.getProjectile();
-        weaponModel.setProjectile(projectileId == null ? null : transformProjectile(projectileId, projectileMap.get(projectileId)));
+        EntityId projectileId = weaponJsonModel.getProjectile();
+        weaponModel.setProjectile(projectileId == null ? null : transformProjectile(projectileId, projectiles.get(projectileId)));
         weaponModel.setRechargePeriod(Utils.intToDoubleShift(weaponJsonModel.getRechargePeriod()));
         weaponModel.setSpread(Utils.intToPercent(weaponJsonModel.getSpread()));
         List<DirectionAttacksPointJsonModel> points = weaponJsonModel.getDirectionAttacks().getDefaultValue().getPoints();
@@ -286,6 +292,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         damageWrapperModel.setBuff(transformBuff(damageJsonModel.getBuff()));
         damageWrapperModel.setDamageFriendly(Utils.getDirectBoolean(damageJsonModel.getDamageFriendly()));
         damageWrapperModel.setDamages(transformDamages(damageJsonModel.getDamages()));
+        damageWrapperModel.setDamageType(damageJsonModel.getType());
         damageWrapperModel.setDamagesCount(getMultipliable(damageJsonModel.getDamagesCount()));
         damageWrapperModel.setEnvDamage(Utils.intToDoubleShift(damageJsonModel.getEnvDamage()));
         damageWrapperModel.setEnvsAffected(tagResolver.getEnvSearchTags(damageJsonModel.getEnvsAffected()));
@@ -321,7 +328,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
-    public ProjectileModel transformProjectile(int id, ProjectileJsonModel projectileJsonModel) {
+    public ProjectileModel transformProjectile(EntityId id, ProjectileJsonModel projectileJsonModel) {
         if (projectileJsonModel == null) {
             return null;
         }
@@ -342,7 +349,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         buffModel.setPeriod(Utils.intToDoubleShift(buffJsonModel.getPeriod()));
         buffModel.setAffectedUnits(tagResolver.getUnitTags(buffJsonModel.getTargetsTags()));
         EntityInfoModel entityInfo = new EntityInfoModel();
-        int entityId = buffJsonModel.getResearch();
+        EntityId entityId = buffJsonModel.getResearch();
         entityInfo.setEntityName(localization.getResearchNames().get(entityId));
         entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), entityId));
         entityInfo.setEntityId(entityId);
@@ -465,10 +472,10 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 EnvTagModel envTag = new EnvTagModel();
                 envTag.setEnvId(tagId);
                 envTag.setEnvName(localization.getEnvSearchTagNames().get(tagId));
-                Map.Entry<Integer, EnvJsonModel> targetEnvEntry = envMap.entrySet().stream()
-                        .filter(envEntry -> envEntry.getValue().getSearchTags() != null)
-                        .filter(envEntry -> {
-                            List<Integer> searchTags = Utils.getPositiveBitIndices(envEntry.getValue().getSearchTags());
+                EntityId targetEnvId = envs.getIds().stream()
+                        .filter(envId -> envs.get(envId).getSearchTags() != null)
+                        .filter(envId -> {
+                            List<Integer> searchTags = Utils.getPositiveBitIndices(envs.get(envId).getSearchTags());
                             if (searchTags.size() != 1) {
                                 throw new IllegalStateException("Should be only 1 search tag for single env");
                             }
@@ -476,7 +483,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                         })
                         .findAny()
                         .orElseThrow();
-                envTag.setEnvImage(imageService.getImageName(Constants.EntityType.ENV.getName(), targetEnvEntry.getKey()));
+                envTag.setEnvImage(imageService.getImageName(Constants.EntityType.ENV.getName(), targetEnvId));
                 envTags.add(envTag);
             }
         }
@@ -505,7 +512,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         }
         ConstructionModel constructionModel = new ConstructionModel();
         EntityInfoModel entityInfoModel = new EntityInfoModel();
-        Integer entityId = buildingJsonModel.getId();
+        EntityId entityId = buildingJsonModel.getId();
         entityInfoModel.setEntityId(entityId);
         entityInfoModel.setEntityNation(nationResolver.getUnitNation(entityId));
         entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
@@ -532,7 +539,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
-    public UpgradeModel transformUpgrade(int id, UpgradeJsonModel upgradeJsonModel) {
+    public UpgradeModel transformUpgrade(EntityId id, UpgradeJsonModel upgradeJsonModel) {
         if (upgradeJsonModel == null) {
             return null;
         }
@@ -541,10 +548,11 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         upgradeModel.setParameters(transformParameters(upgradeJsonModel.getParameters()));
         int programId = upgradeJsonModel.getProgram();
         upgradeModel.setProgramId(programId);
-        upgradeModel.setProgramFile(upgradesScripts.getPath() + "/" + upgradesScripts.getList().get(programId).getFile());
+        String upgradesScriptsPath = upgradesScripts.getPath() != null ? upgradesScripts.getPath() : DEFAULT_UPGRADES_SCRIPTS_PATH;
+        upgradeModel.setProgramFile(upgradesScriptsPath + "/" + upgradesScripts.getList().get(programId));
 
         EntityInfoModel unitInfo = new EntityInfoModel();
-        Integer unitId = upgradeJsonModel.getUnit();
+        EntityId unitId = upgradeJsonModel.getUnit();
         if (unitId != null) {
             unitInfo.setEntityId(unitId);
             unitInfo.setEntityName(localization.getUnitNames().get(unitId));
@@ -565,7 +573,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 : new HashMap<>();
     }
 
-    private List<ResearchRequirementModel> researchesToRequirements(List<Integer> researches) {
+    private List<ResearchRequirementModel> researchesToRequirements(List<EntityId> researches) {
         return emptyIfNull(researches)
                 .stream()
                 .map(researchId -> {

@@ -1,6 +1,5 @@
 package com.wsunitstats.exporter.utils;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -9,7 +8,11 @@ public class Constants {
         // Utility class
     }
 
-    public static final Pattern LOCALIZATION_KEY_PATTERN = Pattern.compile("<\\*[a-zA-Z0-9/]+>");
+    /**
+     * Localization key; keys of entities include entity ids, which may be paths (e.g. "<*unitNameWarSelection/3/ae/asigaru-yari>"),
+     * keys of parts of multipart entries include the part index (e.g. "<*upgrade12#0>")
+     */
+    public static final Pattern LOCALIZATION_KEY_PATTERN = Pattern.compile("<\\*[a-zA-Z0-9/_.\\-]+(#[0-9]+)?>");
     public static final double TICK_TIME = 50d;
     public static final double SHIFT_VALUE_MULTIPLIER = 1000d;
     public static final double PROJECTILE_SPEED_VALUE_MULTIPLIER = 1_000_000d;
@@ -17,7 +20,11 @@ public class Constants {
     public static final double POPULATION_VALUE_MULTIPLIER = 10d;
     public static final int LONG_SIZE = 64;
     public static final int LIVESTOCK_LIMIT = 50;
-    public static final List<Integer> LIVESTOCK_IDS = List.of(62, 130); // fowl, goat
+    /** References to the livestock units, resolved by the unit provider */
+    public static final List<String> LIVESTOCK_UNITS = List.of(
+            "WarSelection/animals/goose", // domestic fowl
+            "WarSelection/animals/goat/female"
+    );
     public static final double INIT_HEALTH_MODIFIER = 1.5; // calculated by experiment
     public static final double BUILD_SPEED_MODIFIER = 0.238095; // calculated by experiment
     public static final int ACTIVE_RESOURCES = 3;
@@ -26,12 +33,18 @@ public class Constants {
     public static final double STORAGE_MULTIPLIER_MODIFIER = 100d / 65536d;
     public static final double STORAGE_MULTIPLIER_DEFAULT = 65536d;
     public static final int MOVEMENT_SPEED_MODIFIER = 16;
+    /** Typed armor multiplier of 1.0 in the game files */
+    public static final double TYPED_ARMOR_MAX = 65535d;
 
     private static final String UNDEF = "N/A";
 
     public static final String LOCALIZATION_MULTI_VALUE_DELIMITER_REGEX = "\\|";
     public static final String SLASH = "/";
-    public static final String LOCALIZATION_INDEX_DELIMITER = SLASH;
+    /**
+     * Separates a localization key from the index of a part of a multipart entry (e.g. "<*upgrade12#0>").
+     * The game uses "/" for that, which the exporter can't: "/" also separates segments of entity paths in keys.
+     */
+    public static final String LOCALIZATION_INDEX_DELIMITER = "#";
     public static final String FILE_PATH_DELIMITER = SLASH;
     public static final String CLOSING_ANGLE_BRACKET = ">";
 
@@ -40,11 +53,22 @@ public class Constants {
     public static final String NIL = "nil";
     public static final String JSON_EXTENSION = ".json";
 
-    public static final List<Integer> WALL_UNITS = Arrays.asList(
-            182, 183, 184, 185, 186, 187, 188, 189,
-            198, 199,
-            211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
-            232, 375
+    /** References to the wall units, resolved by the unit provider */
+    public static final List<String> WALL_UNITS = List.of(
+            "WarSelection/2/e/wall_big", "WarSelection/2/e/wall_medium", "WarSelection/2/e/wall_tower",
+            "WarSelection/2/e/wall_gate_close", "WarSelection/2/e/wall_gate_open",
+            "WarSelection/2/a/wall_big", "WarSelection/2/a/wall_medium", "WarSelection/2/a/wall_tower",
+            "WarSelection/2/a/wall_gate_close", "WarSelection/2/a/wall_gate_open",
+            "WarSelection/3/ew/wall_big", "WarSelection/3/ew/wall_medium", "WarSelection/3/ew/wall_tower",
+            "WarSelection/3/ew/wall_gate_close", "WarSelection/3/ew/wall_gate_open",
+            "WarSelection/3/ee/wall_big", "WarSelection/3/ee/wall_medium", "WarSelection/3/ee/wall_tower",
+            "WarSelection/3/ee/wall_gate_close", "WarSelection/3/ee/wall_gate_open",
+            "WarSelection/3/aw/wall_big", "WarSelection/3/aw/wall_medium", "WarSelection/3/aw/wall_tower",
+            "WarSelection/3/aw/wall_gate_close", "WarSelection/3/aw/wall_gate_open",
+            "WarSelection/3/ae/wall_big", "WarSelection/3/ae/wall_medium", "WarSelection/3/ae/wall_tower",
+            "WarSelection/3/ae/wall_gate_close", "WarSelection/3/ae/wall_gate_open",
+            "WarSelection/4/wall", // antitank hedgehog
+            "WarSelection/4/pl/wall" // dragon's teeth
     );
 
     public enum TagGroupName {
@@ -173,35 +197,27 @@ public class Constants {
     }
 
     public enum ResourceIcon {
-        FOOD(0, 579),
-        WOOD(1, 580),
-        METAL(2, 584),
-        GOLD(3, 581),
-        FUEL(4, 582);
+        FOOD(0, "WarSelection/atlases/resources#1-res_meat.png"),
+        WOOD(1, "WarSelection/atlases/resources#2-res_materials.png"),
+        METAL(2, "WarSelection/atlases/resources#6-res_metall.png"),
+        GOLD(3, "WarSelection/atlases/resources#3-res_gold.png"),
+        FUEL(4, "WarSelection/atlases/resources#4-res_oil.png");
 
         private final int gameId;
-        private final int imageId;
+        /** Interface image asset of the resource icon */
+        private final String asset;
 
-        ResourceIcon(int gameId, int imageId) {
+        ResourceIcon(int gameId, String asset) {
             this.gameId = gameId;
-            this.imageId = imageId;
+            this.asset = asset;
         }
 
         public int getGameId() {
             return gameId;
         }
 
-        public int getImageId() {
-            return imageId;
-        }
-
-        public static ResourceIcon getByGameId(int gameId) {
-            for (ResourceIcon resourceIconMappings : ResourceIcon.values()) {
-                if (resourceIconMappings.getGameId() == gameId) {
-                    return resourceIconMappings;
-                }
-            }
-            throw new IllegalArgumentException("Resource icon not found for gameId:" + gameId);
+        public String getAsset() {
+            return asset;
         }
     }
 
