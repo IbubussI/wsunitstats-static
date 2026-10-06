@@ -1,6 +1,7 @@
 package com.wsunitstats.exporter.utils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Constants {
@@ -49,6 +50,10 @@ public class Constants {
     public static final String CLOSING_ANGLE_BRACKET = ">";
 
     public static final String BASIC_DAMAGE_TYPE = "damageTypeBase";
+    /** Localization keys of damage types (weapon damage type, typed armor); unmapped types are exported as their number */
+    public static final Map<Integer, String> DAMAGE_TYPE_NAMES = Map.of(
+            1, "damageTypeRanged"
+    );
     public static final String GENERIC_UNIT_TAG = "genericUnitTag";
     public static final String NIL = "nil";
     public static final String JSON_EXTENSION = ".json";

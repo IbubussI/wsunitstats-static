@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    // some modules (chart.js internals, replay parser, modding tree) are kept in JS
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": false,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}

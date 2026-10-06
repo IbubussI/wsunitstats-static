@@ -1,0 +1,59 @@
+.resizeLine {
+  position: absolute;
+  height: 100%;
+  width: 6px;
+  top: 0;
+  right: -1px;
+  cursor: col-resize;
+
+  position: absolute;
+  overflow: hidden;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  -moz-box-pack: center;
+  justify-content: center;
+  -moz-box-align: center;
+  align-items: center;
+  max-width: 10px;
+  color: rgb(81, 81, 81);
+  touch-action: none;
+
+  &:hover {
+    color: #0AA1DD;
+
+    svg rect {
+      width: 3px;
+      rx: 1.5px;
+      x: 10.5px;
+    }
+  }
+
+  &:active {
+    color: #0AA1DD;
+
+    svg rect {
+      width: 3px;
+      rx: 1.5px;
+      x: 10.5px;
+    }
+  }
+
+  svg {
+    pointer-events: none;
+    color: inherit;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    fill: currentColor;
+    -webkit-flex-shrink: 0;
+    -ms-flex-negative: 0;
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+  }
+}

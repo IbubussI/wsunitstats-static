@@ -37,6 +37,7 @@ build/
 /entities_compare.json
 /files/
 /com.wsunitstats.ui/public/files/
+/com.wsunitstats.ui2/public/files/
 /com.wsunitstats.service/src/main/resources/static/
 /specialTaskResults.txt
 /logs/

@@ -320,7 +320,7 @@ public class ModelBuilderImpl implements ModelBuilder {
         return new TreeMap<>(typed).entrySet().stream()
                 .map(entry -> {
                     TypedArmorModel typedArmor = new TypedArmorModel();
-                    typedArmor.setType(entry.getKey());
+                    typedArmor.setType(Constants.DAMAGE_TYPE_NAMES.getOrDefault(entry.getKey(), String.valueOf(entry.getKey())));
                     typedArmor.setProbability((int) Math.round(entry.getValue() / Constants.TYPED_ARMOR_MAX * 100));
                     return typedArmor;
                 })
