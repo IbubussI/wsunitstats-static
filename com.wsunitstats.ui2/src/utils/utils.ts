@@ -137,6 +137,19 @@ export const localizeNation = (t: TFunction, nationName?: NationName) => {
 /** Returns true if the value should be displayed */
 export const isPresent = <T>(value: T | null | undefined): value is T => value != null && value !== '';
 
+/**
+ * Rounds the value like the exporter does (half up on its decimal representation, Java BigDecimal.valueOf).
+ */
+export const roundHalfUp = <T extends number | null | undefined>(value: T, places = 1): T => {
+  if (value == null) {
+    return value;
+  }
+  const abs = Math.abs(value);
+  // shift by the decimal exponent to round the decimal representation, not the binary one
+  const rounded = Number(Math.round(Number(`${abs}e${places}`)) + `e-${places}`);
+  return (Number.isFinite(rounded) ? Math.sign(value) * rounded : value) as T;
+};
+
 /** Appends a unit marker to the value, keeps empty values empty */
 export const withUnits = (value: number | string | null | undefined, units: string) =>
   isPresent(value) ? `${value}${units}` : undefined;

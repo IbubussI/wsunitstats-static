@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, styled, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useLoaderData, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import * as Constants from '@/utils/constants';
@@ -12,6 +12,7 @@ import { MultiSelect } from '@/components/common/MultiSelect';
 import { FormButton } from '@/components/common/misc';
 import type { FilterOption, NationFilterOption, UnitSelectorContext } from '@/types/game';
 import { EntitySelectorView } from './EntitySelectorView';
+import { FilterButtonGroup, FilterPanel } from './FilterPanel';
 
 const parseIds = (value: string | null) =>
   value?.split(',').map(Number).filter(id => !isNaN(id));
@@ -59,22 +60,6 @@ export const UnitSelectorPage = () => {
   );
 };
 
-const FilterPanel = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: theme.spacing(1),
-  alignItems: 'stretch',
-  padding: theme.spacing(2, 1, 3, 1)
-}));
-
-const FilterButtonGroup = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  width: '300px',
-  height: '56px',
-  gap: theme.spacing(1),
-}));
-
 const isSameOption = (option: { gameId: number }, value: { gameId: number }) => option.gameId === value.gameId;
 
 const UnitFilters = ({ filterOptions }: { filterOptions: UnitSelectorContext }) => {
@@ -97,7 +82,8 @@ const UnitFilters = ({ filterOptions }: { filterOptions: UnitSelectorContext }) 
         options={unitTags.options}
         onChange={unitTags.setValues}
         getOptionLabel={(option) => t(option.name)}
-        isOptionEqualToValue={isSameOption} />
+        isOptionEqualToValue={isSameOption}
+        getOptionKey={(option) => option.gameId} />
       <MultiSelect<FilterOption>
         sx={{ width: '350px' }}
         label={t('filtersSearchTags')}
@@ -105,7 +91,8 @@ const UnitFilters = ({ filterOptions }: { filterOptions: UnitSelectorContext }) 
         options={searchTags.options}
         onChange={searchTags.setValues}
         getOptionLabel={(option) => t(option.name)}
-        isOptionEqualToValue={isSameOption} />
+        isOptionEqualToValue={isSameOption}
+        getOptionKey={(option) => option.gameId} />
       <MultiSelect<NationFilterOption>
         sx={{ width: '350px' }}
         label={t('filtersNations')}
@@ -113,7 +100,8 @@ const UnitFilters = ({ filterOptions }: { filterOptions: UnitSelectorContext }) 
         options={nations.options}
         onChange={nations.setValues}
         getOptionLabel={(option) => localizeNation(t, option.name)}
-        isOptionEqualToValue={isSameOption} />
+        isOptionEqualToValue={isSameOption}
+        getOptionKey={(option) => option.gameId} />
       <FilterButtonGroup>
         <FormButton
           onClick={() => sync(new Map<string, unknown[]>([

@@ -9,6 +9,7 @@ export const UNIT_DATA_PATH = FILES_PATH + '/units';
 export const RESEARCH_DATA_PATH = FILES_PATH + '/researches';
 export const CONTEXT_DATA_PATH = FILES_PATH + '/context.json';
 export const UNIT_SELECTOR_DATA_PATH = FILES_PATH + '/units/unitSelector.json';
+export const RESEARCH_SELECTOR_DATA_PATH = FILES_PATH + '/researches/researchSelector.json';
 export const DOCS_DATA_ROOT_PATH = FILES_PATH + '/docs';
 export const DOCS_DATA_TREE_PATH = DOCS_DATA_ROOT_PATH + '/tree';
 export const DOCS_DATA_TREE_ROOT_FILE_PATH = DOCS_DATA_TREE_PATH + '/home.json';
@@ -34,6 +35,7 @@ export const UNIT_WEAPONS_TAB = 'weapons';
 export const UNIT_BUILD_TAB = 'build';
 export const UNIT_GATHER_TAB = 'gather';
 export const UNIT_HEAL_TAB = 'heal';
+export const UNIT_AURA_TAB = 'aura';
 export const UNIT_CONSTRUCTION_TAB = 'construction';
 export const UNIT_AIRPLANE_TAB = 'airplane';
 export const UNIT_SUBMARINE_TAB = 'submarine';
@@ -46,6 +48,7 @@ export const UNIT_TABS = [
   UNIT_CONSTRUCTION_TAB,
   UNIT_GATHER_TAB,
   UNIT_HEAL_TAB,
+  UNIT_AURA_TAB,
   UNIT_AIRPLANE_TAB,
   UNIT_SUBMARINE_TAB
 ];
@@ -58,6 +61,7 @@ export const PARAM_RESEARCH_IDS = 'researchIds';
 export const PARAM_NATIONS = 'nations';
 export const PARAM_UNIT_TAGS = 'unitTags';
 export const PARAM_SEARCH_TAGS = 'searchTags';
+export const PARAM_RESEARCH_TYPES = 'researchTypes';
 export const PARAM_PATH = 'path';
 
 export const DEFAULT_LOCALE_OPTION = 'en';
@@ -93,3 +97,4 @@ export const ABILITY_TYPE_CREATE_UNIT = 0;
 export const ABILITY_TYPE_RESEARCH = 1;
 export const ABILITY_TYPE_TRANSFORM = 2;
 export const ABILITY_TYPE_CREATE_ENV = 3;
+export const ABILITY_TYPE_DAMAGE = 6;

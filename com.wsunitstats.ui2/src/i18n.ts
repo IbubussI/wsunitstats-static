@@ -12,6 +12,8 @@ i18n.use(Backend)
     ns: ['files', 'static'],
     defaultNS: 'files',
     fallbackNS: 'static',
+    // react escapes rendered values itself
+    interpolation: { escapeValue: false },
     parseMissingKeyHandler: (key) => {
       // game localization token that is not found is rendered as empty string
       LOCALIZATION_REGEX.lastIndex = 0;

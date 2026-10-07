@@ -6,6 +6,7 @@ import com.wsunitstats.exporter.entity.EntityReferences;
 import com.wsunitstats.exporter.model.exported.ResearchModel;
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
+import com.wsunitstats.exporter.model.exported.submodel.AuraModel;
 import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
 import com.wsunitstats.exporter.model.exported.submodel.ConstructionModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
@@ -27,6 +28,7 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.DeathabilityJsonMod
 import com.wsunitstats.exporter.model.json.gameplay.submodel.GatherJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.MovementJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TurretJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitAuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AirplaneJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.researches.ResearchJsonModel;
@@ -100,6 +102,8 @@ public class ModelBuilderImpl implements ModelBuilder {
     private List<String> unitResearches;
     @Value("${researches.buffResearches}")
     private List<String> buffResearches;
+    @Value("${researches.auraResearches}")
+    private List<String> auraResearches;
     @Value("${researches.wonderTransitionResearches}")
     private List<String> wonderTransitionResearches;
 
@@ -116,6 +120,7 @@ public class ModelBuilderImpl implements ModelBuilder {
         researchTypes.put(ResearchType.COMBAT, EntityReferences.resolveAll(researches, combatResearches));
         researchTypes.put(ResearchType.UNIT, EntityReferences.resolveAll(researches, unitResearches));
         researchTypes.put(ResearchType.BUFF, EntityReferences.resolveAll(researches, buffResearches));
+        researchTypes.put(ResearchType.AURA, EntityReferences.resolveAll(researches, auraResearches));
         researchTypes.put(ResearchType.WONDER_TRANSITION, EntityReferences.resolveAll(researches, wonderTransitionResearches));
         livestockUnits = EntityReferences.resolveAll(fileContentService.getUnits(), Constants.LIVESTOCK_UNITS);
     }
@@ -149,6 +154,7 @@ public class ModelBuilderImpl implements ModelBuilder {
             unit.setControllable(Utils.getInvertedBoolean(unitJsonModel.getControllable()));
             unit.setParentMustIdle(unitJsonModel.getParentMustIdle());
             unit.setHeal(transformingService.transformHeal(unitJsonModel.getHeal()));
+            unit.setAura(getAura(unitJsonModel.getAura(), gameplayModel));
             unit.setSize(Utils.intToDoubleShift(unitJsonModel.getSize()));
             unit.setSupply(transformingService.transformSupply(unitJsonModel.getSupply()));
             unit.setLifetime(Utils.intToDoubleShift(unitJsonModel.getLifeTime()));
@@ -161,7 +167,7 @@ public class ModelBuilderImpl implements ModelBuilder {
 
             AbilityWrapperJsonModel ability = unitJsonModel.getAbility();
             if (ability != null) {
-                unit.setAbilities(abilityTransformingService.transformAbilities(unitJsonModel));
+                unit.setAbilities(abilityTransformingService.transformAbilities(id, unitJsonModel));
             }
 
             DeathabilityJsonModel deathability = unitJsonModel.getDeathability();
@@ -291,6 +297,13 @@ public class ModelBuilderImpl implements ModelBuilder {
         return unitResearchesMap;
     }
 
+    private AuraModel getAura(UnitAuraJsonModel unitAura, GameplayFileJsonModel gameplayJsonModel) {
+        if (unitAura == null || unitAura.getAura() == null) {
+            return null;
+        }
+        return transformingService.transformAura(unitAura, gameplayJsonModel.getAuras().get(unitAura.getAura()));
+    }
+
     private BuildingModel getBuildModel(UnitJsonModel unitJsonModel, GameplayFileJsonModel gameplayJsonModel, EntityId unitId) {
         List<BuildJsonModel> buildJsonModels = gameplayJsonModel.getBuild();
         int buildId = IntStream.range(0, buildJsonModels.size())
@@ -332,9 +345,8 @@ public class ModelBuilderImpl implements ModelBuilder {
         if (entries == null) {
             return null;
         }
-        int probabilitiesSum = Utils.sum(entries.stream().map(ArmorJsonModel.Entry::getProbability).toList());
         return entries.stream()
-                .map(entry -> transformingService.transformArmor(entry, probabilitiesSum))
+                .map(transformingService::transformArmor)
                 .toList();
     }
 

@@ -48,6 +48,10 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String steamWSAppId;
     @Value("${warselection.root.folder}")
     private String wsRootFolderPath;
+    @Value("${warselection.engine.version.file}")
+    private String wsEngineVersionFilePath;
+    @Value("${warselection.main.file}")
+    private String wsMainFilePath;
     @Value("${warselection.gameplay.file}")
     private String wsGameplayFilePath;
     @Value("${warselection.visual.file}")
@@ -56,6 +60,8 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String wsLocalizationFolderPath;
     @Value("${warselection.interfaces.session.init.file}")
     private String wsInterfacesSessionInitFilePath;
+    @Value("${warselection.interfaces.session.start.file}")
+    private String wsInterfacesSessionStartFilePath;
     @Value("${warselection.on.project.load.file}")
     private String wsOnProjectLoadFilePath;
     @Value("${warselection.cultures.file}")
@@ -93,10 +99,13 @@ public class FilePathResolverImpl implements FilePathResolver {
         validateFile(wsRootAbsFolderPath);
         result.setRootFolderPath(wsRootAbsFolderPath);
 
+        result.setEngineVersionFilePath(resolveRequired(gameDirPath, wsEngineVersionFilePath));
+        result.setMainFilePath(resolveRequired(wsRootAbsFolderPath, wsMainFilePath));
         result.setGameplayFilePath(resolveRequired(wsRootAbsFolderPath, wsGameplayFilePath));
         result.setVisualFilePath(resolveRequired(wsRootAbsFolderPath, wsVisualFilePath));
         result.setLocalizationFolderPath(resolveRequired(wsRootAbsFolderPath, wsLocalizationFolderPath));
         result.setSessionInitFilePath(resolveRequired(wsRootAbsFolderPath, wsInterfacesSessionInitFilePath));
+        result.setSessionStartFilePath(resolveRequired(wsRootAbsFolderPath, wsInterfacesSessionStartFilePath));
         result.setOnProjectLoadFilePath(resolveRequired(wsRootAbsFolderPath, wsOnProjectLoadFilePath));
         result.setCulturesFilePath(resolveRequired(wsRootAbsFolderPath, wsCulturesFilePath));
         result.setEnvNamesFilePath(resolveRequired(wsRootAbsFolderPath, wsEnvNamesFilePath));

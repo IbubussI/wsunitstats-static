@@ -1,11 +1,12 @@
 import { Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import * as Constants from '@/utils/constants';
 import { getAbilityRoute, localizeNation, withUnits } from '@/utils/utils';
 import { GridGroup, ResizableGrid } from '@/components/layout/ResizableGrid';
 import { Frame, FrameSection } from '@/components/layout/Frame';
 import { StatTable } from '@/components/layout/StatTable';
-import { CostTable } from '@/components/layout/KeyValueTable';
+import { CostTable, DamageTable } from '@/components/layout/KeyValueTable';
 import { RequirementsButton } from '@/components/layout/RequirementsButton';
 import { EntityInfo } from '@/components/common/EntityInfo';
 import { HeaderChip } from '@/components/common/HeaderChip';
@@ -16,6 +17,7 @@ import {
   type AbilityContainer,
   type Unit
 } from '@/types/game';
+import { BuffButton, DamageAreaValue, EnvButton } from './damage';
 
 const MIN_WIDTH = 280;
 
@@ -23,7 +25,8 @@ const ABILITY_NAMES: Record<number, string> = {
   [Constants.ABILITY_TYPE_CREATE_UNIT]: 'abilityCreateUnit',
   [Constants.ABILITY_TYPE_RESEARCH]: 'abilityResearch',
   [Constants.ABILITY_TYPE_TRANSFORM]: 'abilityTransform',
-  [Constants.ABILITY_TYPE_CREATE_ENV]: 'abilityCreateEnv'
+  [Constants.ABILITY_TYPE_CREATE_ENV]: 'abilityCreateEnv',
+  [Constants.ABILITY_TYPE_DAMAGE]: 'abilityDamage'
 };
 const COLUMN_WIDTH = 480;
 
@@ -35,17 +38,26 @@ const SIMPLE_ABILITY_TYPES = [
   Constants.ABILITY_TYPE_CREATE_ENV
 ];
 
+/** On-death abilities also include damage (e.g. explosion of a bomb) */
+const DEATH_ABILITY_TYPES = [...SIMPLE_ABILITY_TYPES, Constants.ABILITY_TYPE_DAMAGE];
+
 /**
- * Work and on-death abilities that create units/envs, research or transform the unit.
- * Other abilities (on action, zone events, damage) are not shown yet
+ * Work abilities that create units/envs, research or transform the unit, and on-death abilities.
+ * Other abilities (on action, zone events) are not shown yet
  */
-export const getSimpleAbilities = (unit: Unit) => (unit.abilities ?? []).filter(container =>
-  (container.containerType === CONTAINER_TYPE_WORK || container.containerType === CONTAINER_TYPE_DEATH)
-  && container.ability && SIMPLE_ABILITY_TYPES.includes(container.ability.abilityType));
+export const getShownAbilities = (unit: Unit) => (unit.abilities ?? []).filter(container => {
+  const abilityType = container.ability?.abilityType;
+  if (abilityType == null) {
+    return false;
+  }
+  return container.containerType === CONTAINER_TYPE_WORK
+    ? SIMPLE_ABILITY_TYPES.includes(abilityType)
+    : container.containerType === CONTAINER_TYPE_DEATH && DEATH_ABILITY_TYPES.includes(abilityType);
+});
 
 export const AbilitiesTab = ({ unit }: { unit: Unit }) => {
   const { t } = useTranslation();
-  const abilities = getSimpleAbilities(unit);
+  const abilities = getShownAbilities(unit);
   const workAbilities = abilities.filter(container => container.containerType === CONTAINER_TYPE_WORK);
   const deathAbilities = abilities.filter(container => container.containerType === CONTAINER_TYPE_DEATH);
 
@@ -57,10 +69,44 @@ export const AbilitiesTab = ({ unit }: { unit: Unit }) => {
           {workAbilities.map((container, index) => <AbilityTable key={index} container={container} />)}
         </GridGroup>
         <GridGroup heading={deathAbilities[0]?.containerName} columnWidth={COLUMN_WIDTH}>
-          {deathAbilities.map((container, index) => <AbilityTable key={index} container={container} />)}
+          {deathAbilities.map((container, index) => container.ability?.abilityType === Constants.ABILITY_TYPE_DAMAGE
+            ? <DamageAbilityTable key={index} ability={container.ability} />
+            : <AbilityTable key={index} container={container} />)}
         </GridGroup>
       </ResizableGrid>
     </>
+  );
+};
+
+const abilityLabel = (ability: Ability, t: TFunction, disabled?: boolean) =>
+  <HeaderChip
+    id={ability.abilityId}
+    tooltip={t('abilitiesTooltipID', { value: ability.abilityId })}
+    label={t(ABILITY_NAMES[ability.abilityType])}
+    disabled={disabled} />;
+
+/** Damage to units and envs around, like a weapon */
+const DamageAbilityTable = ({ ability }: { ability: Ability }) => {
+  const { t } = useTranslation();
+  const damage = ability.damage!;
+  const rows = [
+    { label: t('damageAreaCell'), value: <DamageAreaValue damage={damage} /> },
+    { label: t('damageFriendlyCell'), value: t(String(!!damage.damageFriendly)) },
+  ];
+
+  return (
+    <Frame labelShift='80px' label={abilityLabel(ability, t)}>
+      <FrameSection sx={{ paddingTop: '14px' }}>
+        <DamageTable damages={damage.damages} attacksNumber={damage.damagesCount} />
+        <Stack sx={{ width: '100%', gap: '5px', padding: '5px', boxSizing: 'border-box' }}>
+          <BuffButton buff={damage.buff} />
+          <EnvButton damage={damage} />
+        </Stack>
+      </FrameSection>
+      <FrameSection sx={{ overflow: 'auto', width: '100%' }}>
+        <StatTable rows={rows} labelWidth='48%' minWidth={MIN_WIDTH} />
+      </FrameSection>
+    </Frame>
   );
 };
 
@@ -88,16 +134,11 @@ const AbilityTable = ({ container }: { container: AbilityContainer }) => {
     { label: t('abilitiesCountCell'), value: ability.count },
     { label: t('abilitiesDurationCell'), value: seconds(ability.duration) },
     { label: t('abilitiesLifeTimeCell'), value: seconds(ability.lifeTime) },
-    { label: t('workAbilityWorkIdCell'), value: work?.workId },
   ];
 
   const disabled = work?.enabled === false;
   const stats = <StatTable rows={rows} labelWidth='33%' minWidth={MIN_WIDTH} />;
-  const label = <HeaderChip
-    id={ability.abilityId}
-    tooltip={t('abilitiesTooltipID', { value: ability.abilityId })}
-    label={t(ABILITY_NAMES[ability.abilityType])}
-    disabled={disabled} />;
+  const label = abilityLabel(ability, t, disabled);
 
   // ability without cost (e.g. on death) - single column
   if (!work?.cost.length) {

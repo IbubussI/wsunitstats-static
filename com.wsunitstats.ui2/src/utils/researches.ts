@@ -1,283 +1,377 @@
-import * as Constants from '@/utils/constants';
-import { CONTAINER_TYPE_ON_ACTION, CONTAINER_TYPE_WORK, type Unit, type Weapon, type Work } from '@/types/game';
+import {
+  CONTAINER_TYPE_ICON,
+  CONTAINER_TYPE_WORK,
+  type Resource,
+  type Unit,
+  type Weapon,
+  type Work
+} from '@/types/game';
 
-// Replicates game upgrade scripts (gameplay/upgrades/*.lua) to show unit stats with applied researches
+// Replicates the game upgrade scripts (Projects/WarSelection/scripts/gameplay/upgrades/*.lua) to show unit stats
+// with applied researches. The scripts work with game values, so each exported value is converted back to the game
+// value (the exporter keeps enough precision for that), changed the same way as the script does and converted back.
 
 type Params = Record<string, string>;
 type UpgradeScript = (unit: Unit, params: Params) => void;
 
-const DAMAGE_AREA_TYPE: Record<string, string> = {
-  '0': 'damageAreaSingle',
-  '1': 'damageAreaArea',
-  '2': 'damageAreaFrontal'
-};
+// exported value = game value / scale (see the exporter transformations)
+const SHIFT = 1000; // distances, times, damage, armor thickness, bag size, view range, resources
+const SPEED_SCALE = 16; // movement speed
+const TICK_SCALE = 50; // per tick values shown per second: gather speed, regeneration
+const SPREAD_SCALE = 10; // weapon spread, %
+const ANGLE_SCALE = 4096 * 1000; // rotation speed
+const STORAGE_SCALE = 65536 / 100; // storage multiplier, %
+const BUILD_SPEED_SCALE = SHIFT / 0.238095; // construction speed, %/sec (see the exporter BUILD_SPEED_MODIFIER)
 
-function tonumber(value: string | undefined, defaultValue: number): number;
-function tonumber(value: string | undefined, defaultValue: null): number | null;
-function tonumber(value: string | undefined, defaultValue: number | null) {
+const toGame = (value: number, scale: number) => Math.round(value * scale);
+const fromGame = (value: number, scale: number) => value / scale;
+/** Applies a change to the exported value in game units */
+const change = (value: number, scale: number, changer: (gameValue: number) => number) =>
+  fromGame(changer(toGame(value, scale)), scale);
+/** Lua "value * mult // 100" */
+const multiply = (value: number, mult: number) => Math.floor(value * mult / 100);
+
+/** Lua tonumber(getParameter(name)) */
+const tonumber = (value: string | undefined) => {
   if (value == null) {
-    return defaultValue;
+    return undefined;
   }
   const num = Number(value);
-  return isNaN(num) ? defaultValue : num;
-}
+  return isNaN(num) ? undefined : num;
+};
 
-function tobool(value: string | undefined, defaultValue: boolean) {
-  const num = Number(value);
-  if (value != null && !isNaN(num)) {
-    return num !== 0;
+/** CommonScripts/functions/typesConversation.lua toBool for a string parameter */
+const tobool = (value: string | undefined, defaultValue: boolean) => {
+  if (value == null) {
+    return defaultValue;
   }
   if (value === 'true') {
     return true;
   }
-  if (value === 'false') {
-    return false;
-  }
-  return defaultValue;
-}
+  const num = tonumber(value);
+  return num != null && num !== 0;
+};
 
-function processTurretsAndWeapons(unit: Unit, turretId: number | null, weaponId: number | null, weaponConsumer: (weapon: Weapon) => void) {
+const required = <T>(value: T | undefined | null, message: string): T => {
+  if (value == null) {
+    throw new Error(message);
+  }
+  return value;
+};
+
+/**
+ * Weapons selected by "turret" and "weapon" parameters: no turret - unit weapons, turret < 0 - weapons of all turrets;
+ * no weapon - all weapons
+ */
+function forEachWeapon(unit: Unit, params: Params, consumer: (weapon: Weapon) => void) {
+  const weaponId = tonumber(params.weapon);
+  const turretId = tonumber(params.turret);
   const processWeapons = (weapons: Weapon[] = []) => {
-    if (weaponId === null) {
-      weapons.forEach(weaponConsumer);
+    if (weaponId == null) {
+      weapons.forEach(consumer);
     } else {
-      weaponConsumer(weapons[weaponId]);
+      consumer(required(weapons.find(weapon => weapon.weaponId === weaponId), `No weapon ${weaponId}`));
     }
   };
 
-  if (turretId === null) {
+  if (turretId == null) {
     processWeapons(unit.weapons);
   } else if (turretId < 0) {
     unit.turrets?.forEach(turret => processWeapons(turret.weapons));
   } else {
-    processWeapons(unit.turrets?.[turretId].weapons);
+    processWeapons(required(unit.turrets?.find(turret => turret.turretId === turretId), `No turret ${turretId}`).weapons);
   }
 }
 
-function collectWorks(unit: Unit) {
-  const works: Record<number, Work> = {};
-  for (const container of unit.abilities ?? []) {
-    if (container.containerType === CONTAINER_TYPE_WORK && container.work) {
-      works[container.work.workId] = container.work;
-    }
-  }
-  return works;
+function getWorks(unit: Unit) {
+  return (unit.abilities ?? [])
+    .filter(container => container.containerType === CONTAINER_TYPE_WORK && container.work)
+    .map(container => container.work as Work);
 }
 
-function processWorks(unit: Unit, params: Params, workConsumer: (work: Work) => void) {
-  const works = collectWorks(unit);
-  const workIds = [tonumber(params.work, null), tonumber(params.work2, null), tonumber(params.work3, null)];
-  if (workIds[0] === null) {
-    Object.values(works).forEach(workConsumer);
-  } else {
-    // work2 is taken only if work is set, work3 - only if work2 is set
-    for (const workId of workIds) {
-      if (workId === null) {
-        break;
-      }
-      workConsumer(works[workId]);
+function getWork(unit: Unit, workId: number | undefined) {
+  return required(getWorks(unit).find(work => work.workId === workId), `No work ${workId}`);
+}
+
+/** "work" parameter, then "work2" if "work" is set, then "work3" if "work2" is set; no "work" - all works */
+function forEachWork(unit: Unit, params: Params, consumer: (work: Work) => void) {
+  if (params.work == null) {
+    getWorks(unit).forEach(consumer);
+    return;
+  }
+  consumer(getWork(unit, tonumber(params.work)));
+  if (params.work2 != null) {
+    consumer(getWork(unit, tonumber(params.work2)));
+    if (params.work3 != null) {
+      consumer(getWork(unit, tonumber(params.work3)));
     }
   }
 }
 
 // -------------------------------- SCRIPTS --------------------------------
 
+// unit/moveSpeed.lua
 const moveSpeed: UpgradeScript = (unit, params) => {
-  if (!unit.movement) {
-    return;
-  }
-  // in engine move-speed UI value represented by internal num divided by 16
-  const add = tonumber(params.add, 0) / 16;
-  const mult = tonumber(params.mult, 100);
-  const addR = tonumber(params.addRotation, 0);
-  const multR = tonumber(params.multRotation, 100);
   const movement = unit.movement;
-  movement.speed = (movement.speed ?? 0) * Math.floor(mult / 100) + add;
-  movement.rotationSpeed = (movement.rotationSpeed ?? 0) * Math.floor(multR / 100) + addR;
-};
-
-const gatherSpeedAdd: UpgradeScript = (unit, params) => {
-  const gather = unit.gather?.[tonumber(params.gather, 0)];
-  if (gather) {
-    const add = tonumber(params.add, 0);
-    gather.perSecond = Number(((gather.perSecond ?? 0) + add / Constants.TICK_RATE).toFixed(1));
-  }
-};
-
-const setDamageArea: UpgradeScript = (unit, params) => {
-  const area = DAMAGE_AREA_TYPE[params.area] ?? 'N/A';
-  processTurretsAndWeapons(unit, tonumber(params.turret, null), tonumber(params.weapon, null), (weapon) => {
-    weapon.damage.areaType = area;
-  });
-};
-
-const spreadMult: UpgradeScript = (unit, params) => {
-  const mult = tonumber(params.mult, 100);
-  processTurretsAndWeapons(unit, tonumber(params.turret, null), tonumber(params.weapon, null), (weapon) => {
-    weapon.spread = Math.floor((weapon.spread ?? 0) * mult / 100);
-  });
-};
-
-const armorAddSize: UpgradeScript = (unit, params) => {
-  const armorList = unit.armorZonal;
-  if (!armorList) {
+  if (!movement) {
     return;
   }
-  const addVal = tonumber(params.add, 0);
-  const add = (armorId: number) => {
-    const armor = armorList[armorId];
-    if (armorList.length === 2 && addVal === 100) {
-      // strange case for stone units: n1/100%, n2/0%, armor=1,add=100 => n1/50%, n2/50%
-      armorList[0].probability = 50;
-      armor.probability = 50;
-    } else {
-      armor.probability = armor.probability + addVal;
+  const add = tonumber(params.add) ?? 0;
+  const mult = tonumber(params.mult) ?? 100;
+  const addR = tonumber(params.addRotation) ?? 0;
+  const multR = tonumber(params.multRotation) ?? 100;
+
+  const changeSpeed = (speed: number) => change(speed, SPEED_SCALE, (value) => multiply(value, mult) + add);
+  movement.speed = changeSpeed(movement.speed ?? 0);
+  // reverse speed is changed only for units that can move backwards
+  if (movement.speedReverse) {
+    movement.speedReverse = changeSpeed(movement.speedReverse);
+  }
+  movement.rotationSpeed = change(movement.rotationSpeed ?? 0, ANGLE_SCALE, (value) => multiply(value, multR) + addR);
+  // agro speed is changed as well, but it is not exported
+};
+
+// unit/gather/speedAdd.lua
+const gatherSpeedAdd: UpgradeScript = (unit, params) => {
+  const gatherId = tonumber(params.gather);
+  const gather = required(unit.gather?.find(gather => gather.gatherId === gatherId), `No gather ${gatherId}`);
+  const add = required(tonumber(params.add), 'No add parameter');
+  gather.perSecond = change(gather.perSecond ?? 0, TICK_SCALE, (value) => value + add);
+};
+
+// unit/gather/bagSizeAdd.lua
+const gatherBagSizeAdd: UpgradeScript = (unit, params) => {
+  const add = required(tonumber(params.add), 'No add parameter');
+  const gatherId = tonumber(params.gather);
+  const gathers = params.gather == null
+    ? unit.gather ?? []
+    : [required(unit.gather?.find(gather => gather.gatherId === gatherId), `No gather ${gatherId}`)];
+  for (const gather of gathers) {
+    gather.bagSize = change(gather.bagSize ?? 0, SHIFT, (value) => value + add);
+  }
+};
+
+const DAMAGE_AREA_TYPES: Record<string, string> = {
+  '0': 'damageAreaSingle',
+  '1': 'damageAreaArea',
+  '2': 'damageAreaFrontal'
+};
+
+// unit/weapon/setDamageArea.lua
+const setDamageArea: UpgradeScript = (unit, params) => {
+  const area = required(params.area, 'No area parameter');
+  // the same names as the exporter gives
+  forEachWeapon(unit, params, (weapon) => {
+    weapon.damage.areaType = DAMAGE_AREA_TYPES[area] ?? 'N/A';
+  });
+};
+
+// unit/weapon/spreadMult.lua
+const spreadMult: UpgradeScript = (unit, params) => {
+  const mult = required(tonumber(params.mult), 'No mult parameter');
+  // the program is also applied by auras and buffs, so a unit without attack is a usual case
+  if (!unit.weapons && !unit.turrets) {
+    return;
+  }
+  forEachWeapon(unit, params, (weapon) => {
+    // no spread (melee weapon) is zero spread in the game, it stays zero
+    if (weapon.spread != null) {
+      weapon.spread = change(weapon.spread, SPREAD_SCALE, (value) => multiply(value, mult));
     }
+  });
+};
+
+// unit/armor/addSize.lua; probabilities of the armor zones are weights (see toDisplayPrecision)
+const armorAddSize: UpgradeScript = (unit, params) => {
+  const armorList = unit.armorZonal ?? [];
+  const add = required(tonumber(params.add), 'No add parameter');
+  const addTo = (armorId: number | undefined) => {
+    const armor = required(armorList[armorId ?? -1], `No armor ${armorId}`);
+    armor.probability = armor.probability + add;
   };
 
-  for (const armorId of [tonumber(params.armor, null), tonumber(params.armor2, null), tonumber(params.armor3, null)]) {
-    if (armorId === null) {
-      break;
+  addTo(tonumber(params.armor));
+  if (params.armor2 != null) {
+    addTo(tonumber(params.armor2));
+    if (params.armor3 != null) {
+      addTo(tonumber(params.armor3));
     }
-    add(armorId);
   }
 };
 
+// unit/armor/addThickness.lua
 const armorAddThickness: UpgradeScript = (unit, params) => {
   const armorList = unit.armorZonal ?? [];
-  const mods = [
-    { armor: tonumber(params.armor, 0), add: tonumber(params.add, 0), mult: tonumber(params.mult, 100) },
-    { armor: tonumber(params.armor2, null), add: tonumber(params.add2, 0), mult: tonumber(params.mult2, 100) },
-    { armor: tonumber(params.armor3, null), add: tonumber(params.add3, 0), mult: tonumber(params.mult3, 100) },
-    { armor: tonumber(params.armor4, null), add: tonumber(params.add4, 0), mult: tonumber(params.mult4, 100) }
-  ];
-  for (let i = 0; i < Math.min(mods.length, armorList.length); i++) {
-    const { armor: armorId, add, mult } = mods[i];
-    if (armorId === null) {
-      break;
+  const size = armorList.length;
+  const mod = (armorId: string, add: string, mult: string) => {
+    const armor = required(armorList[tonumber(armorId) ?? -1], `No armor ${armorId}`);
+    armor.value = change(armor.value, SHIFT, (value) => multiply(value, tonumber(mult) ?? 100) + (tonumber(add) ?? 0));
+  };
+
+  if (size > 0) {
+    mod(params.armor, params.add, params.mult);
+    if (size > 1 && params.armor2 != null) {
+      mod(params.armor2, params.add2, params.mult2);
+      if (size > 2 && params.armor3 != null) {
+        mod(params.armor3, params.add3, params.mult3);
+        if (size > 3 && params.armor4 != null) {
+          mod(params.armor4, params.add4, params.mult4);
+        }
+      }
     }
-    const armor = armorList[armorId];
-    armor.value = Math.floor(armor.value * mult / 100) + add / Constants.ENGINE_FLOAT_SHIFT;
   }
 };
 
+// unit/weapon/rechargePeriodDec.lua
 const rechargePeriodDec: UpgradeScript = (unit, params) => {
-  const dec = tonumber(params.dec, 0);
-  processTurretsAndWeapons(unit, tonumber(params.turret, null), tonumber(params.weapon, null), (weapon) => {
-    weapon.rechargePeriod = Number((weapon.rechargePeriod - dec / Constants.ENGINE_FLOAT_SHIFT).toFixed(1));
+  const dec = tonumber(params.dec) ?? 0;
+  const mult = tonumber(params.mult) ?? 100;
+  forEachWeapon(unit, params, (weapon) => {
+    weapon.rechargePeriod = change(weapon.rechargePeriod, SHIFT, (value) => multiply(value, mult) - dec);
   });
 };
 
+// unit/weapon/maxDistanceAdd.lua
 const maxDistanceAdd: UpgradeScript = (unit, params) => {
-  const add = tonumber(params.add, 0) / Constants.ENGINE_FLOAT_SHIFT;
-  processTurretsAndWeapons(unit, tonumber(params.turret, null), tonumber(params.weapon, null), (weapon) => {
-    weapon.distance.max = (weapon.distance.max ?? 0) + add;
-    weapon.distance.stop = (weapon.distance.stop ?? 0) + add;
+  const add = required(tonumber(params.add), 'No add parameter');
+  forEachWeapon(unit, params, (weapon) => {
+    weapon.distance.max = change(weapon.distance.max ?? 0, SHIFT, (value) => value + add);
+    weapon.distance.stop = change(weapon.distance.stop ?? 0, SHIFT, (value) => value + add);
   });
 };
 
+// unit/work/enable.lua
 const workEnable: UpgradeScript = (unit, params) => {
-  const work = collectWorks(unit)[tonumber(params.id, 0)];
-  if (work) {
-    work.enabled = tobool(params.enable, true);
-  }
+  const id = required(tonumber(params.id), 'No id parameter');
+  getWork(unit, id).enabled = tobool(params.enable, true);
 };
 
+// unit/regeneration.lua
 const regeneration: UpgradeScript = (unit, params) => {
-  const add = tonumber(params.add, 0);
-  unit.regenerationSpeed = (unit.regenerationSpeed ?? 0) + add / Constants.ENGINE_FLOAT_SHIFT;
+  const set = tonumber(params.set);
+  unit.regenerationSpeed = set != null
+    ? fromGame(set, TICK_SCALE)
+    : change(unit.regenerationSpeed ?? 0, TICK_SCALE, (value) => value + (tonumber(params.add) ?? 0));
 };
 
+// unit/buildingSpeedMult.lua
 const buildingSpeedMult: UpgradeScript = (unit, params) => {
-  const mult = tonumber(params.mult, 100);
-  const buildingId = tonumber(params.building, null);
-  const constructions = buildingId === null ? unit.construction ?? [] : [unit.construction?.[buildingId]];
+  const mult = required(tonumber(params.mult), 'No mult parameter');
+  const buildingId = tonumber(params.building);
+  const constructions = params.building == null
+    ? unit.construction ?? []
+    : [required(unit.construction?.find(construction => construction.constructionId === buildingId), `No building ${buildingId}`)];
   for (const construction of constructions) {
-    if (construction) {
-      construction.constructionSpeed = Math.floor((construction.constructionSpeed ?? 0) * mult / 100);
-    }
+    construction.constructionSpeed = change(construction.constructionSpeed ?? 0, BUILD_SPEED_SCALE, (value) => multiply(value, mult));
   }
 };
 
-const gatherBagSizeAdd: UpgradeScript = (unit, params) => {
-  const add = tonumber(params.add, 0);
-  const gatherId = tonumber(params.gather, null);
-  const gathers = gatherId === null ? unit.gather ?? [] : [unit.gather?.[gatherId]];
-  for (const gather of gathers) {
-    if (gather) {
-      gather.bagSize = (gather.bagSize ?? 0) + add / Constants.ENGINE_FLOAT_SHIFT;
-    }
-  }
-};
-
+// unit/work/reserveTimeMult.lua; works without reserve have zero reserve time in the game, it stays zero
 const workReserveTimeMult: UpgradeScript = (unit, params) => {
-  const mult = tonumber(params.mult, 100);
-  processWorks(unit, params, (work) => {
-    if (work?.reserve) {
-      work.reserve.reserveTime = Math.floor((work.reserve.reserveTime ?? 0) * mult / 100);
+  const mult = required(tonumber(params.mult), 'No mult parameter');
+  forEachWork(unit, params, (work) => {
+    if (work.reserve) {
+      work.reserve.reserveTime = change(work.reserve.reserveTime ?? 0, SHIFT, (value) => multiply(value, mult));
     }
   });
 };
 
+// unit/work/reserveLimitAdd.lua
 const workReserveLimitAdd: UpgradeScript = (unit, params) => {
-  const add = tonumber(params.add, 0);
-  processWorks(unit, params, (work) => {
-    if (work?.reserve) {
-      work.reserve.reserveLimit = (work.reserve.reserveLimit ?? 0) + add;
-    }
+  const add = required(tonumber(params.add), 'No add parameter');
+  forEachWork(unit, params, (work) => {
+    // a work without reserve has zero reserve limit and time in the game
+    work.reserve ??= { reserveLimit: 0, reserveTime: 0 };
+    work.reserve.reserveLimit = (work.reserve.reserveLimit ?? 0) + add;
   });
 };
 
+// unit/storageMultiplierAdd.lua
 const storageMultiplierAdd: UpgradeScript = (unit, params) => {
-  const add = tonumber(params.add, 0);
-  unit.storageMultiplier = (unit.storageMultiplier ?? 0) + Math.floor(Constants.ENGINE_STORAGE_MULTIPLIER * add);
+  const add = required(tonumber(params.add), 'No add parameter');
+  // the exporter truncates the percent
+  unit.storageMultiplier = Math.trunc(fromGame(toGame(unit.storageMultiplier ?? 0, STORAGE_SCALE) + add, STORAGE_SCALE));
 };
 
+// unit/work/priceChange.lua
 const workPriceChange: UpgradeScript = (unit, params) => {
-  const mult = tonumber(params.mult, 100);
-  const add = tonumber(params.add, 0);
-  const resourceId = tonumber(params.resource, null);
-  const work = collectWorks(unit)[tonumber(params.work, 0)];
-  if (!work) {
-    return;
-  }
-  const resources = resourceId === null ? work.cost : [work.cost[resourceId]];
-  for (const resource of resources) {
-    resource.value = Math.floor(resource.value * mult / 100) + add / Constants.ENGINE_FLOAT_SHIFT;
-  }
-};
+  const mult = tonumber(params.mult) ?? 100;
+  const add = tonumber(params.add) ?? 0;
+  const resourceId = tonumber(params.resource);
+  const work = getWork(unit, tonumber(params.work));
 
-const enable: UpgradeScript = (unit, params) => {
-  const weaponId = tonumber(params.weapon, 0);
-  const turretId = tonumber(params.turret, null);
-  const weapons = turretId === null ? unit.weapons : unit.turrets?.[turretId].weapons;
-  const weapon = weapons?.[weaponId];
-  if (weapon) {
-    weapon.enabled = tobool(params.enable, true);
-  }
-};
-
-const abilityOnActionEnable: UpgradeScript = (unit, params) => {
-  const enabled = tobool(params.enable, true);
-  for (const container of unit.abilities ?? []) {
-    if (container.containerType === CONTAINER_TYPE_ON_ACTION) {
-      container.enabled = enabled;
+  const processResource = (resource: Resource) => {
+    // the exporter truncates resources to whole numbers
+    resource.value = Math.trunc(change(resource.value, SHIFT, (value) => multiply(value, mult) + add));
+  };
+  for (const resource of work.cost) {
+    if (resourceId == null || resource.resourceId === resourceId) {
+      processResource(resource);
     }
   }
 };
 
+// unit/weapon/enable.lua; the script assigns the "enable" parameter as is (no researches set it for now),
+// here it is read like other enable parameters
+const weaponEnable: UpgradeScript = (unit, params) => {
+  const weaponId = required(tonumber(params.weapon), 'No weapon parameter');
+  const turretId = tonumber(params.turret);
+  const weapons = turretId == null
+    ? unit.weapons
+    : required(unit.turrets?.find(turret => turret.turretId === turretId), `No turret ${turretId}`).weapons;
+  const weapon = required(weapons?.find(weapon => weapon.weaponId === weaponId), `No weapon ${weaponId}`);
+  weapon.enabled = tobool(params.enable, true);
+};
+
+// unit/abilityOnActionEnable.lua
+const abilityOnActionEnable: UpgradeScript = (unit, params) => {
+  const enabled = params.enable !== 'false';
+  // on action abilities are shown as icons
+  for (const container of unit.abilities ?? []) {
+    if (container.containerType === CONTAINER_TYPE_ICON) {
+      container.abilities?.filter(ability => ability.trigger === 'action').forEach(ability => ability.enabled = enabled);
+    }
+  }
+};
+
+// unit/weapon/damageAdd.lua
 const damageAdd: UpgradeScript = (unit, params) => {
-  const add = tonumber(params.add, 0);
-  const mult = tonumber(params.mult, 100);
-  processTurretsAndWeapons(unit, tonumber(params.turret, null), tonumber(params.weapon, null), (weapon) => {
-    const damage = weapon.damage.damages?.[0];
-    if (damage) {
-      damage.value = Math.floor(damage.value * mult / 100) + add / Constants.ENGINE_FLOAT_SHIFT;
+  const add = tonumber(params.add) ?? 0;
+  const mult = tonumber(params.mult) ?? 100;
+  const raise = (value: number) => change(value, SHIFT, (gameValue) => multiply(gameValue, mult) + add);
+  forEachWeapon(unit, params, (weapon) => {
+    const damages = weapon.damage.damages ?? [];
+    const base = damages.find(damage => damage.type === 'damageTypeBase');
+    if (base) {
+      // only the default damage is raised, values by target tag stay as they are
+      base.value = raise(base.value);
+      return;
+    }
+    // a weapon without the default damage: positive values by target tag are raised, zero values (exclusions) are kept
+    for (const damage of damages) {
+      if (damage.value > 0) {
+        damage.value = raise(damage.value);
+      }
     }
   });
 };
 
-/** Upgrade scripts by program id (index of the script in gameplay.json upgradesScripts) */
+// unit/viewRange.lua
+const viewRange: UpgradeScript = (unit, params) => {
+  const add = tonumber(params.add) ?? 0;
+  const mult = tonumber(params.mult) ?? 100;
+  unit.viewRange = change(unit.viewRange ?? 0, SHIFT, (value) => multiply(value, mult) + add);
+};
+
+// unit/controllable.lua
+const controllable: UpgradeScript = (unit, params) => {
+  unit.controllable = params.enable !== 'false';
+};
+
+/**
+ * Upgrade scripts by program id (index of the script in gameplay.json upgradesScripts).
+ * Other programs change player data (ages, territory, supply), not units
+ */
 const UPGRADE_SCRIPTS: Record<number, UpgradeScript> = {
   0: moveSpeed, // unit/moveSpeed.lua
   2: gatherSpeedAdd, // unit/gather/speedAdd.lua
@@ -295,9 +389,11 @@ const UPGRADE_SCRIPTS: Record<number, UpgradeScript> = {
   23: workReserveLimitAdd, // unit/work/reserveLimitAdd.lua
   27: storageMultiplierAdd, // unit/storageMultiplierAdd.lua
   31: workPriceChange, // unit/work/priceChange.lua
-  32: enable, // unit/weapon/enable.lua
+  32: weaponEnable, // unit/weapon/enable.lua
   33: abilityOnActionEnable, // unit/abilityOnActionEnable.lua
   34: damageAdd, // unit/weapon/damageAdd.lua
+  35: viewRange, // unit/viewRange.lua
+  43: controllable, // unit/controllable.lua
 };
 
 /** Returns a copy of the unit with applied upgrades of the given researches */
@@ -318,7 +414,7 @@ export const applyResearches = (unit: Unit, researchIds: number[]): Unit => {
       try {
         applyScript(unitCopy, upgrade.parameters ?? {});
       } catch (error) {
-        console.error(`Can't apply research script ${upgrade.programId}`, error);
+        console.error(`Can't apply research ${researchId} script ${upgrade.programId}`, error);
       }
     }
   }

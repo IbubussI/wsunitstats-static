@@ -77,6 +77,17 @@ export interface Buff {
   affectedUnits?: Tag[];
 }
 
+/** Units in the radius of the unit get the researches */
+export interface Aura {
+  auraId: number;
+  radius?: number;
+  researches: EntityInfo[];
+  /** absent - all units */
+  affectedUnits?: Tag[];
+  affectsAllies: boolean;
+  affectsEnemies: boolean;
+}
+
 export interface DamageWrapper {
   areaType: string;
   /** Damage type, matched against typed armor of the target */
@@ -158,34 +169,63 @@ export interface Work {
   };
 }
 
-export const CONTAINER_TYPE_ON_ACTION = 0;
 export const CONTAINER_TYPE_WORK = 1;
-export const CONTAINER_TYPE_ZONE_EVENT = 2;
 export const CONTAINER_TYPE_DEATH = 3;
+export const CONTAINER_TYPE_ICON = 4;
+
+export type IconAbilityKind = 'crushUnits' | 'crushEnvs' | 'selfBuff' | 'areaBuff' | 'scatter' | 'dance';
+export type AbilityTrigger = 'action' | 'zone' | 'weapon' | 'script';
+
+/** Ability shown as an icon, only the fields of its kind are set */
+export interface IconAbility {
+  icon: IconAbilityKind;
+  trigger: AbilityTrigger;
+  abilityIds: number[];
+  /** false if the ability is enabled by a research */
+  enabled?: boolean;
+  rechargeTime?: number;
+  distance?: Distance;
+  /** buff (research) the ability gives */
+  research?: EntityInfo;
+  researchDescription?: string;
+  duration?: number;
+  /** damage to units under the unit (crush units) */
+  damages?: Damage[];
+  damageRadius?: number;
+  /** damage to envs (crush envs) */
+  envDamage?: number;
+  affectedEnvs?: Tag[];
+  /** units in the radius move away and get the buff */
+  radius?: number;
+  moveDistance?: number;
+  /** absent - all units */
+  affectedUnits?: Tag[];
+  affectsAllies?: boolean;
+  affectsEnemies?: boolean;
+  /** unit created together with the ability (e.g. the bomb of the saboteur) */
+  createdUnit?: EntityInfo;
+}
 
 export interface AbilityContainer {
   containerType: number;
   containerName: string;
-  enabled?: boolean;
-  // work
+  // work, death
   ability?: Ability;
   work?: Work;
-  // on action, zone event
-  abilities?: Ability[];
-  // on action
-  distance?: Distance;
-  onAgro?: boolean;
-  rechargeTime?: number;
-  // zone event
-  size?: number;
-  envSearchDistance?: number;
-  envTags?: Tag[];
+  // icon
+  abilities?: IconAbility[];
 }
 
 export interface Movement {
   speed?: number;
   speedReverse?: number;
   rotationSpeed?: number;
+  /** speed gained per second, absent if the unit gets full speed at once */
+  acceleration?: number;
+  /** rotation speed gained per second, absent if the unit gets full rotation speed at once */
+  rotationAcceleration?: number;
+  /** can't turn on the spot, turns along an arc */
+  smoothTurn?: boolean;
 }
 
 export interface Transporting {
@@ -310,6 +350,7 @@ export interface Unit {
   supply?: Supply;
   gather?: Gather[];
   heal?: Heal;
+  aura?: Aura;
   construction?: Construction[];
   build?: Build;
   airplane?: Airplane;
@@ -348,6 +389,10 @@ export interface ResearchOption {
 }
 
 export interface GameContext {
+  /** "{engine}.{gameplay}_{main}" versions of the game files, e.g. 252.4005_29231 */
+  gameVersion?: string;
+  /** date of the export, yyyy-MM-dd */
+  exportDate?: string;
   localeOptions: string[];
   units: UnitOption[];
   researches: ResearchOption[];
@@ -368,4 +413,15 @@ export interface UnitSelectorContext {
   unitTags: FilterOption[];
   searchTags: FilterOption[];
   nations: NationFilterOption[];
+}
+
+// researches/researchSelector.json
+export interface ResearchTypeOption {
+  id: number;
+  /** localization key, the same as ResearchOption type */
+  name: string;
+}
+
+export interface ResearchSelectorContext {
+  researchTypes: ResearchTypeOption[];
 }

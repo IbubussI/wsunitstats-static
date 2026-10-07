@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.json.gameplay;
 
+import com.wsunitstats.exporter.model.json.gameplay.submodel.AuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ScenesJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UpgradesScriptsJsonModel;
@@ -31,6 +32,6 @@ public class GameplayFileJsonModel {
     private String startPositionEnv;
     private UpgradesScriptsJsonModel upgradesScripts;
     private Integer version;
-    private Object auras;
+    private List<AuraJsonModel> auras;
     private Object collisionSolver;
 }

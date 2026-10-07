@@ -12,6 +12,7 @@ import com.wsunitstats.exporter.model.exported.submodel.DistanceModel;
 import com.wsunitstats.exporter.model.exported.submodel.EnvTagModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
 import com.wsunitstats.exporter.model.exported.submodel.HealModel;
+import com.wsunitstats.exporter.model.exported.submodel.AuraModel;
 import com.wsunitstats.exporter.model.exported.submodel.IncomeModel;
 import com.wsunitstats.exporter.model.exported.submodel.MovementModel;
 import com.wsunitstats.exporter.model.exported.submodel.ReserveModel;
@@ -32,6 +33,7 @@ import com.wsunitstats.exporter.model.exported.submodel.weapon.ProjectileModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ArmorJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.AuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildingJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.DeathabilityJsonModel;
@@ -45,6 +47,7 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.SupplyJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TransportJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TransportingJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TurretJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitAuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UpgradesScriptsJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AerodromeJsonModel;
@@ -67,7 +70,6 @@ import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -77,7 +79,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -86,7 +87,12 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 @Slf4j
 @Service
 public class ModelTransformingServiceImpl implements ModelTransformingService {
-    private static final int PROBABILITY_MAX = 100;
+    /** Weight of an armor zone without probability (game shows blank/20 zones as 4%/95%) */
+    private static final int DEFAULT_ARMOR_ZONE_WEIGHT = 1;
+    /** game ticks are 50 ms */
+    private static final double TICKS_PER_SECOND = 20;
+    /** game angle to the exported rotation speed units (see Utils.getAngle) */
+    private static final double ANGLE_MODIFIER = 4096d * 1000d;
     /** Folder of the upgrade scripts, relative to the project scripts folder */
     private static final String DEFAULT_UPGRADES_SCRIPTS_PATH = "gameplay/upgrades";
 
@@ -113,22 +119,15 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
-    public ArmorModel transformArmor(ArmorJsonModel.Entry armorEntryJsonModel, int probabilitiesSum) {
+    public ArmorModel transformArmor(ArmorJsonModel.Entry armorEntryJsonModel) {
         if (armorEntryJsonModel == null) {
             return null;
         }
         ArmorModel armorModel = new ArmorModel();
         armorModel.setValue(Utils.intToDoubleShift(armorEntryJsonModel.getObject()));
-        Optional.ofNullable(armorEntryJsonModel.getProbability()).ifPresentOrElse(
-                (p) -> armorModel.setProbability(Range.between(0, 100).fit(p)),
-                () -> {
-                    if (probabilitiesSum == 0) {
-                        armorModel.setProbability(PROBABILITY_MAX);
-                    } else {
-                        armorModel.setProbability(PROBABILITY_MAX - probabilitiesSum);
-                    }
-                }
-        );
+        // the game uses probabilities of the zones as weights (shares of their sum), absent one is the default weight
+        Integer probability = armorEntryJsonModel.getProbability();
+        armorModel.setProbability(probability != null ? probability : DEFAULT_ARMOR_ZONE_WEIGHT);
         return armorModel;
     }
 
@@ -199,10 +198,20 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         MovementModel movementModel = new MovementModel();
-        movementModel.setSpeed(movementJsonModel.getSpeed() / Constants.MOVEMENT_SPEED_MODIFIER);
+        movementModel.setSpeed(movementJsonModel.getSpeed() / (double) Constants.MOVEMENT_SPEED_MODIFIER);
         Integer speedReverse = movementJsonModel.getSpeedReverse();
-        movementModel.setSpeedReverse(speedReverse == null ? null : speedReverse / Constants.MOVEMENT_SPEED_MODIFIER);
+        movementModel.setSpeedReverse(speedReverse == null ? null : speedReverse / (double) Constants.MOVEMENT_SPEED_MODIFIER);
         movementModel.setRotationSpeed(Utils.getAngle(movementJsonModel.getRotationSpd()));
+        // game accelerations are per tick in the units of the speeds, shown per second
+        Integer accel = movementJsonModel.getAccel();
+        if (accel != null && accel > 0) {
+            movementModel.setAcceleration(accel / (double) Constants.MOVEMENT_SPEED_MODIFIER * TICKS_PER_SECOND);
+        }
+        Long rotationAccel = movementJsonModel.getRotationAccel();
+        if (rotationAccel != null && rotationAccel > 0) {
+            movementModel.setRotationAcceleration(rotationAccel / ANGLE_MODIFIER * TICKS_PER_SECOND);
+        }
+        movementModel.setSmoothTurn(Boolean.TRUE.equals(movementJsonModel.getSmoothTurn()) ? true : null);
         return movementModel;
     }
 
@@ -348,13 +357,27 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         buffModel.setBuffId(buffJsonModel.getResearch());
         buffModel.setPeriod(Utils.intToDoubleShift(buffJsonModel.getPeriod()));
         buffModel.setAffectedUnits(tagResolver.getUnitTags(buffJsonModel.getTargetsTags()));
-        EntityInfoModel entityInfo = new EntityInfoModel();
-        EntityId entityId = buffJsonModel.getResearch();
-        entityInfo.setEntityName(localization.getResearchNames().get(entityId));
-        entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), entityId));
-        entityInfo.setEntityId(entityId);
-        buffModel.setEntityInfo(entityInfo);
+        buffModel.setEntityInfo(transformResearchInfo(buffJsonModel.getResearch()));
         return buffModel;
+    }
+
+    @Override
+    public EntityInfoModel transformResearchInfo(EntityId researchId) {
+        EntityInfoModel entityInfo = new EntityInfoModel();
+        entityInfo.setEntityName(localization.getResearchNames().get(researchId));
+        entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), researchId));
+        entityInfo.setEntityId(researchId);
+        return entityInfo;
+    }
+
+    @Override
+    public EntityInfoModel transformUnitInfo(EntityId unitId) {
+        EntityInfoModel entityInfo = new EntityInfoModel();
+        entityInfo.setEntityName(localization.getUnitNames().get(unitId));
+        entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UNIT.getName(), unitId));
+        entityInfo.setEntityNation(nationResolver.getUnitNation(unitId));
+        entityInfo.setEntityId(unitId);
+        return entityInfo;
     }
 
     @Override
@@ -503,6 +526,22 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         healModel.setAutoSearchTargetDistance(Utils.intToDoubleShift(healJsonModel.getAutoSearchTargetDistance()));
         healModel.setAutoSearchTargetPeriod(Utils.intToDoubleShift(healJsonModel.getAutoSearchTargetPeriod()));
         return healModel;
+    }
+
+    @Override
+    public AuraModel transformAura(UnitAuraJsonModel unitAuraJsonModel, AuraJsonModel auraJsonModel) {
+        if (unitAuraJsonModel == null || auraJsonModel == null) {
+            return null;
+        }
+        AuraModel auraModel = new AuraModel();
+        auraModel.setAuraId(unitAuraJsonModel.getAura());
+        auraModel.setRadius(Utils.intToDoubleShift(unitAuraJsonModel.getRadius()));
+        auraModel.setResearches(auraJsonModel.getResearch() == null ? List.of() : List.of(transformResearchInfo(auraJsonModel.getResearch())));
+        auraModel.setAffectedUnits(tagResolver.getUnitTags(auraJsonModel.getTargetsTags()));
+        // an aura affects allies only, unless set otherwise
+        auraModel.setAffectsAllies(Utils.getInvertedBoolean(auraJsonModel.getAffectsAlly()));
+        auraModel.setAffectsEnemies(Utils.getDirectBoolean(auraJsonModel.getAffectsEnemy()));
+        return auraModel;
     }
 
     @Override

@@ -28,7 +28,7 @@ const isSelectAll = (option: unknown): option is SelectAllOption =>
 
 export type MultiSelectProps<T> = Omit<
   AutocompleteProps<Option<T>, true, boolean, false>,
-  'options' | 'value' | 'onChange' | 'renderInput' | 'getOptionLabel' | 'isOptionEqualToValue'
+  'options' | 'value' | 'onChange' | 'renderInput' | 'getOptionLabel' | 'isOptionEqualToValue' | 'getOptionKey'
 > & {
   label?: string;
   values: T[];
@@ -39,6 +39,8 @@ export type MultiSelectProps<T> = Omit<
   selectAll?: boolean;
   getOptionLabel?: (option: T) => string;
   isOptionEqualToValue?: (option: T, value: T) => boolean;
+  /** unique key of the option (default - its label, which must be unique then) */
+  getOptionKey?: (option: T) => string | number;
   getSecondaryText?: (option: T) => string;
   getOptionImage?: (option: T) => string | undefined;
   primaryFontSize?: TypographyProps['variant'];
@@ -61,6 +63,7 @@ export const MultiSelect = <T,>(props: MultiSelectProps<T>) => {
     primaryFontSize = 'body1',
     getOptionLabel = (option: T) => String((option as { name?: string }).name),
     isOptionEqualToValue = (option: T, value: T) => option === value,
+    getOptionKey,
     displayTags = true,
     slotProps,
     disableRipple = false,
@@ -100,6 +103,7 @@ export const MultiSelect = <T,>(props: MultiSelectProps<T>) => {
       value={values}
       getOptionLabel={optionLabel}
       isOptionEqualToValue={(option, value) => !isSelectAll(option) && !isSelectAll(value) && isOptionEqualToValue(option, value)}
+      getOptionKey={getOptionKey && ((option) => isSelectAll(option) ? 'select-all' : getOptionKey(option))}
       filterOptions={(options, params) => {
         const filtered = filterOptions(options, params);
         return selectAll ? [{ name: t('multiSelectAllOption'), selectAll: true }, ...filtered] : filtered;

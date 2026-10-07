@@ -18,6 +18,7 @@ import com.wsunitstats.exporter.model.lua.SessionInitFileModel;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Content of the game files. Game entities are accessed through providers, so the rest of the exporter
@@ -49,6 +50,12 @@ public interface FileContentService {
      */
     Map<EntityId, Integer> getUnitNations();
 
+    /**
+     * Units the game allows to dance (session/_start.lua)
+     * @return null if unknown
+     */
+    Set<EntityId> getDanceUnits();
+
     SessionInitFileModel getSessionInitFileModel();
 
     OnProjectLoadFileModel getOnProjectLoadFileModel();
@@ -60,4 +67,10 @@ public interface FileContentService {
     Map<String, BufferedImage> getImages();
 
     LocalizationKeyModel getLocalizationKeyModel();
+
+    /**
+     * Version of the game files as the game writes it into replays: "{engine}.{gameplay}_{main}", e.g. 252.4005_29231.
+     * The game also shows a client build number after it (e.g. v252.4005_29231.12079), it is not in the game files.
+     */
+    String getGameVersion();
 }

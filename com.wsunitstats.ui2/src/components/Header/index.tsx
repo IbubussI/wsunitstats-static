@@ -24,9 +24,10 @@ import * as Constants from '@/utils/constants';
 import { EntityPicker } from './EntityPicker';
 import { LocaleSelector } from './LocaleSelector';
 import { ThemeSelector } from './ThemeSelector';
+import { useGameDataStore } from '@/store/gameDataStore';
 
-const LAST_UPDATED = '15.08.2026';
-const GAME_VERSION = 'v228.3845_29171';
+/** yyyy-MM-dd -> dd.MM.yyyy */
+const formatDate = (isoDate: string) => isoDate.split('-').reverse().join('.');
 
 interface Page {
   path: string;
@@ -35,6 +36,8 @@ interface Page {
 
 export const Header = () => {
   const { t } = useTranslation();
+  const gameVersion = useGameDataStore((state) => state.context?.gameVersion);
+  const exportDate = useGameDataStore((state) => state.context?.exportDate);
 
   const pages: Page[] = [
     { path: Constants.UNIT_SELECTOR_PAGE_PATH, name: t('headerUnits') },
@@ -53,12 +56,12 @@ export const Header = () => {
               color: '#ffda6b',
             }
           }}>
-            <Typography fontSize='12px' mr={2}>
-              {t('headerLastUpdated', { value: LAST_UPDATED })}
-            </Typography>
-            <Typography fontSize='12px' mr={2}>
-              {t('headerGameVersion', { value: GAME_VERSION })}
-            </Typography>
+            {exportDate && <Typography fontSize='12px' mr={2}>
+              {t('headerLastUpdated', { value: formatDate(exportDate) })}
+            </Typography>}
+            {gameVersion && <Typography fontSize='12px' mr={2}>
+              {t('headerGameVersion', { value: `v${gameVersion}` })}
+            </Typography>}
           </Stack>
           <NavigationMenu pages={pages} />
           <EntityPicker />

@@ -141,7 +141,9 @@ export const router = createBrowserRouter([
       },
       {
         path: Constants.RESEARCH_SELECTOR_PAGE_PATH,
-        element: <ResearchSelectorPage />
+        element: <ResearchSelectorPage />,
+        loader: () => fetchJsonFile(Constants.RESEARCH_SELECTOR_DATA_PATH),
+        shouldRevalidate: () => false,
       },
       {
         path: `${Constants.RESEARCH_PAGE_PATH}/*`,

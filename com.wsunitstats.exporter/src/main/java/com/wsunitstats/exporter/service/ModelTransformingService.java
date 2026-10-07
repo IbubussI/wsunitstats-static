@@ -1,6 +1,7 @@
 package com.wsunitstats.exporter.service;
 
 import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
 import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
@@ -8,6 +9,7 @@ import com.wsunitstats.exporter.model.exported.submodel.ConstructionModel;
 import com.wsunitstats.exporter.model.exported.submodel.DistanceModel;
 import com.wsunitstats.exporter.model.exported.submodel.EnvTagModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
+import com.wsunitstats.exporter.model.exported.submodel.AuraModel;
 import com.wsunitstats.exporter.model.exported.submodel.HealModel;
 import com.wsunitstats.exporter.model.exported.submodel.IncomeModel;
 import com.wsunitstats.exporter.model.exported.submodel.MovementModel;
@@ -29,7 +31,9 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.ArmorJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildingJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.GatherJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.AuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.HealJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitAuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.IncomeJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.MovementJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ProjectileJsonModel;
@@ -51,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface ModelTransformingService {
-    ArmorModel transformArmor(ArmorJsonModel.Entry source, int probabilitiesSum);
+    ArmorModel transformArmor(ArmorJsonModel.Entry source);
 
     GatherModel transformGather(int index, GatherJsonModel source);
 
@@ -83,6 +87,10 @@ public interface ModelTransformingService {
 
     BuffModel transformBuff(BuffJsonModel buffSource);
 
+    EntityInfoModel transformResearchInfo(EntityId researchId);
+
+    EntityInfoModel transformUnitInfo(EntityId unitId);
+
     TurretModel transformTurret(int turretId, TurretJsonModel turretSource, List<WeaponModel> turretWeapons);
 
     SupplyModel transformSupply(SupplyJsonModel supplySource);
@@ -98,6 +106,8 @@ public interface ModelTransformingService {
     List<EnvTagModel> transformEnvTags(Long tags);
 
     HealModel transformHeal(HealJsonModel healSource);
+
+    AuraModel transformAura(UnitAuraJsonModel unitAuraSource, AuraJsonModel auraSource);
 
     ConstructionModel transformConstruction(int id, BuildingJsonModel buildingSource);
 

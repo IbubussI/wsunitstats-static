@@ -99,10 +99,11 @@ public class Constants {
         TRANSFORM(2, "abilityTransform"),
         CREATE_ENV(3, "abilityCreateEnv"),
         SELF_BUFF(4, "abilitySelfBuff"),
-        //SELF_STUN(5, "abilityDance"),
+        SELF_STUN(5, "abilitySelfStun"),
         DAMAGE(6, "abilityDamage"),
-        SCRIPT(7, "abilityScript");
-        //SEARCH_UNITS_CIRCLE(8, ""); - need to clarify what is it responsible for
+        SCRIPT(7, "abilityScript"),
+        // units in a circle move away (and can get a buff)
+        UNITS_IN_RADIUS(8, "abilityUnitsInRadius");
 
         private final int type;
         private final String name;
@@ -132,10 +133,10 @@ public class Constants {
 
     public enum AbilityContainerType {
         UNDEFINED(-1, UNDEF),
-        ACTION(0, "abilityContainerAction"),
         WORK(1, "abilityContainerWork"),
-        ZONE_EVENT(2, "abilityContainerZone"),
-        DEATH(3, "abilityContainerDeath");
+        DEATH(3, "abilityContainerDeath"),
+        // abilities shown as icons: on action, zone event and the ones triggered by weapons or game scripts
+        ICON(4, "abilityContainerIcon");
 
         private final int type;
         private final String name;
@@ -337,6 +338,50 @@ public class Constants {
         }
     }
 
+    /** Kinds of abilities shown as icons, the names are the icon names in the UI */
+    public enum IconAbility {
+        // damages units under the unit when it moves (tanks)
+        CRUSH_UNITS("crushUnits"),
+        // damages envs it moves through, may slow the unit down (tanks in forest)
+        CRUSH_ENVS("crushEnvs"),
+        // buff the unit gives itself (e.g. speed when charging)
+        SELF_BUFF("selfBuff"),
+        // buff the unit gives to units around (e.g. panic of horses near elephants)
+        AREA_BUFF("areaBuff"),
+        // units around move away (e.g. from a planted bomb)
+        SCATTER("scatter"),
+        // the unit can dance (stuns itself)
+        DANCE("dance");
+
+        private final String name;
+
+        IconAbility(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    /** What triggers an ability shown as an icon */
+    public enum AbilityTrigger {
+        ACTION("action"),
+        ZONE("zone"),
+        WEAPON("weapon"),
+        SCRIPT("script");
+
+        private final String name;
+
+        AbilityTrigger(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     public enum ResearchType {
         AGE_TRANSITION("researchTypeAgeTransition"),
         ECO("researchTypeEco"),
@@ -346,6 +391,7 @@ public class Constants {
         UNIT("researchTypeUnit"),
         BUFF("researchTypeBuff"),
         WONDER_TRANSITION("researchTypeWonderTransition"),
+        AURA("researchTypeAura"),
         OTHER("researchTypeOther");
 
         private final String type;

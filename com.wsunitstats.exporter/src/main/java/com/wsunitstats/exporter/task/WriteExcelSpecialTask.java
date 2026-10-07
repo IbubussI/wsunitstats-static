@@ -363,19 +363,13 @@ public class WriteExcelSpecialTask implements ExecutionTask {
 
             List<ArmorModel> armor = unitModel.getArmorZonal();
             if (armor != null && !armor.isEmpty()) {
-                addNumericCell(row, counter, armor.get(0).getValue());
-                addStringCell(row, counter + 1, armor.get(0).getProbability() + "%", localizationModel);
-                if (armor.size() > 1) {
-                    addNumericCell(row, counter + 2, armor.get(1).getValue());
-                    addStringCell(row, counter + 3, armor.get(1).getProbability() + "%", localizationModel);
-                    if (armor.size() > 2) {
-                        addNumericCell(row, counter + 4, armor.get(2).getValue());
-                        addStringCell(row, counter + 5, armor.get(2).getProbability() + "%", localizationModel);
-                        if (armor.size() > 3) {
-                            addNumericCell(row, counter + 6, armor.get(3).getValue());
-                            addStringCell(row, counter + 7, armor.get(3).getProbability() + "%", localizationModel);
-                        }
-                    }
+                // probabilities are weights, shown as whole percents of their sum like the game does
+                int weightSum = armor.stream().mapToInt(zone -> Math.max(zone.getProbability(), 0)).sum();
+                for (int zoneIndex = 0; zoneIndex < Math.min(armor.size(), 4); ++zoneIndex) {
+                    ArmorModel zone = armor.get(zoneIndex);
+                    int percent = weightSum > 0 ? Math.max(zone.getProbability(), 0) * 100 / weightSum : zone.getProbability();
+                    addNumericCell(row, counter + zoneIndex * 2, zone.getValue());
+                    addStringCell(row, counter + zoneIndex * 2 + 1, percent + "%", localizationModel);
                 }
             }
             counter += 8;

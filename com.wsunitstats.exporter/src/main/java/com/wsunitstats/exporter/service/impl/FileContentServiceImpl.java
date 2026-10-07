@@ -13,6 +13,7 @@ import com.wsunitstats.exporter.content.entity.PathEntityProvider;
 import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.entity.EntityKind;
 import com.wsunitstats.exporter.entity.EntityProvider;
+import com.wsunitstats.exporter.entity.EntityReferences;
 import com.wsunitstats.exporter.exception.FileReadingException;
 import com.wsunitstats.exporter.exception.GameFilesResolvingException;
 import com.wsunitstats.exporter.model.FilePathWrapper;
@@ -47,6 +48,8 @@ import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -91,7 +94,9 @@ public class FileContentServiceImpl implements FileContentService {
     private static final String VISUAL_NODE = "visual";
     private static final String LOCALIZATION_NODE = "localization";
     private static final String ICON_NODE = "icon";
+    private static final String VERSION_NODE = "version";
 
+    private String gameVersion;
     private GameplayFileJsonModel gameplayFileModel;
     private PathEntityProvider<UnitJsonModel> units;
     private PathEntityProvider<UnitTypeJsonModel> unitTypes;
@@ -100,6 +105,7 @@ public class FileContentServiceImpl implements FileContentService {
     private IndexEntityProvider<ResearchJsonModel> researches;
     private IndexEntityProvider<UpgradeJsonModel> upgrades;
     private Map<EntityId, Integer> unitNations;
+    private Set<EntityId> danceUnits;
 
     private SessionInitFileModel sessionInitFileModel;
     private CulturesFileModel culturesFileModel;
@@ -156,6 +162,11 @@ public class FileContentServiceImpl implements FileContentService {
     }
 
     @Override
+    public Set<EntityId> getDanceUnits() {
+        return danceUnits;
+    }
+
+    @Override
     public Map<EntityId, Integer> getUnitNations() {
         return unitNations;
     }
@@ -188,6 +199,11 @@ public class FileContentServiceImpl implements FileContentService {
     @Override
     public LocalizationKeyModel getLocalizationKeyModel() {
         return localizationKeyModel;
+    }
+
+    @Override
+    public String getGameVersion() {
+        return gameVersion;
     }
 
     @PostConstruct
@@ -229,6 +245,8 @@ public class FileContentServiceImpl implements FileContentService {
                 .withAttribute(EntityKind.RESEARCH, researches)
                 .withAttribute(EntityKind.UPGRADE, upgrades);
         gameplayFileModel = readValue(reader, gameplayTree, GameplayFileJsonModel.class, "gameplay.json");
+        gameVersion = readGameVersion(filePathWrapper);
+        LOG.info("Game version: {}", gameVersion);
         researches.setAll(gameplayFileModel.getResearches().getList());
         upgrades.setAll(gameplayFileModel.getResearches().getUpgrades());
 
@@ -244,6 +262,8 @@ public class FileContentServiceImpl implements FileContentService {
         unknownProperties.check();
 
         unitNations = resolveByReference(units, culturesFileModel.getUnitNationsByAddress(), "unit nation");
+        List<String> danceUnitAddresses = fileReaderService.readDanceUnitsLua(filePathWrapper.getSessionStartFilePath());
+        danceUnits = danceUnitAddresses == null ? null : EntityReferences.resolveAll(units, danceUnitAddresses);
         resolveByReference(researches, researchIconsFileModel.getResearchIcons(), "research icon").forEach((researchId, asset) ->
                 imageSources.put(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), researchId), ImageSource.ofAsset(asset)));
         Arrays.stream(Constants.ResourceIcon.values()).forEach(resource -> imageSources.put(
@@ -255,6 +275,12 @@ public class FileContentServiceImpl implements FileContentService {
             LOG.warn("{} of {} images could not be read", imageSources.size() - images.size(), imageSources.size());
         }
         localizationKeyModel = generateLocalizationKeyModel();
+    }
+
+    private String readGameVersion(FilePathWrapper filePathWrapper) throws IOException {
+        String engineVersion = Files.readString(Path.of(filePathWrapper.getEngineVersionFilePath())).trim();
+        String mainVersion = fileReaderService.readJsonTree(filePathWrapper.getMainFilePath()).path(VERSION_NODE).asText();
+        return engineVersion + "." + gameplayFileModel.getVersion() + "_" + mainVersion;
     }
 
     private void readUnits(Map<String, Map<String, byte[]>> packs,

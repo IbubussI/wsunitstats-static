@@ -6,6 +6,7 @@ import { Frame, FrameSection } from '@/components/layout/Frame';
 import { TagBox } from '@/components/common/TagBox';
 import { EntityImage } from '@/components/common/misc';
 import type { TypedArmor, Unit } from '@/types/game';
+import { AbilityIcons } from './AbilityIcons';
 import { ArmorChart } from './ArmorChart';
 import { TabLayout } from './TabLayout';
 
@@ -72,6 +73,7 @@ export const CommonTab = ({ unit }: { unit: Unit }) => {
                 wordBreak: 'break-word'
               }}>{t(unit.name)}</h4>
               <EntityImage image={unit.image} size='150px' />
+              <AbilityIcons unit={unit} />
               {unit.description &&
                 <Typography variant='body2' align='center' sx={{ maxWidth: '150px', pt: 0.5 }}>
                   {t(unit.description)}

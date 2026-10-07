@@ -100,6 +100,8 @@ export const EntityPicker = () => {
         includeInputInList
         getOptionLabel={(option) => option.name ? t(option.name) : ''}
         isOptionEqualToValue={(option, value) => option.route === value.route && option.gameId === value.gameId}
+        // names are not unique, non-unique keys leave stale options in the list
+        getOptionKey={(option) => `${option.route}/${option.gameId}`}
         groupBy={option => option.group}
         options={options}
         value={value}

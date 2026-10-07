@@ -5,18 +5,17 @@ import { useTranslation } from 'react-i18next';
 import * as Constants from '@/utils/constants';
 import { entityUrl, parseEntityPath } from '@/utils/utils';
 import { applyResearches } from '@/utils/researches';
-import { useOptionsController } from '@/hooks/useOptionsController';
-import { useValuesToQueryStringSync } from '@/hooks/useValuesToQueryStringSync';
-import { MultiSelect } from '@/components/common/MultiSelect';
-import { FormButton } from '@/components/common/misc';
-import type { Unit, UnitResearch } from '@/types/game';
+import { toDisplayPrecision } from '@/utils/displayPrecision';
+import type { Unit } from '@/types/game';
+import { ResearchSelector } from './ResearchSelector';
 import { CommonTab } from './CommonTab';
 import { WeaponsTab } from './WeaponsTab';
-import { AbilitiesTab, getSimpleAbilities } from './AbilitiesTab';
+import { AbilitiesTab, getShownAbilities } from './AbilitiesTab';
 import { BuildingTab } from './BuildingTab';
 import { ConstructionTab } from './ConstructionTab';
 import { GatherTab } from './GatherTab';
 import { HealTab } from './HealTab';
+import { AuraTab } from './AuraTab';
 import { AirplaneTab } from './AirplaneTab';
 import { SubmarineTab } from './SubmarineTab';
 
@@ -35,7 +34,8 @@ export const UnitPage = () => {
 
   const unit = React.useMemo(() => {
     const researchIds = researchIdsParam?.split(',').map(Number).filter(id => !isNaN(id)) ?? [];
-    return loadedUnit && applyResearches(loadedUnit, researchIds);
+    // scripts work with precise values, then values are rounded to their usual precision
+    return loadedUnit && toDisplayPrecision(applyResearches(loadedUnit, researchIds));
   }, [loadedUnit, researchIdsParam]);
 
   if (!unit) {
@@ -64,11 +64,12 @@ const UnitTabs = ({ unit, currentTab }: { unit: Unit; currentTab: string }) => {
   const tabs: UnitTab[] = [
     { id: Constants.INITIAL_TAB, label: t('unitTabCommon'), Component: CommonTab, isShow: true },
     { id: Constants.UNIT_WEAPONS_TAB, label: t('unitTabWeapons'), Component: WeaponsTab, isShow: !!(unit.weapons?.length || unit.turrets?.length) },
-    { id: Constants.UNIT_ABILITIES_TAB, label: t('unitTabAbilities'), Component: AbilitiesTab, isShow: getSimpleAbilities(unit).length > 0 },
+    { id: Constants.UNIT_ABILITIES_TAB, label: t('unitTabAbilities'), Component: AbilitiesTab, isShow: getShownAbilities(unit).length > 0 },
     { id: Constants.UNIT_BUILD_TAB, label: t('unitTabBuilding'), Component: BuildingTab, isShow: !!unit.build },
     { id: Constants.UNIT_CONSTRUCTION_TAB, label: t('unitTabConstruct'), Component: ConstructionTab, isShow: !!unit.construction?.length },
     { id: Constants.UNIT_GATHER_TAB, label: t('unitTabGather'), Component: GatherTab, isShow: !!unit.gather?.length },
     { id: Constants.UNIT_HEAL_TAB, label: t('unitTabHeal'), Component: HealTab, isShow: !!unit.heal },
+    { id: Constants.UNIT_AURA_TAB, label: t('unitTabAura'), Component: AuraTab, isShow: !!unit.aura },
     { id: Constants.UNIT_AIRPLANE_TAB, label: t('unitTabAirplane'), Component: AirplaneTab, isShow: !!unit.airplane },
     { id: Constants.UNIT_SUBMARINE_TAB, label: t('unitTabSubmarine'), Component: SubmarineTab, isShow: !!unit.submarine },
   ].filter(tab => tab.isShow);
@@ -96,34 +97,5 @@ const UnitTabs = ({ unit, currentTab }: { unit: Unit; currentTab: string }) => {
         <activeTab.Component unit={unit} />
       </Stack>
     </>
-  );
-};
-
-const ResearchSelector = ({ researches }: { researches: UnitResearch[] }) => {
-  const { t } = useTranslation();
-  const { sync } = useValuesToQueryStringSync();
-  const optionsController = useOptionsController(Constants.PARAM_RESEARCH_IDS, researches);
-  const researchValues = optionsController.values.filter(value => researches.some(option => value.gameId === option.gameId));
-
-  return (
-    <Stack direction='row' sx={{ gap: 0.5, width: '100%', margin: '2px', maxWidth: 'sm', paddingTop: '5px' }}>
-      <MultiSelect<UnitResearch>
-        sx={{ width: '100%' }}
-        label={t('researchSelectorLabel')}
-        values={researchValues}
-        options={researches}
-        onChange={optionsController.setValues}
-        limitTags={3}
-        getSecondaryText={(option) => 'ID: ' + option.gameId}
-        getOptionLabel={(option) => t(option.name)}
-        getOptionImage={(option) => option.image}
-        isOptionEqualToValue={(option, value) => option.gameId === value.gameId}
-      />
-      <FormButton
-        onClick={() => sync(new Map([[Constants.PARAM_RESEARCH_IDS, researchValues]]))}
-        disabled={optionsController.isApplied}>
-        {t('researchSelectorApply')}
-      </FormButton>
-    </Stack>
   );
 };

@@ -23,6 +23,12 @@ public interface FileReaderService {
 
     SessionInitFileModel readSessionInitLua(String path);
 
+    /**
+     * Reads the addresses of the units that can dance from the setCanDance calls of session/_start.lua
+     * @return null if they can't be read (e.g. the script is compiled)
+     */
+    List<String> readDanceUnitsLua(String path);
+
     OnProjectLoadFileModel readOnProjectLoadLua(String path);
 
     CulturesFileModel readCulturesLua(String path);

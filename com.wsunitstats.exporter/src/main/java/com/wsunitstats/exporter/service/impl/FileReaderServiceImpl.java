@@ -56,6 +56,9 @@ public class FileReaderServiceImpl implements FileReaderService {
     private static final Pattern GAME_LOCALIZATION_PART_KEY_PATTERN = Pattern.compile("^(<\\*.*)/(\\d+)>$");
     /** Signature compiled Lua chunks start with */
     private static final byte[] LUA_BYTECODE_SIGNATURE = {0x1B, 'L', 'u', 'a'};
+    /** Call of session/_start.lua enabling the dance for the units by their addresses: setCanDance({"addr", ...}, canDance) */
+    private static final Pattern SET_CAN_DANCE_PATTERN = Pattern.compile("setCanDance\\s*\\(\\s*\\{([^}]*)}");
+    private static final Pattern QUOTED_STRING_PATTERN = Pattern.compile("\"([^\"]*)\"");
 
     @Override
     public <T> T readJson(String path, Class<T> clazz) {
@@ -121,6 +124,34 @@ public class FileReaderServiceImpl implements FileReaderService {
         SessionInitFileModel sessionInitModel = new SessionInitFileModel();
         sessionInitModel.setAgeNames(readLocalizationKeys(values, "ageNames", path));
         return sessionInitModel;
+    }
+
+    @Override
+    public List<String> readDanceUnitsLua(String path) {
+        LOG.debug("Reading session/_start.lua file at path: {}", path);
+        try {
+            byte[] bytes = Files.readAllBytes(Paths.get(path));
+            if (Arrays.equals(bytes, 0, Math.min(bytes.length, LUA_BYTECODE_SIGNATURE.length),
+                    LUA_BYTECODE_SIGNATURE, 0, LUA_BYTECODE_SIGNATURE.length)) {
+                LOG.warn("Units that can dance are unknown: {} is compiled", path);
+                return null;
+            }
+            List<String> result = new ArrayList<>();
+            Matcher calls = SET_CAN_DANCE_PATTERN.matcher(new String(bytes, StandardCharsets.UTF_8));
+            while (calls.find()) {
+                Matcher addresses = QUOTED_STRING_PATTERN.matcher(calls.group(1));
+                while (addresses.find()) {
+                    result.add(addresses.group(1));
+                }
+            }
+            if (result.isEmpty()) {
+                LOG.warn("Units that can dance are unknown: no setCanDance calls in {}", path);
+                return null;
+            }
+            return result;
+        } catch (IOException e) {
+            throw new FileReadingException("Reading LUA file failed", e);
+        }
     }
 
     @Override
