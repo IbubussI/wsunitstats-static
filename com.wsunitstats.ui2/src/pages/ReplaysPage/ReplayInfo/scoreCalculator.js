@@ -169,7 +169,7 @@ export const MVP_CONST = {
   winWonderPoints: 250,
   wonderPoints: 150,
   wonderRefTime: 1590000, // ms
-  winTeamK: 1.2,
+  winTeamK: 1.07,
   looseTeamK: 1,
   armySizeK: 0.2,
   researchPointsK: 1,
