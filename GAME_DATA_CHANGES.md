@@ -56,7 +56,7 @@ Every reference that changed from int to path string:
 
 `Projects/WarSelection/legacyIds.json` maps the old int ids to paths (`units` 453, `envs` 459 incl. 235 retired, `projectiles` 82,
 `createTags`, `decorTags`). It is temporary and the exporter does not use it. A snapshot is kept in the site's static files
-(`com.wsunitstats.ui2/public/static/legacyIds.json`): replays recorded before the change reference units by these old int ids,
+(`com.wsunitstats.ui/public/static/legacyIds.json`): replays recorded before the change reference units by these old int ids,
 while newer replays carry their own index → path mapping in `extraData["7"]`.
 
 **Exporter identifiers.** The exported data uses the game's identifiers as they are: units, envs and projectiles by path,
