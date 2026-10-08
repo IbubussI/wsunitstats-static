@@ -48,8 +48,15 @@ export const ButtonPopper = ({ children, renderButton, placement, padding = '16p
   );
 };
 
-/** Full width outlined button with a popper */
-export const InfoButtonPopper = ({ children, label }: { children: React.ReactNode; label: string }) => (
+interface InfoButtonPopperProps {
+  children: React.ReactNode;
+  label: string;
+  /** width of the button is defined by its label instead of the parent */
+  fitContent?: boolean;
+}
+
+/** Outlined button with a popper, full width unless fitContent */
+export const InfoButtonPopper = ({ children, label, fitContent }: InfoButtonPopperProps) => (
   <ButtonPopper
     placement='bottom'
     renderButton={(onClick, open) => {
@@ -59,7 +66,7 @@ export const InfoButtonPopper = ({ children, label }: { children: React.ReactNod
           variant='outlined'
           onClick={onClick}
           sx={{
-            width: '100%',
+            ...(fitContent ? { width: 'fit-content', alignSelf: 'flex-start' } : { width: '100%' }),
             textTransform: 'none',
             padding: '5px 24px'
           }}>

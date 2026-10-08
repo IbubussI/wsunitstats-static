@@ -2,8 +2,8 @@ import { Avatar, Box, Chip, Stack, Tooltip, Typography, useTheme } from '@mui/ma
 import { useTranslation } from 'react-i18next';
 
 interface HeaderChipProps {
-  /** short id shown in the circle, e.g. W0 */
-  id: string | number;
+  /** short id shown in the circle, e.g. W0; no circle if absent */
+  id?: string | number;
   label?: string;
   tooltip?: string;
   disabled?: boolean;
@@ -29,7 +29,7 @@ export const HeaderChip = ({ id, label, tooltip, disabled }: HeaderChipProps) =>
       height: '32px',
       backgroundColor: theme.palette.background.paper,
     }}>
-      <Tooltip title={tooltip}>
+      {id != null && <Tooltip title={tooltip}>
         <Avatar sx={{
           fontWeight: 'inherit',
           border: '1px solid',
@@ -42,7 +42,7 @@ export const HeaderChip = ({ id, label, tooltip, disabled }: HeaderChipProps) =>
         }}>
           {id}
         </Avatar>
-      </Tooltip>
+      </Tooltip>}
       {isLabel && <Stack alignItems='center' sx={{ px: '12px' }}>
         {label &&
           <Typography

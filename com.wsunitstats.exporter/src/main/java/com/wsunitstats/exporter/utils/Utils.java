@@ -53,15 +53,16 @@ public class Utils {
                 .sum();
     }
 
+    /**
+     * @param progress building progress a builder adds every tick
+     * @return construction speed of 1 builder, % of the construction per second
+     */
     public static Double intToConstructionSpeed(Integer progress) {
-        /*
-         * time = (hp-initial_hp)*progress/tickRate, s (not used here, JFI)
-         * speed = 1/progress*tickRate, %/sec
-         */
         if (progress == null) {
             return null;
         }
-        return Utils.intToDoubleShift(progress) * Constants.BUILD_SPEED_MODIFIER;
+        double ticksPerSecond = 1000 / Constants.TICK_TIME;
+        return progress * ticksPerSecond * 100 / Constants.BUILDING_PROGRESS_FULL;
     }
 
     public static List<Integer> add(List<Integer> intList1, List<Integer> intList2) {

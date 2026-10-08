@@ -1,5 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import * as Constants from '@/utils/constants';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDiscord, faGithub } from '@fortawesome/free-brands-svg-icons';
 import './index.css';
 
 const MINIMIZED_PATHS = [
@@ -23,8 +25,8 @@ export const Footer = () => {
         </p>
         {isFull && 
         <ul className="social-icons">
-          <li><a className="discord" href="https://discord.com/users/536561066407362571"><i className="fa-brands fa-discord"></i></a></li>
-          <li><a className="github" href="https://github.com/IbubussI/wsunitstats-static"><i className="fa fa-github"></i></a></li>
+          <li><a className="discord" href="https://discord.com/users/536561066407362571"><FontAwesomeIcon icon={faDiscord} widthAuto /></a></li>
+          <li><a className="github" href="https://github.com/IbubussI/wsunitstats-static"><FontAwesomeIcon icon={faGithub} widthAuto /></a></li>
         </ul>}
       </footer>
     </>

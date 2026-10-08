@@ -3,8 +3,12 @@ import * as Constants from '@/utils/constants';
 import { Box, debounce, Grid, Paper, Stack, useTheme } from '@mui/material';
 import { ResizableBox, type ResizeCallbackData } from 'react-resizable';
 import { useTranslation } from 'react-i18next';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
 
 const MAX_COLUMNS = 12;
+/** Gap between grid tiles, horizontal and vertical (theme spacing units, 8px each) */
+const DEFAULT_TILE_SPACING = 4.5;
 
 const readStoredWidth = () => Number(localStorage.getItem(Constants.LOCAL_RESIZABLE_WIDTH)) || 0;
 
@@ -110,15 +114,22 @@ const ResizeHandle = React.forwardRef<HTMLDivElement, { handleAxis?: string }>((
           border: '1px solid #076fad69',
           boxShadow: '0px 0px 4px #0779a6',
         }}>
-          <i className="fa-sharp fa-solid fa-ellipsis-vertical"></i>
+          <FontAwesomeIcon icon={faEllipsisVertical} widthAuto />
         </Box>
       </Box>
     </Box>
   );
 });
 
+interface GridLayoutProps {
+  children: React.ReactNode;
+  columnWidth: number;
+  /** gap between tiles in theme spacing units */
+  spacing?: number;
+}
+
 /** Grid with as many columns of columnWidth as fit into its width */
-export const GridLayout = ({ children, columnWidth }: { children: React.ReactNode; columnWidth: number }) => {
+export const GridLayout = ({ children, columnWidth, spacing = DEFAULT_TILE_SPACING }: GridLayoutProps) => {
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [gridCols, setGridCols] = React.useState(1);
 
@@ -142,7 +153,7 @@ export const GridLayout = ({ children, columnWidth }: { children: React.ReactNod
   const columns = Math.max(1, Math.min(gridCols, childrenArray.length));
 
   return (
-    <Grid ref={contentRef} container spacing={3}>
+    <Grid ref={contentRef} container spacing={spacing}>
       {childrenArray.map((child, index) => <Grid key={index} item xs={MAX_COLUMNS / columns}>{child}</Grid>)}
     </Grid>
   );
@@ -152,9 +163,11 @@ interface GridGroupProps {
   children: React.ReactNode;
   columnWidth: number;
   heading?: string;
+  /** gap between tiles in theme spacing units */
+  spacing?: number;
 }
 
-export const GridGroup = ({ columnWidth, children, heading }: GridGroupProps) => {
+export const GridGroup = ({ columnWidth, children, heading, spacing }: GridGroupProps) => {
   const { t } = useTranslation();
   if (React.Children.toArray(children).length === 0) {
     return null;
@@ -162,7 +175,7 @@ export const GridGroup = ({ columnWidth, children, heading }: GridGroupProps) =>
   return (
     <Stack>
       {heading && <h4 style={{ textAlign: 'center' }}>{t(heading)}</h4>}
-      <GridLayout columnWidth={columnWidth}>
+      <GridLayout columnWidth={columnWidth} spacing={spacing}>
         {children}
       </GridLayout>
     </Stack>

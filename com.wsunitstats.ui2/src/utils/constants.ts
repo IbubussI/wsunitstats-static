@@ -36,6 +36,7 @@ export const UNIT_BUILD_TAB = 'build';
 export const UNIT_GATHER_TAB = 'gather';
 export const UNIT_HEAL_TAB = 'heal';
 export const UNIT_AURA_TAB = 'aura';
+export const UNIT_SOURCES_TAB = 'sources';
 export const UNIT_CONSTRUCTION_TAB = 'construction';
 export const UNIT_AIRPLANE_TAB = 'airplane';
 export const UNIT_SUBMARINE_TAB = 'submarine';
@@ -45,6 +46,7 @@ export const UNIT_TABS = [
   UNIT_WEAPONS_TAB,
   UNIT_ABILITIES_TAB,
   UNIT_BUILD_TAB,
+  UNIT_SOURCES_TAB,
   UNIT_CONSTRUCTION_TAB,
   UNIT_GATHER_TAB,
   UNIT_HEAL_TAB,

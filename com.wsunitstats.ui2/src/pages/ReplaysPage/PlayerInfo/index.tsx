@@ -10,8 +10,10 @@ import ArrowBackTwoToneIcon from '@mui/icons-material/ArrowBackTwoTone';
 import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { UnitsInfoTabs } from './UnitsInfo';
 import { useTranslation } from 'react-i18next';
+import { SectionTitle } from '@/pages/ReplaysPage/SectionTitle';
 import { GeneralTable } from './GeneralTable';
 import { PlayerChartViewer } from './PlayerChartViewer';
+import { getPlayerResources } from '@/pages/ReplaysPage/StatsTable';
 import type { ReplayParseResult } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 
 export const PlayerInfo = () => {
@@ -34,19 +36,15 @@ export const PlayerInfo = () => {
           </Typography>
         </Box>
       </Box>
-      <GeneralTable player={player} />
+      <GeneralTable player={player} resources={getPlayerResources(replayInfo.timeLine)[playerIndex]} />
       {(player.unitsCreatedOn || player.unitsKilledOn) &&
         <Box>
-          <Typography variant="h5" gutterBottom>
-            {t('playerInfoUnitsTitle')}
-          </Typography>
+          <SectionTitle>{t('playerInfoUnitsTitle')}</SectionTitle>
           <UnitsInfoTabs player={player} />
         </Box>}
       {replayInfo.timeLine &&
         <Box>
-          <Typography variant="h5" gutterBottom>
-            {t('playerInfoChartsTitle')}
-          </Typography>
+          <SectionTitle>{t('playerInfoChartsTitle')}</SectionTitle>
           <PlayerChartViewer charts={replayInfo.timeLine} timeLinePeriod={replayInfo.timeLinePeriod} playerId={playerIndex} />
         </Box>}
     </Stack>

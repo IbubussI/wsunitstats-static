@@ -64,8 +64,8 @@ const RequirementTable = ({ label, subLabel, head, rows }: RequirementTableProps
   </Stack>
 );
 
-/** Button with a popper listing required units and researches */
-export const RequirementsButton = ({ requirements }: { requirements?: Requirements }) => {
+/** Button with a popper listing required units and researches, full width unless fitContent */
+export const RequirementsButton = ({ requirements, fitContent }: { requirements?: Requirements; fitContent?: boolean }) => {
   const { t } = useTranslation();
   if (!requirements || !(requirements.units?.length || requirements.researchAll?.length || requirements.researchAny?.length)) {
     return null;
@@ -82,7 +82,7 @@ export const RequirementsButton = ({ requirements }: { requirements?: Requiremen
   const researchHead = [nbsp(t('requirementsResearchesResearch'))];
 
   return (
-    <InfoButtonPopper label={t('requirementsLabel')}>
+    <InfoButtonPopper label={t('requirementsLabel')} fitContent={fitContent}>
       {!!requirements.units?.length && <RequirementTable
         label={t('requirementsUnitsLabel')}
         subLabel={requirements.unitsAll ? t('requirementsAll') : t('requirementsOne')}

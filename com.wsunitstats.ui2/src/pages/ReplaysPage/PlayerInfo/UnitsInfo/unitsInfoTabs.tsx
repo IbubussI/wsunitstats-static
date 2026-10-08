@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Box, Stack, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { UnitsInfo } from './unitsInfo';
+import { UnitsInfo, countAllUnits } from './unitsInfo';
 import type { Player } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 
 export const UnitsInfoTabs = ({ player }: { player: Player }) => {
@@ -16,9 +16,9 @@ export const UnitsInfoTabs = ({ player }: { player: Player }) => {
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-          <Tab label={t('unitsInfoTabsCreatedTab')} />
-          <Tab label={t('unitsInfoTabsKilledTab')} />
-          <Tab label={t('unitsInfoTabsLostTab')} />
+          <Tab label={withTotal(t('unitsInfoTabsCreatedTab'), player.unitsCreatedOn ? player.unitsCreated : undefined)} />
+          <Tab label={withTotal(t('unitsInfoTabsKilledTab'), player.unitsKilledOn ? player.unitsKilledPlain : undefined)} />
+          <Tab label={withTotal(t('unitsInfoTabsLostTab'), player.unitsLostOn ? player.unitsLostPlain : undefined)} />
         </Tabs>
       </Box>
       {player.unitsCreatedOn &&
@@ -45,6 +45,10 @@ export const UnitsInfoTabs = ({ player }: { player: Player }) => {
     </Box>
   );
 };
+
+/** Label with the total number of units, e.g. "Killed (152)" */
+const withTotal = (label: string, units?: Player['unitsCreated']) =>
+  units ? `${label} (${countAllUnits(units)})` : label;
 
 interface TabPanelProps {
   value: number;
@@ -101,7 +105,7 @@ const GroupedUnitsInfoPanel = (props: TabPanelProps & { plain: Player['unitsCrea
           <Stack gap={1} key={i}>
             <Box>
               <Typography variant="h6">
-                {group.name || t('replayFactionBot')}
+                {withTotal(group.name || t('replayFactionBot'), group.units)}
               </Typography>
               <UnitsInfo unitStatsMap={group.units} />
             </Box>

@@ -9,7 +9,8 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  Typography
 } from '@mui/material';
 import React from 'react';
 import { useGameContext } from '@/store/gameDataStore';
@@ -39,6 +40,12 @@ const NumberTag = styled(TagChip)(() => ({
     paddingLeft: '10px',
   }
 }));
+
+/** Total number of units in a list of unit stats */
+export const countUnits = (units) => units.reduce((sum, unit) => sum + unit.number, 0);
+
+/** Total number of units in a map of category to unit stats */
+export const countAllUnits = (unitStatsMap) => Array.from(unitStatsMap.values()).reduce((sum, units) => sum + countUnits(units), 0);
 
 export const UnitsInfo = ({ unitStatsMap }) => {
   const gameContext = useGameContext();
@@ -77,7 +84,8 @@ export const UnitsInfo = ({ unitStatsMap }) => {
         column.length > 0 &&
         <Stack key={i} sx={{ flex: 1, maxWidth: 276 }} gap={1}>
           {column.map((entry, j) => (
-            <UnitsSingleColumn key={j} units={entry.data[1]} category={entry.data[0]} />
+            <UnitsSingleColumn key={j} units={entry.data[1]} category={entry.data[0]}
+              categoryTotal={countUnits(unitStatsMap.get(entry.data[0]))} />
           ))}
         </Stack>
       ))}
@@ -85,7 +93,8 @@ export const UnitsInfo = ({ unitStatsMap }) => {
   );
 };
 
-const UnitsSingleColumn = ({ units, category }) => {
+// a big category may be split into two columns, both show the total of the whole category
+const UnitsSingleColumn = ({ units, category, categoryTotal }) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const isDebug = searchParams.get('debug') || false;
@@ -95,8 +104,12 @@ const UnitsSingleColumn = ({ units, category }) => {
       <Table>
         <TableHead>
           <TableRow>
-            <HeaderCell align="center" colSpan={2}>
+            <HeaderCell align="center" colSpan={2} sx={{ position: 'relative' }}>
               {t(category)}
+              <Typography variant="caption" color="text.secondary"
+                sx={{ position: 'absolute', right: '8px', bottom: '2px', lineHeight: 1.2 }}>
+                {t('unitsInfoCategoryTotal', { value: categoryTotal })}
+              </Typography>
             </HeaderCell>
           </TableRow>
         </TableHead>

@@ -3,8 +3,11 @@ import { GeneralTable } from '@/pages/ReplaysPage/ReplayInfo/GeneralTable';
 import { useOutletContext } from 'react-router-dom';
 import type { ReplayParseResult } from './replayStructure';
 import { ChartViewer } from './ChartViewer';
-import { Box, Stack, Typography } from '@mui/material';
+import { StatsTable } from '@/pages/ReplaysPage/StatsTable';
+import { Awards } from './Awards';
+import { Box, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { SectionTitle } from '@/pages/ReplaysPage/SectionTitle';
 
 export const ReplayInfo = () => {
   const { t } = useTranslation();
@@ -14,21 +17,24 @@ export const ReplayInfo = () => {
   return (
     <Stack gap={1}>
       <Box>
-        <Typography variant="h5" gutterBottom>
-          {t('replayGeneralTableTitle')}
-        </Typography>
+        <SectionTitle>{t('replayGeneralTableTitle')}</SectionTitle>
         <GeneralTable replayInfo={replayInfo} />
       </Box>
       <Box>
-        <Typography variant="h5" gutterBottom>
-          {t('replayPlayerTableTitle')}
-        </Typography>
+        <SectionTitle>{t('replayPlayerTableTitle')}</SectionTitle>
         <PlayerTable replayInfo={replayInfo} />
       </Box>
       <Box>
-        <Typography variant="h5" gutterBottom>
-          {t('replayChartsTitle')}
-        </Typography>
+        <SectionTitle>{t('replayAwardsTitle')}</SectionTitle>
+        <Awards replayInfo={replayInfo} />
+      </Box>
+      <Box>
+        <SectionTitle>{t('replayStatsTitle')}</SectionTitle>
+        {/* remount to have the default view when replay changes */}
+        <StatsTable key={id} replayInfo={replayInfo} />
+      </Box>
+      <Box>
+        <SectionTitle>{t('replayChartsTitle')}</SectionTitle>
         {/* remount charts to have a default view when replay changes */}
         <ChartViewer key={id} id={id} replayInfo={replayInfo} />
       </Box>

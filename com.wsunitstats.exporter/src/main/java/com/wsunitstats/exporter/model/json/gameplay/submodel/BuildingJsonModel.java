@@ -15,7 +15,7 @@ public class BuildingJsonModel {
     private Integer distance;
     @JsonDeserialize(using = EntityRefDeserializer.Unit.class)
     private EntityId id;
-    // ticks for 1 hp
+    // building progress added every tick (tickProgress in game scripts), see Constants.BUILDING_PROGRESS_FULL
     private Integer progress;
     private Integer progressTerritory;
 }

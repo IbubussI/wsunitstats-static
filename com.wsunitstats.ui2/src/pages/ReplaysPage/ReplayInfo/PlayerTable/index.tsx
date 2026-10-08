@@ -1,3 +1,4 @@
+import * as React from 'react';
 import * as Utils from '@/utils/utils';
 import * as Constants from '@/utils/constants';
 import {
@@ -18,11 +19,12 @@ import { IconTagChip, TagChip } from '@/components/common/TagChip';
 import { Image } from '@/components/common/Image';
 import { useTranslation } from 'react-i18next';
 import { NoBottomBorderRow } from '@/components/common/misc';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useGameContext } from '@/store/gameDataStore';
 import type { ReplayParseResult, Team } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 import { ColorIndicator } from '@/components/common/misc';
+import { calcKillDeath } from '@/pages/ReplaysPage/ReplayInfo/killDeath';
 
 const PlayerTableCell = styled(TableCell)(({ theme }) => ({
   borderColor: alpha(theme.palette.grey[700], 0.6),
@@ -47,6 +49,18 @@ const RatingTag = styled(TagChip)(() => ({
   }
 }));
 
+/** K/D chip colors from the highest K/D: the color of the first range the K/D is not less than */
+const KD_COLORS = [
+  { min: 5, color: '#8e24aa' }, // purple
+  { min: 1, color: '#43a047' }, // green: kills are not less than losses
+  { min: -Infinity, color: '#e53935' } // red
+];
+
+/** K/D value in a chip, colored by its range */
+const KdTag = ({ value }: { value: number }) => (
+  <RatingTag label={value.toFixed(2)} bgColor={KD_COLORS.find(range => value >= range.min)!.color} />
+);
+
 const MVPTag = styled(IconTagChip)(() => ({
   '& span': {
     paddingTop: '2px',
@@ -56,7 +70,8 @@ const MVPTag = styled(IconTagChip)(() => ({
   }
 }))
 
-const ColoredTableRow = styled(NoBottomBorderRow, {
+/** Row in the color of the team (light or dark by the theme) */
+export const ColoredTableRow = styled(NoBottomBorderRow, {
   shouldForwardProp: (prop) => prop !== "teamColor"
 })<{ teamColor: { dark: string; light: string } }>(({ theme, teamColor }) => {
   const color = theme.palette.mode === 'dark'
@@ -70,11 +85,24 @@ const ColoredTableRow = styled(NoBottomBorderRow, {
   };
 });
 
+/** Column header text with a tooltip explaining the column */
+const HeaderLabel = ({ label, tooltip }: { label: string; tooltip: string }) => (
+  <Tooltip arrow title={tooltip}>
+    <span style={{ cursor: 'help' }}>{label}</span>
+  </Tooltip>
+);
+
 export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) => {
   const { t } = useTranslation();
   const gameContext = useGameContext();
+  const [searchParams] = useSearchParams();
+  // the plain K/D (not by unit value) is shown in the debug mode only
+  const isDebug = !!searchParams.get('debug');
   // shown as the age of players that did not research any age
   const stoneAgeUnit = gameContext.units.find(unit => unit.gameId === Constants.STONE_AGE_UNIT_ID)!;
+  const killValues = React.useMemo(
+    () => new Map(gameContext.units.map(unit => [unit.gameId as string, unit.killValue])),
+    [gameContext.units]);
 
   return (
     <TableContainer component={Paper} >
@@ -82,21 +110,39 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
         <TableHead>
           <NoBottomBorderRow>
             {/* Link, Color, Nickname */}
-            <PlayerTableHeaderCell colSpan={replayInfo.match.isMapGen ? 3 : 2}>{t('replayPlayerTablePlayerHeader')}</PlayerTableHeaderCell>
+            <PlayerTableHeaderCell colSpan={replayInfo.match.isMapGen ? 3 : 2}>
+              <HeaderLabel label={t('replayPlayerTablePlayerHeader')} tooltip={t('replayPlayerTablePlayerTooltip')} />
+            </PlayerTableHeaderCell>
+            {/* K/D: raw (debug), by unit value */}
+            {isDebug && <PlayerTableHeaderCell align='center'>
+              <HeaderLabel label={t('replayPlayerTableKdHeader')} tooltip={t('replayPlayerTableKdTooltip')} />
+            </PlayerTableHeaderCell>}
+            <PlayerTableHeaderCell align='center'>
+              <HeaderLabel label={t('replayPlayerTableKdvHeader')} tooltip={t('replayPlayerTableKdvTooltip')} />
+            </PlayerTableHeaderCell>
             {/* MVP Rating, MVP Icon */}
-            <PlayerTableHeaderCell colSpan={2} align='center'>{t('replayPlayerTableMVPHeader')}</PlayerTableHeaderCell>
+            <PlayerTableHeaderCell colSpan={2} align='center'>
+              <HeaderLabel label={t('replayPlayerTableMVPHeader')} tooltip={t('replayPlayerTableMVPTooltip')} />
+            </PlayerTableHeaderCell>
             {/* Squad */}
-            <PlayerTableHeaderCell align='center'>{t('replayPlayerTableSquadHeader')}</PlayerTableHeaderCell>
+            <PlayerTableHeaderCell align='center'>
+              <HeaderLabel label={t('replayPlayerTableSquadHeader')} tooltip={t('replayPlayerTableSquadTooltip')} />
+            </PlayerTableHeaderCell>
             {/* Lastest Age Reached, Survival Time, Win/loose, Death, Wonder */}
-            <PlayerTableHeaderCell colSpan={4} align='center'>{t('replayPlayerTableSurvivalHeader')}</PlayerTableHeaderCell>
+            <PlayerTableHeaderCell colSpan={4} align='center'>
+              <HeaderLabel label={t('replayPlayerTableSurvivalHeader')} tooltip={t('replayPlayerTableSurvivalTooltip')} />
+            </PlayerTableHeaderCell>
             {/* Rating */}
-            <PlayerTableHeaderCell align='right'>{t('replayPlayerTableRatingHeader')}</PlayerTableHeaderCell>
+            <PlayerTableHeaderCell align='right'>
+              <HeaderLabel label={t('replayPlayerTableRatingHeader')} tooltip={t('replayPlayerTableRatingTooltip')} />
+            </PlayerTableHeaderCell>
           </NoBottomBorderRow>
         </TableHead>
         <TableBody>
           {replayInfo.teams.filter((team: Team) => team.isPlayerTeam).map((team: Team) => {
             return team.players.map((playerId: number) => {
               const player = replayInfo.players[playerId];
+              const killDeath = calcKillDeath(player, killValues);
               const lastAgeResearch = player.lastAgeResearch
                 ? { name: gameContext.researches[player.lastAgeResearch].name, image: gameContext.researches[player.lastAgeResearch].image }
                 : { name: stoneAgeUnit.nation.ir1, image: stoneAgeUnit.image };
@@ -130,6 +176,14 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
                     }}>
                       {player.nickname}
                     </Box>
+                  </PlayerTableCell>
+
+                  {/* K/D: raw (debug), by unit value */}
+                  {isDebug && <PlayerTableCell align="center" sx={{ width: '50px' }}>
+                    {killDeath && <KdTag value={killDeath.raw} />}
+                  </PlayerTableCell>}
+                  <PlayerTableCell align="center" sx={{ width: '50px' }}>
+                    {killDeath && <KdTag value={killDeath.value} />}
                   </PlayerTableCell>
 
                   {/* MVP Rating */}
@@ -186,7 +240,7 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
                   </PlayerTableCell>
 
                   {/* Survival Time */}
-                  <PlayerTableCell align="right" sx={{ width: '100px' }}>
+                  <PlayerTableCell align="right" sx={{ width: '100px', whiteSpace: 'nowrap' }}>
                     {player.isDead && <>
                       <span style={{ marginRight: '5px' }}>{Utils.formatDuration(player.survivalTime)}</span>
                       <DeadIcon style={{

@@ -495,7 +495,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 EnvTagModel envTag = new EnvTagModel();
                 envTag.setEnvId(tagId);
                 envTag.setEnvName(localization.getEnvSearchTagNames().get(tagId));
-                EntityId targetEnvId = envs.getIds().stream()
+                List<EntityId> taggedEnvIds = envs.getIds().stream()
                         .filter(envId -> envs.get(envId).getSearchTags() != null)
                         .filter(envId -> {
                             List<Integer> searchTags = Utils.getPositiveBitIndices(envs.get(envId).getSearchTags());
@@ -504,9 +504,14 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                             }
                             return tagId == searchTags.get(0);
                         })
-                        .findAny()
-                        .orElseThrow();
-                envTag.setEnvImage(imageService.getImageName(Constants.EntityType.ENV.getName(), targetEnvId));
+                        .toList();
+                // the image of an env that has one: some envs of the tag have no icon (e.g. omen wheat)
+                String envImage = taggedEnvIds.stream()
+                        .map(envId -> imageService.getImageName(Constants.EntityType.ENV.getName(), envId))
+                        .filter(fileContentService.getImages()::containsKey)
+                        .findFirst()
+                        .orElseGet(() -> imageService.getImageName(Constants.EntityType.ENV.getName(), taggedEnvIds.stream().findFirst().orElseThrow()));
+                envTag.setEnvImage(envImage);
                 envTags.add(envTag);
             }
         }

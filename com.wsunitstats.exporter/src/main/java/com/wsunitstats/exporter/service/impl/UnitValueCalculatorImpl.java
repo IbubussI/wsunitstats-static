@@ -97,6 +97,10 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
         List<UnitSourceModel> unitSources = unit.getSources();
         double lowestAvg = Double.MAX_VALUE;
         for (UnitSourceModel source : unitSources) {
+            if (source.getCost() == null) {
+                // free sources (on death, by weapon) say nothing about the unit cost
+                continue;
+            }
             lowestAvg = Math.min(lowestAvg, getCostAvg(source));
         }
         if (category.equals(AdvancedUnitCategory.WONDER)) {
@@ -116,9 +120,6 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
         List<ResourceModel> cost = source.getFullChainCost();
         if (cost == null) {
             cost = source.getCost();
-        }
-        if (cost == null) {
-            System.out.println(source);
         }
         return Utils.getCostValue(cost);
     }

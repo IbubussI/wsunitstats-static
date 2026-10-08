@@ -1,73 +1,73 @@
-import { Box, Stack } from '@mui/material';
+import { alpha, Box, Stack, Typography, useTheme } from '@mui/material';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useTranslation } from 'react-i18next';
 import { withUnits } from '@/utils/utils';
 import { Frame, FrameSection } from '@/components/layout/Frame';
-import { StatTable } from '@/components/layout/StatTable';
 import { EntityInfo } from '@/components/common/EntityInfo';
-import { HeaderChip } from '@/components/common/HeaderChip';
-import { TagBox } from '@/components/common/TagBox';
 import type { Gather, Unit } from '@/types/game';
 import { TabLayout } from './TabLayout';
+
+/** Resource column (gathered envs, arrow, resource), speed, bag size */
+const COLUMNS = 'minmax(0, max-content) auto minmax(0, 1fr) auto auto';
 
 export const GatherTab = ({ unit }: { unit: Unit }) => {
   const { t } = useTranslation();
   return (
-    <TabLayout title={t('gatherTitle')} minWidth={250} columnWidth={500}>
-      {unit.gather?.map((gather) => <GatherTable key={gather.gatherId} gather={gather} />)}
+    <TabLayout title={t('gatherTitle')} minWidth={250} columnWidth={500} paddingTop={1}>
+      <Frame column>
+        <FrameSection sx={{ width: '100%' }}>
+          <GatherTable gathers={unit.gather ?? []} />
+        </FrameSection>
+      </Frame>
     </TabLayout>
   );
 };
 
-const GatherTable = ({ gather }: { gather: Gather }) => {
+/** One row per gathering: which envs give which resource, how fast and how much is carried at once */
+const GatherTable = ({ gathers }: { gathers: Gather[] }) => {
   const { t } = useTranslation();
-  const rows = [
-    { column: 1, label: t('gatherSpeedCell'), value: withUnits(gather.perSecond, t('perSecMarker')) },
-    { column: 1, label: t('gatherBagSizeCell'), value: gather.bagSize },
-    { column: 1, label: t('gatherAngleCell'), value: gather.angle },
-    { column: 2, label: t('gatherGatherDistanceCell'), value: gather.gatherDistance },
-    { column: 2, label: t('gatherPutDistanceCell'), value: gather.putDistance },
-    { column: 2, label: t('gatherFindNextDistanceCell'), value: gather.findTargetDistance },
-    { column: 2, label: t('gatherFindStorageDistanceCell'), value: gather.findStorageDistance },
+  const theme = useTheme();
+  // the resource head spans the envs, arrow and resource cells: one column that keeps the arrows aligned
+  const head = [
+    { label: t('gatherResourceHead'), span: 3 },
+    { label: t('gatherSpeedCell'), span: 1 },
+    { label: t('gatherBagSizeCell'), span: 1 }
   ];
 
   return (
-    <Frame column label={
-      <HeaderChip id={gather.gatherId} tooltip={t('gatherTooltipID', { value: gather.gatherId })} />
-    }>
-      <FrameSection sx={{ paddingTop: '10px' }}>
-        <TransformInfo gather={gather} />
-      </FrameSection>
-      <FrameSection sx={{ width: '100%' }}>
-        <StatTable rows={rows} columns={2} labelWidth='55%' minWidth={200} />
-      </FrameSection>
-      <FrameSection>
-        <TagBox label={t('gatherStorageTags')} tags={gather.storageTags} />
-        <TagBox label={t('tagContainerUnit')} tags={gather.unitTags} />
-      </FrameSection>
-    </Frame>
-  );
-};
-
-/** Gathered envs -> resource */
-const TransformInfo = ({ gather }: { gather: Gather }) => {
-  const { t } = useTranslation();
-  return (
-    <Stack direction='row' sx={{ justifyContent: 'center', alignItems: 'center', padding: '10px' }}>
-      <Box sx={{ flexGrow: 1, flexBasis: 0 }}>
-        <Stack direction="column" gap={1} sx={{ maxWidth: 'max-content', margin: 'auto' }}>
-          {gather.envTags.map((env) =>
-            <EntityInfo key={env.envId} primary={t(env.envName)} image={env.envImage} overflow />
-          )}
-        </Stack>
+    <Box sx={{
+      display: 'grid',
+      gridTemplateColumns: COLUMNS,
+      alignItems: 'center',
+      '& > .gather-row': { display: 'contents' },
+      '& > .gather-row > *': { padding: '6px 8px', minHeight: '45px', boxSizing: 'border-box', display: 'flex', alignItems: 'center' },
+      '& > .gather-row:nth-of-type(even) > *': { backgroundColor: theme.palette.action.hover },
+      '& > .gather-row:not(:first-of-type):hover > *': { backgroundColor: alpha(theme.palette.action.hover, 0.2) }
+    }}>
+      <Box className='gather-row'>
+        {head.map((cell, index) =>
+          <Box key={index} sx={{ minHeight: 'auto !important', gridColumn: `span ${cell.span}` }}>
+            <Typography variant='body2' color='text.primary' sx={{ fontWeight: 'bold' }}>{cell.label}</Typography>
+          </Box>)}
       </Box>
-      <Box sx={{ fontSize: '40px', lineHeight: '40px', color: 'primary.dark' }}>
-        <i className="fa-solid fa-right-long"></i>
-      </Box>
-      <Box sx={{ flexGrow: 1, flexBasis: 0 }}>
-        <Box sx={{ maxWidth: 'max-content', margin: 'auto' }}>
-          <EntityInfo primary={t(gather.resource.resourceName)} image={gather.resource.image} overflow />
-        </Box>
-      </Box>
-    </Stack>
+      {gathers.map(gather =>
+        <Box key={gather.gatherId} className='gather-row'>
+          <Stack sx={{ gap: '4px', alignItems: 'flex-start !important', flexDirection: 'column', justifyContent: 'center' }}>
+            {gather.envTags.map(env => <EntityInfo key={env.envId} primary={t(env.envName)} image={env.envImage} imageSize={30} overflow />)}
+          </Stack>
+          <Box>
+            <ArrowForwardIcon fontSize='small' sx={{ color: 'text.secondary' }} />
+          </Box>
+          <Box>
+            <EntityInfo primary={t(gather.resource.resourceName)} image={gather.resource.image} imageSize={30} overflow />
+          </Box>
+          <Box>
+            <Typography variant='body2' color='text.primary' noWrap>{withUnits(gather.perSecond, t('perSecMarker'))}</Typography>
+          </Box>
+          <Box>
+            <Typography variant='body2' color='text.primary'>{gather.bagSize}</Typography>
+          </Box>
+        </Box>)}
+    </Box>
   );
 };

@@ -1052,6 +1052,7 @@ export class ReplayInfoParser {
           }
         }
         killedByFactionsEntry.push({
+          factionId: victimFactionN,
           name: this.#getFactionName(victimFactionN),
           units: killedFactionUnits
         });

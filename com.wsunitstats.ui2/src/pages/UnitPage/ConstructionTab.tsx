@@ -1,4 +1,3 @@
-import { Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import * as Constants from '@/utils/constants';
 import { localizeNation } from '@/utils/utils';
@@ -19,11 +18,6 @@ export const ConstructionTab = ({ unit }: { unit: Unit }) => {
           {unit.construction?.map((construction) =>
             <ConstructionTable key={construction.constructionId} construction={construction} />)}
         </GridGroup>
-        <GridGroup columnWidth={500}>
-          <Typography variant="caption" color="text.secondary">
-            {t('constructionNote')}
-          </Typography>
-        </GridGroup>
       </ResizableGrid>
     </>
   );
@@ -43,7 +37,6 @@ const ConstructionTable = ({ construction }: { construction: Construction }) => 
         id={entity.entityId}
         overflow />
     },
-    { label: t('constructionDistanceCell'), value: construction.distance },
     {
       label: t('constructionConstructionSpeedCell'),
       value: construction.constructionSpeed != null

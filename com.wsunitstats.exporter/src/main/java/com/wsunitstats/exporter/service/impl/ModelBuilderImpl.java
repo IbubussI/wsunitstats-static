@@ -28,6 +28,7 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.DeathabilityJsonMod
 import com.wsunitstats.exporter.model.json.gameplay.submodel.GatherJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.MovementJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TurretJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.SupplyJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitAuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AirplaneJsonModel;
@@ -108,7 +109,6 @@ public class ModelBuilderImpl implements ModelBuilder {
     private List<String> wonderTransitionResearches;
 
     private final Map<ResearchType, Set<EntityId>> researchTypes = new LinkedHashMap<>();
-    private Set<EntityId> livestockUnits;
 
     @PostConstruct
     protected void postConstruct() {
@@ -122,7 +122,6 @@ public class ModelBuilderImpl implements ModelBuilder {
         researchTypes.put(ResearchType.BUFF, EntityReferences.resolveAll(researches, buffResearches));
         researchTypes.put(ResearchType.AURA, EntityReferences.resolveAll(researches, auraResearches));
         researchTypes.put(ResearchType.WONDER_TRANSITION, EntityReferences.resolveAll(researches, wonderTransitionResearches));
-        livestockUnits = EntityReferences.resolveAll(fileContentService.getUnits(), Constants.LIVESTOCK_UNITS);
     }
 
     @Override
@@ -204,7 +203,7 @@ public class ModelBuilderImpl implements ModelBuilder {
                 unit.setTransporting(transformingService.transformTransport(null, unitJsonModel.getTransport()));
             }
 
-            if (livestockUnits.contains(id)) {
+            if (isLivestock(unitJsonModel)) {
                 unit.setLimit(LIVESTOCK_LIMIT);
             }
 
@@ -401,5 +400,14 @@ public class ModelBuilderImpl implements ModelBuilder {
             }
         }
         return attackGround;
+    }
+
+    /**
+     * @return true if the unit costs the livestock supply (provided by farms, barnyards, poultry yards and town halls)
+     */
+    private static boolean isLivestock(UnitJsonModel unitJsonModel) {
+        SupplyJsonModel supply = unitJsonModel.getSupply();
+        List<Integer> cost = supply != null ? supply.getCostList() : null;
+        return cost != null && cost.size() > Constants.LIVESTOCK_SUPPLY_INDEX && cost.get(Constants.LIVESTOCK_SUPPLY_INDEX) > 0;
     }
 }

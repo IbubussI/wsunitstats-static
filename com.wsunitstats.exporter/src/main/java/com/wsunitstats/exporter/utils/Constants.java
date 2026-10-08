@@ -20,14 +20,19 @@ public class Constants {
     public static final double PERCENT_VALUE_MULTIPLIER = 10d;
     public static final double POPULATION_VALUE_MULTIPLIER = 10d;
     public static final int LONG_SIZE = 64;
+    /**
+     * Livestock (domestic fowl, goats, cows) can be created while the player has fewer than this number of them.
+     * Not found in the game files, checked in the game: cows created by 7 stop after 8 times (49 -> 56)
+     */
     public static final int LIVESTOCK_LIMIT = 50;
-    /** References to the livestock units, resolved by the unit provider */
-    public static final List<String> LIVESTOCK_UNITS = List.of(
-            "WarSelection/animals/goose", // domestic fowl
-            "WarSelection/animals/goat/female"
-    );
+    /** Index of the livestock supply in unit supply costs: livestock costs this supply instead of population */
+    public static final int LIVESTOCK_SUPPLY_INDEX = 1;
     public static final double INIT_HEALTH_MODIFIER = 1.5; // calculated by experiment
-    public static final double BUILD_SPEED_MODIFIER = 0.238095; // calculated by experiment
+    /**
+     * Building progress of a finished construction (2^23): every tick each builder adds its building progress
+     * (tickProgress) to it, see the game UI script scripts/common/sessionSelection.lua
+     */
+    public static final int BUILDING_PROGRESS_FULL = 8388608;
     public static final int ACTIVE_RESOURCES = 3;
     public static final double DEFAULT_GATHER_FIND_TARGET_DISTANCE = 100d;
     public static final double DEFAULT_GATHER_FIND_STORAGE_DISTANCE = 16640d;
@@ -405,9 +410,20 @@ public class Constants {
         }
     }
 
+    /**
+     * How a unit can be obtained, in the order the sources are listed
+     */
     public enum UnitCostSourceType {
-        ABILITY("unitCostSourceTypeAbility"),
-        BUILDING("unitCostSourceTypeBuilding");
+        /** created by a work ability of the parent (trained, produced) */
+        CREATE("unitCostSourceTypeCreate"),
+        /** the parent turns into the unit by a work ability */
+        TRANSFORM("unitCostSourceTypeTransform"),
+        /** built by the parent (a unit that can construct it) */
+        BUILDING("unitCostSourceTypeBuilding"),
+        /** appears when the parent dies, free */
+        DEATH("unitCostSourceTypeDeath"),
+        /** created by the parent's weapon, free */
+        WEAPON("unitCostSourceTypeWeapon");
 
         private final String type;
 

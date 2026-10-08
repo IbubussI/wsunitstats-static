@@ -1,5 +1,6 @@
-import type * as React from "react";
 import { SvgIcon, type SvgIconProps } from "@mui/material";
+import { FontAwesomeIcon, type FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
+import { faSkull } from "@fortawesome/free-solid-svg-icons";
 
 export const WinIcon = (props: SvgIconProps) => {
   return (
@@ -20,9 +21,9 @@ export const WinIcon = (props: SvgIconProps) => {
   );
 };
 
-export const DeadIcon = (props: React.HTMLAttributes<HTMLElement>) => {
+export const DeadIcon = (props: Omit<FontAwesomeIconProps, 'icon'>) => {
   return (
-    <i {...props} className="fa-solid fa-skull fa-lg"></i>
+    <FontAwesomeIcon icon={faSkull} size="lg" widthAuto {...props} />
   );
 };
 

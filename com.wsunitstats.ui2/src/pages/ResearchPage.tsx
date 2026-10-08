@@ -37,7 +37,7 @@ export const ResearchPage = () => {
         <h3>{t('researchPageTitle')}</h3>
       </Box>
       <ResizableGrid minWidth={MIN_WIDTH} paddingTop={1}>
-        <GridGroup columnWidth={COLUMN_WIDTH}>
+        <GridGroup columnWidth={COLUMN_WIDTH} spacing={3}>
           <Frame column>
             <FrameSection>
               <Stack alignItems='center' spacing={0.8}>

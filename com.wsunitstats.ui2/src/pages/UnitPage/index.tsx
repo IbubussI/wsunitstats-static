@@ -16,6 +16,7 @@ import { ConstructionTab } from './ConstructionTab';
 import { GatherTab } from './GatherTab';
 import { HealTab } from './HealTab';
 import { AuraTab } from './AuraTab';
+import { SourcesTab } from './SourcesTab';
 import { AirplaneTab } from './AirplaneTab';
 import { SubmarineTab } from './SubmarineTab';
 
@@ -66,6 +67,7 @@ const UnitTabs = ({ unit, currentTab }: { unit: Unit; currentTab: string }) => {
     { id: Constants.UNIT_WEAPONS_TAB, label: t('unitTabWeapons'), Component: WeaponsTab, isShow: !!(unit.weapons?.length || unit.turrets?.length) },
     { id: Constants.UNIT_ABILITIES_TAB, label: t('unitTabAbilities'), Component: AbilitiesTab, isShow: getShownAbilities(unit).length > 0 },
     { id: Constants.UNIT_BUILD_TAB, label: t('unitTabBuilding'), Component: BuildingTab, isShow: !!unit.build },
+    { id: Constants.UNIT_SOURCES_TAB, label: t('unitTabSources'), Component: SourcesTab, isShow: !!unit.sources?.length },
     { id: Constants.UNIT_CONSTRUCTION_TAB, label: t('unitTabConstruct'), Component: ConstructionTab, isShow: !!unit.construction?.length },
     { id: Constants.UNIT_GATHER_TAB, label: t('unitTabGather'), Component: GatherTab, isShow: !!unit.gather?.length },
     { id: Constants.UNIT_HEAL_TAB, label: t('unitTabHeal'), Component: HealTab, isShow: !!unit.heal },

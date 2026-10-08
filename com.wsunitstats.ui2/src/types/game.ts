@@ -353,9 +353,26 @@ export interface Unit {
   aura?: Aura;
   construction?: Construction[];
   build?: Build;
+  sources?: UnitSource[];
   airplane?: Airplane;
   submarine?: Submarine;
   limit?: number;
+}
+
+export interface UnitSource {
+  /** unitCostSourceType* */
+  sourceType: string;
+  /** cost of the last step, absent for free sources (on death, by weapon) */
+  cost?: Resource[];
+  /** transformations only: cost of the transformation plus the cheapest cost of obtaining the parent */
+  fullChainCost?: Resource[];
+  /** transformations only: units of the cheapest route from the first created or built one to the parent */
+  fullChainRoute?: EntityInfo[];
+  /** transformations only: the parent can be obtained by more than one route, so the cheapest one is worth showing */
+  fullChainRouteHasAlternatives?: boolean;
+  /** unit that creates, turns into or builds this unit */
+  sourceInfo?: EntityInfo;
+  requirements?: Requirements;
 }
 
 export interface Research {

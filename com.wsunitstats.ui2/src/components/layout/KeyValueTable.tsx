@@ -116,7 +116,7 @@ export const DamageTable = ({ damages = [], attacksNumber, width = '150px' }: Da
 };
 
 interface CostTableProps {
-  label: string;
+  label: React.ReactNode;
   cost: Resource[];
 }
 

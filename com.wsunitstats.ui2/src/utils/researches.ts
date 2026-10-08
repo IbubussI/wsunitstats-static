@@ -21,7 +21,8 @@ const TICK_SCALE = 50; // per tick values shown per second: gather speed, regene
 const SPREAD_SCALE = 10; // weapon spread, %
 const ANGLE_SCALE = 4096 * 1000; // rotation speed
 const STORAGE_SCALE = 65536 / 100; // storage multiplier, %
-const BUILD_SPEED_SCALE = SHIFT / 0.238095; // construction speed, %/sec (see the exporter BUILD_SPEED_MODIFIER)
+// construction speed, %/sec: building progress per tick of 2^23 for the whole construction (see the exporter BUILDING_PROGRESS_FULL)
+const BUILD_SPEED_SCALE = 8388608 / (20 * 100);
 
 const toGame = (value: number, scale: number) => Math.round(value * scale);
 const fromGame = (value: number, scale: number) => value / scale;

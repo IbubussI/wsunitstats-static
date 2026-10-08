@@ -1,5 +1,7 @@
 import * as Utils from '@/utils/utils';
 import * as Constants from '@/utils/constants';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSkull } from '@fortawesome/free-solid-svg-icons';
 import {
   Paper,
   Stack,
@@ -20,6 +22,7 @@ import { WinIcon } from '@/pages/ReplaysPage/ReplayInfo/svg';
 import { useGameContext } from '@/store/gameDataStore';
 import { Image } from '@/components/common/Image';
 import type { Player } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
+import { RESOURCE_IMAGES } from '@/pages/ReplaysPage/StatsTable';
 
 const GeneralTableCell = styled(TableCell)(({ theme }) => ({
   fontSize: theme.typography.body2.fontSize,
@@ -42,9 +45,10 @@ const RatingTag = styled(TagChip)(() => ({
   }
 }));
 
-export const GeneralTable = ({ player }: { player: Player }) => {
+/** @param resources food, wood and iron collected by the player, absent if the replay has no time line */
+export const GeneralTable = ({ player, resources }: { player: Player; resources?: number[] }) => {
   const isWide = useMediaQuery('(min-width:800px)');
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const gameContext = useGameContext();
   // shown as the age of players that did not research any age
   const stoneAgeUnit = gameContext.units.find(unit => unit.gameId === Constants.STONE_AGE_UNIT_ID)!;
@@ -71,7 +75,7 @@ export const GeneralTable = ({ player }: { player: Player }) => {
           {t('playerInfoDead')}
         </CellText>}
       {player.isDead &&
-        <i className="fa-solid fa-skull fa-lg" style={{ color: '#dd1d1dd4' }}></i>}
+        <FontAwesomeIcon icon={faSkull} size='lg' widthAuto style={{ color: '#dd1d1dd4' }} />}
       {player.isWinner &&
         <CellText variant='body2'>
           {t('playerInfoWinner')}
@@ -154,32 +158,54 @@ export const GeneralTable = ({ player }: { player: Player }) => {
   ];
 
   return (
-    <Stack direction={isWide ? 'row' : 'column'} gap={1} sx={{ py: 1 }}>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableBody>
-            {rowsLeft.map((row, id) => (
-              <NoBottomBorderRow key={id}>
-                <GeneralTableCell align="left">{row[0]}</GeneralTableCell>
-                <GeneralTableCell align="right">{row[1]}</GeneralTableCell>
-              </NoBottomBorderRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <Stack gap={1} sx={{ py: 1 }}>
+      <Stack direction={isWide ? 'row' : 'column'} gap={1}>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableBody>
+              {rowsLeft.map((row, id) => (
+                <NoBottomBorderRow key={id}>
+                  <GeneralTableCell align="left">{row[0]}</GeneralTableCell>
+                  <GeneralTableCell align="right">{row[1]}</GeneralTableCell>
+                </NoBottomBorderRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableBody>
-            {rowsRight.map((row, id) => (
-              <NoBottomBorderRow key={id}>
-                <GeneralTableCell align="left">{row[0]}</GeneralTableCell>
-                <GeneralTableCell align="right">{row[1]}</GeneralTableCell>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableBody>
+              {rowsRight.map((row, id) => (
+                <NoBottomBorderRow key={id}>
+                  <GeneralTableCell align="left">{row[0]}</GeneralTableCell>
+                  <GeneralTableCell align="right">{row[1]}</GeneralTableCell>
+                </NoBottomBorderRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Stack>
+      {/* full width row under the 2 tables */}
+      {resources &&
+        <TableContainer component={Paper}>
+          <Table>
+            <TableBody>
+              <NoBottomBorderRow>
+                <GeneralTableCell align="left">{t('playerInfoResourcesCollectedCell')}</GeneralTableCell>
+                <GeneralTableCell align="right" sx={{ maxWidth: 'none' }}>
+                  <Stack direction="row" gap={2} sx={{ justifyContent: 'flex-end' }}>
+                    {resources.map((value, index) =>
+                      <Stack key={index} direction="row" gap={0.5} sx={{ alignItems: 'center' }}>
+                        <CellText variant='body2'>{Math.round(value).toLocaleString(i18n.language)}</CellText>
+                        <Image path={RESOURCE_IMAGES[index]} width={18} height={18} />
+                      </Stack>)}
+                  </Stack>
+                </GeneralTableCell>
               </NoBottomBorderRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableBody>
+          </Table>
+        </TableContainer>}
     </Stack>
   );
 };
