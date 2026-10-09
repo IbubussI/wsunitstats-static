@@ -43,3 +43,5 @@ build/
 /logs/
 /excel-units-output.xlsx
 /excel-unit-costs-output.xlsx
+/api-response-example.json
+/GAME_DATA_CHANGES.md
