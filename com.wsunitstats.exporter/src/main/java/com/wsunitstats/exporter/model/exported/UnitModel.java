@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported;
 
+import com.wsunitstats.exporter.model.exported.submodel.AdditionalClassifiersModel;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
 import com.wsunitstats.exporter.model.exported.submodel.AuraModel;
@@ -59,6 +60,7 @@ public class UnitModel extends GenericEntityModel {
     private String category;
     private String advancedCategory;
     private double killValue;
+    private AdditionalClassifiersModel additionalClassifiers;
 
     // Technical data to render research selector
     private Collection<UnitResearchModel> applicableResearches;

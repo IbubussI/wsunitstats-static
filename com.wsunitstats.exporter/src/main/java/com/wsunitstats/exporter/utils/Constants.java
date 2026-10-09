@@ -81,6 +81,15 @@ public class Constants {
             "WarSelection/4/pl/wall" // dragon's teeth
     );
 
+    /**
+     * Ground combat vehicles that the rule (turret, equipment, land forces, can hit land units) misses:
+     * the polish tankettes have no turret in the game files. Resolved by the unit provider
+     */
+    public static final List<String> GROUND_COMBAT_VEHICLE_EXTRA_UNITS = List.of(
+            "WarSelection/4/pl/tank_heavy", // tankette KD
+            "WarSelection/4/pl/tank_light" // tankette KS
+    );
+
     public enum TagGroupName {
         UNIT_SEARCH_TAGS("tagGroupUnitSearch"),
         UNIT_TAGS("tagGroupUnit"),

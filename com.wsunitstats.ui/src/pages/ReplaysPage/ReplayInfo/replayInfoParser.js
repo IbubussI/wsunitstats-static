@@ -761,7 +761,8 @@ export class ReplayInfoParser {
         if (isWonder) {
           const entry = { playerId: playerId, researchTime: researchResult.wonderTime };
           firstWonderCandidates.push(entry)
-          if (isWinner && this.#isWonderWin) {
+          // the wonder of a player that died before the match end does not win it
+          if (isWinner && this.#isWonderWin && this.#playerSurvival.get(playerId) >= this.#winnerSurvivalTime) {
             wonderLeaderCandidates.push(entry);
           }
         }

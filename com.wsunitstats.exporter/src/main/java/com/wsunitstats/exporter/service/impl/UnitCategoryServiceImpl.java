@@ -2,6 +2,8 @@ package com.wsunitstats.exporter.service.impl;
 
 import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.WorkAbilityContainer;
+import com.wsunitstats.exporter.model.exported.submodel.AdditionalClassifiersModel;
+import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
 import com.wsunitstats.exporter.service.UnitCategoryService;
 import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Constants.AdvancedUnitCategory;
@@ -20,10 +22,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.wsunitstats.exporter.utils.Constants.GROUND_COMBAT_VEHICLE_EXTRA_UNITS;
 import static com.wsunitstats.exporter.utils.Constants.WALL_UNITS;
 
 @Service
 public class UnitCategoryServiceImpl implements UnitCategoryService {
+    /** Unit tag "Land forces" */
+    private static final int LAND_FORCES_TAG = 15;
     /** Categories by unit reference, resolved by the unit provider */
     private static final Map<String, SimpleUnitCategory> SIMPLE_EXCEPTION_UNITS = new HashMap<>();
     private static final Map<String, AdvancedUnitCategory> ADVANCED_EXCEPTION_UNITS = new HashMap<>();
@@ -57,6 +62,9 @@ public class UnitCategoryServiceImpl implements UnitCategoryService {
     private Map<EntityId, SimpleUnitCategory> simpleExceptions;
     private Map<EntityId, AdvancedUnitCategory> advancedExceptions;
     private Set<EntityId> wallUnits;
+    private Set<EntityId> groundCombatVehicleExtraUnits;
+    /** Damage type of a weapon's damage against land forces; the damage of anti-aircraft weapons against it is 0 */
+    private String landForcesDamageType;
 
     @PostConstruct
     protected void postConstruct() {
@@ -64,6 +72,38 @@ public class UnitCategoryServiceImpl implements UnitCategoryService {
         simpleExceptions = EntityReferences.resolveKeys(units, SIMPLE_EXCEPTION_UNITS);
         advancedExceptions = EntityReferences.resolveKeys(units, ADVANCED_EXCEPTION_UNITS);
         wallUnits = EntityReferences.resolveAll(units, WALL_UNITS);
+        groundCombatVehicleExtraUnits = EntityReferences.resolveAll(units, GROUND_COMBAT_VEHICLE_EXTRA_UNITS);
+        landForcesDamageType = fileContentService.getLocalizationKeyModel().getUnitTagNames().get(LAND_FORCES_TAG);
+    }
+
+    @Override
+    public AdditionalClassifiersModel getAdditionalClassifiers(UnitModel unit) {
+        AdditionalClassifiersModel classifiers = new AdditionalClassifiersModel();
+        classifiers.setGroundCombatVehicle(isGroundCombatVehicle(unit));
+        return classifiers;
+    }
+
+    /**
+     * Tanks, armored cars, APCs and other armed land vehicles: units with a turret that can hit land units,
+     * tagged as equipment and land forces, plus the exceptions the rule misses
+     */
+    private boolean isGroundCombatVehicle(UnitModel unit) {
+        if (groundCombatVehicleExtraUnits.contains(unit.getGameId())) {
+            return true;
+        }
+        return equipmentPredicate.test(unit) && landForcesPredicate.test(unit) && CollectionUtils.isNotEmpty(unit.getTurrets())
+                && unit.getTurrets().stream()
+                .filter(turret -> turret.getWeapons() != null)
+                .flatMap(turret -> turret.getWeapons().stream())
+                .anyMatch(this::hitsLandForces);
+    }
+    /** A weapon hits land forces unless its damage against them is set to 0 (anti-aircraft weapons) */
+    private boolean hitsLandForces(WeaponModel weapon) {
+        if (weapon.getDamage() == null || weapon.getDamage().getDamages() == null) {
+            return true;
+        }
+        return weapon.getDamage().getDamages().stream()
+                .noneMatch(damage -> landForcesDamageType.equals(damage.getType()) && damage.getValue() != null && damage.getValue() == 0);
     }
 
     @Override
@@ -165,6 +205,8 @@ public class UnitCategoryServiceImpl implements UnitCategoryService {
     private final Predicate<UnitModel> fleetPredicate = unit -> unit.getTags().stream().anyMatch(tag -> tag.getGameId() == 16);
     private final Predicate<UnitModel> townCenterPredicate = unit -> unit.getTags().stream().anyMatch(tag -> tag.getGameId() == 5);
     private final Predicate<UnitModel> wonderPredicate = unit -> unit.getTags().stream().anyMatch(tag -> tag.getGameId() == 9);
+    private final Predicate<UnitModel> equipmentPredicate = unit -> unit.getTags().stream().anyMatch(tag -> tag.getGameId() == 13);
+    private final Predicate<UnitModel> landForcesPredicate = unit -> unit.getTags().stream().anyMatch(tag -> tag.getGameId() == LAND_FORCES_TAG);
 
     private final Predicate<UnitModel> productionPredicate = unit -> unit.getAbilities() != null && unit.getAbilities().stream()
             .filter(container -> container.getContainerType() == Constants.AbilityContainerType.WORK.getType())

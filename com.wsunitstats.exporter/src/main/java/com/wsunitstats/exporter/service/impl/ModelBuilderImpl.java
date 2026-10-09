@@ -210,6 +210,7 @@ public class ModelBuilderImpl implements ModelBuilder {
             unit.setApplicableResearches(unitResearchesMap.get(id));
             unit.setCategory(unitCategoryService.getSimpleUnitCategory(unit).getName());
             unit.setAdvancedCategory(unitCategoryService.getAdvancedUnitCategory(unit).getName());
+            unit.setAdditionalClassifiers(unitCategoryService.getAdditionalClassifiers(unit));
 
             units.add(unit);
         });

@@ -24,10 +24,8 @@ export const ReplayInfo = () => {
         <SectionTitle>{t('replayPlayerTableTitle')}</SectionTitle>
         <PlayerTable replayInfo={replayInfo} />
       </Box>
-      <Box>
-        <SectionTitle>{t('replayAwardsTitle')}</SectionTitle>
-        <Awards replayInfo={replayInfo} />
-      </Box>
+      {/* has its own title, the whole section is absent if nobody is awarded */}
+      <Awards replayInfo={replayInfo} />
       <Box>
         <SectionTitle>{t('replayStatsTitle')}</SectionTitle>
         {/* remount to have the default view when replay changes */}

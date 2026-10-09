@@ -344,6 +344,7 @@ export interface Unit {
   category: string;
   advancedCategory: string;
   killValue: number;
+  additionalClassifiers: AdditionalClassifiers;
   applicableResearches?: UnitResearch[];
   movement?: Movement;
   transporting?: Transporting;
@@ -357,6 +358,12 @@ export interface Unit {
   airplane?: Airplane;
   submarine?: Submarine;
   limit?: number;
+}
+
+/** Unit classes the game has no tag for, derived from the unit data */
+export interface AdditionalClassifiers {
+  /** tanks, armored cars, APCs and other armed land vehicles */
+  isGroundCombatVehicle: boolean;
 }
 
 export interface UnitSource {
@@ -392,7 +399,9 @@ export interface UnitOption {
   nation: NationName;
   nationId: number;
   category: string;
+  advancedCategory: string;
   killValue: number;
+  additionalClassifiers: AdditionalClassifiers;
   searchTags: number[];
   unitTags: number[];
 }
