@@ -1,14 +1,21 @@
 import * as React from 'react';
 import * as Constants from '@/utils/constants';
 import { ExplorerTree } from '@/pages/DocsPage/ExplorerTree';
-import { Box, Button, Paper, styled, Typography } from '@mui/material';
+import { Box, Button, Link, Paper, styled, Typography } from '@mui/material';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLoaderData, useSearchParams } from 'react-router-dom';
 import { useValuesToQueryStringSync } from '@/hooks/useValuesToQueryStringSync';
 import SearchIcon from '@mui/icons-material/Search';
 import { PropsTable } from '@/pages/DocsPage/PropsTable';
-import { useBatchLoader } from '@/hooks/useBatchLoader';
 import { useTranslation } from 'react-i18next';
+import {
+  assignChildIds,
+  assignTreeIds,
+  type EngineNode,
+  getProperties,
+  getTextEntries,
+  idToFileName
+} from '@/pages/DocsPage/engineTree';
 
 const PANEL_GAP = 8;
 
@@ -67,14 +74,10 @@ const PathButtonIcon = styled(SearchIcon)(() => ({
   height: '18px',
 }));
 
-// replace . accessor with [] one for number indexes to match valid lua syntax
-const idToFileName = (id: string) => id.replaceAll('[', '.').replaceAll('].', '.').replaceAll(']', '');
-
-interface NodeContext {
-  /** text content */
-  tc?: { nm: string; tx: string }[];
-  /** properties */
-  pr?: { nm: string; tp: string; vl: unknown }[];
+/** Selected node with its children (loaded on demand for some nodes), the properties of an object are its leaf children */
+interface Selection {
+  node: EngineNode;
+  children?: EngineNode[];
 }
 
 interface ExplorerTreeHandle {
@@ -86,16 +89,18 @@ const fetchJsonOrEmpty = (path: string) => fetch(path).then((response) => respon
 
 export const DocsPage = () => {
   const { t } = useTranslation();
-  const initialTree = useLoaderData();
+  const initialTree = useLoaderData() as EngineNode;
+  // nodes hold only their keys, the paths are built from them
+  const tree = React.useMemo(() => assignTreeIds(initialTree), [initialTree]);
   const explorerTreeRef = React.useRef<ExplorerTreeHandle>(null);
   const [searchParams] = useSearchParams();
   const { sync } = useValuesToQueryStringSync();
   const [input, setInput] = React.useState('');
-  const [nodeContext, setNodeContext] = React.useState<NodeContext>();
-
-  const fetchContextBatch = React.useCallback((batchId: string) =>
-    fetchJsonOrEmpty(Constants.DOCS_DATA_CONTEXT_PATH + "/" + batchId + ".json"), []);
-  const loadContext = useBatchLoader<NodeContext>(fetchContextBatch, 1);
+  const [selection, setSelection] = React.useState<Selection>();
+  // children loaded on demand by node path, shared by the tree and the properties of the selected node
+  const childrenCache = React.useRef(new Map<string, Promise<EngineNode[]>>());
+  // the last selected node, to ignore children loaded for a node selected earlier
+  const selectedNode = React.useRef<EngineNode>(undefined);
 
   const getCurrentPath = React.useCallback(() => {
     return searchParams.get(Constants.PARAM_PATH) || '';
@@ -107,8 +112,38 @@ export const DocsPage = () => {
     sync(map);
   }, [sync]);
 
-  const fetchNodeChildren = React.useCallback((id: string) =>
-    fetchJsonOrEmpty(Constants.DOCS_DATA_TREE_PATH + "/" + idToFileName(id) + ".json"), []);
+  const fetchNodeChildren = React.useCallback((node: EngineNode) => {
+    const id = node.id!;
+    let children = childrenCache.current.get(id);
+    if (!children) {
+      children = fetchJsonOrEmpty(Constants.DOCS_DATA_TREE_PATH + "/" + idToFileName(id) + ".json")
+        .then((loaded: EngineNode[]) => assignChildIds(node, loaded) ?? []);
+      childrenCache.current.set(id, children);
+    }
+    return children;
+  }, []);
+
+  const selectNode = React.useCallback((node: EngineNode) => {
+    selectedNode.current = node;
+    if (node.ch || !node.as) {
+      setSelection({ node, children: node.ch });
+    } else {
+      setSelection({ node });
+      fetchNodeChildren(node).then((children) => {
+        if (selectedNode.current === node) {
+          setSelection({ node, children });
+        }
+      });
+    }
+  }, [fetchNodeChildren]);
+
+  const navigateToPath = (path: string) => {
+    const explorerTree = explorerTreeRef.current;
+    if (explorerTree && !explorerTree.isNavigationInProgress()) {
+      setCurrentPath(path);
+      explorerTree.navigateToPath(path);
+    }
+  };
 
   React.useEffect(() => {
     const currentPath = getCurrentPath();
@@ -120,19 +155,15 @@ export const DocsPage = () => {
   }, [getCurrentPath]);
 
   const currentPath = getCurrentPath();
-  const textContent = nodeContext?.tc;
-  const properties = nodeContext?.pr;
+  const textEntries = selection && getTextEntries(selection.node);
+  const properties = selection && getProperties(selection.node, selection.children);
   return (
     <PageRoot>
       <PanelContent>
         <PathForm onSubmit={(event) => {
           // prevent page reload
           event.preventDefault();
-          const explorerTree = explorerTreeRef.current;
-          if (explorerTree && !explorerTree.isNavigationInProgress()) {
-            setCurrentPath(input);
-            explorerTree.navigateToPath(input);
-          }
+          navigateToPath(input);
         }}>
           <Input type='text' value={input} onChange={(event) => setInput(event.target.value)} />
           <PathButton type='submit' variant='text'>
@@ -151,10 +182,9 @@ export const DocsPage = () => {
             <Box height='inherit' padding='1px'>
               <ExplorerTree
                 ref={explorerTreeRef}
-                tree={initialTree}
+                tree={tree}
                 onPathChange={setCurrentPath}
-                onContextChange={(batchId: string, itemId: string) => loadContext(batchId, idToFileName(itemId))
-                  .then((context) => setNodeContext(context))}
+                onSelect={selectNode}
                 currentPath={currentPath}
                 fetchNodeChildren={fetchNodeChildren}
                 onMounted={() => explorerTreeRef.current?.navigateToPath(currentPath)}
@@ -172,20 +202,20 @@ export const DocsPage = () => {
           <StyledPanelGroup autoSaveId={Constants.LOCAL_MODS_CONENT_PROPS_RESIZABLE_ID} direction='vertical'>
             <Panel>
               <PanelContent style={{ padding: '8px' }}>
-                {textContent && textContent.map((entry, i) => {
-                  const name = entry.nm;
-                  const value = entry.tx;
-                  return (
-                    <React.Fragment key={i}>
-                      <Typography variant='h6' gutterBottom sx={{ fontSize: '1rem' }}>
-                        {name}
-                      </Typography>
-                      <Typography variant='body2' color='textSecondary' gutterBottom>
-                        {value}
-                      </Typography>
-                    </React.Fragment>
-                  );
-                })}
+                {textEntries && textEntries.map((entry, i) =>
+                  <React.Fragment key={i}>
+                    <Typography variant='h6' gutterBottom sx={{ fontSize: '1rem' }}>
+                      {entry.name}
+                    </Typography>
+                    <Typography variant='body2' color='textSecondary' gutterBottom>
+                      {entry.isLink
+                        // the same subtree exported once, open it
+                        ? <Link component='button' variant='body2' sx={{ textAlign: 'left' }} onClick={() => navigateToPath(entry.text)}>
+                          {entry.text}
+                        </Link>
+                        : entry.text}
+                    </Typography>
+                  </React.Fragment>)}
               </PanelContent>
             </Panel>
             <PanelResizeHandle>
@@ -196,12 +226,7 @@ export const DocsPage = () => {
                 <PropsTable
                   resizeAllToRight={true}
                   autoSaveId={Constants.LOCAL_MODS_PROPS_TABLE_COLUMNS_RESIZABLE_ID}
-                  dataRows={properties && properties.map((entry) => {
-                    const name = entry.nm;
-                    const type = entry.tp;
-                    const value = String(entry.vl);
-                    return { name, type, value }
-                  })}
+                  dataRows={properties}
                   headCells={[
                     { id: 'name', label: t('moddingPropsName'), width: 200 },
                     { id: 'type', label: t('moddingPropsType'), width: 150 },

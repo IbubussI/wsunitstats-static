@@ -13,7 +13,6 @@ export const RESEARCH_SELECTOR_DATA_PATH = FILES_PATH + '/researches/researchSel
 export const DOCS_DATA_ROOT_PATH = FILES_PATH + '/docs';
 export const DOCS_DATA_TREE_PATH = DOCS_DATA_ROOT_PATH + '/tree';
 export const DOCS_DATA_TREE_ROOT_FILE_PATH = DOCS_DATA_TREE_PATH + '/home.json';
-export const DOCS_DATA_CONTEXT_PATH = DOCS_DATA_ROOT_PATH + '/context';
 /** Snapshot of the game file legacyIds.json, maps legacy numeric unit ids of old replays to path ids */
 export const LEGACY_IDS_PATH = '/static/legacyIds.json';
 

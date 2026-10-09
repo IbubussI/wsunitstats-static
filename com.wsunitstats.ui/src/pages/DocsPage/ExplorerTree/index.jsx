@@ -23,6 +23,7 @@ import { Box } from '@mui/material';
 import styled from '@emotion/styled';
 import { useTheme } from '@mui/material/styles';
 import './index.css';
+import { getNodeLabel } from '@/pages/DocsPage/engineTree';
 
 const RowIcon = (props) => {
   const {
@@ -174,7 +175,7 @@ const ExplorerTreeItem = (props) => {
       isLeaf,
       isLast,
       label,
-      contextBatch,
+      node,
       rowIcons,
       updateChildren,
       loadingState,
@@ -182,7 +183,7 @@ const ExplorerTreeItem = (props) => {
     },
     treeData: {
       onPathChange,
-      onContextChange,
+      onSelect,
       currentPath
     },
     isOpen,
@@ -226,7 +227,7 @@ const ExplorerTreeItem = (props) => {
         : undefined
     }} onClick={() => {
       onPathChange(id);
-      onContextChange(contextBatch, id);
+      onSelect(node);
     }} >
       {rowIcons}
       {nodeSlotIcon}
@@ -241,15 +242,17 @@ const ExplorerTreeItem = (props) => {
 };
 
 /**
- * @typedef {{ tree: any, onPathChange: (path: string) => void, onContextChange: (batchId: string, itemId: string) => void,
- *   currentPath: string, fetchNodeChildren: (id: string) => Promise<any>, onMounted?: () => void, virtualRootPrefix?: string }} ExplorerTreeProps
+ * @typedef {{ tree: import('@/pages/DocsPage/engineTree').EngineNode, onPathChange: (path: string) => void,
+ *   onSelect: (node: import('@/pages/DocsPage/engineTree').EngineNode) => void, currentPath: string,
+ *   fetchNodeChildren: (node: import('@/pages/DocsPage/engineTree').EngineNode) => Promise<any>, onMounted?: () => void,
+ *   virtualRootPrefix?: string }} ExplorerTreeProps
  */
 
 /** @type {React.ForwardRefExoticComponent<ExplorerTreeProps & React.RefAttributes<any>>} */
 export const ExplorerTree = React.forwardRef(({
   tree,
   onPathChange,
-  onContextChange,
+  onSelect,
   currentPath,
   fetchNodeChildren,
   onMounted = () => { },
@@ -262,12 +265,10 @@ export const ExplorerTree = React.forwardRef(({
   const [navigationPath, setNavigationPath] = React.useState();
   const [updateTrigger, triggerUpdate] = React.useReducer((v) => v + 1, 0);
 
-  const fetchChildren = React.useCallback((id) => {
-    return fetchNodeChildren(id).then((children) => {
-      return new Promise((resolve) => {
-        downloadedIdsRef.current.push(id);
-        resolve(children);
-      });
+  const fetchChildren = React.useCallback((node) => {
+    return fetchNodeChildren(node).then((children) => {
+      downloadedIdsRef.current.push(node.id);
+      return children;
     });
   }, [fetchNodeChildren]);
 
@@ -309,7 +310,7 @@ export const ExplorerTree = React.forwardRef(({
         if (currentItem.ch === undefined) {
           currentItem.isLoading = true;
           triggerUpdate();
-          currentItem.ch = await fetchChildren(currentItem.id);
+          currentItem.ch = await fetchChildren(currentItem);
           currentItem.isLoading = false;
           triggerUpdate();
         }
@@ -323,9 +324,9 @@ export const ExplorerTree = React.forwardRef(({
         break;
       }
     }
-    // trigger context change if desired path is reached
+    // select the item if desired path is reached
     if (currentItem) {
-      onContextChange(currentItem.cb, path);
+      onSelect(currentItem);
     }
     navigationInProgress.current = false;
   };
@@ -368,17 +369,17 @@ export const ExplorerTree = React.forwardRef(({
 
     return {
       data: {
-        id: node.id.toString(), // mandatory
+        id: node.id, // mandatory
         isLeaf: () => node.ch === undefined && (!node.as || downloadedIdsRef.current.includes(node.id)),
         isOpenByDefault: node.ex, // mandatory
         isLast,
-        label: node.lb,
-        contextBatch: node.cb,
+        label: getNodeLabel(node),
+        node,
         rowIcons: rowIcons.reverse(),
         type: node.tp,
         updateChildren: () => {
           if (node.ch === undefined) {
-            return fetchChildren(node.id, true).then((children) => {
+            return fetchChildren(node).then((children) => {
               node.ch = children;
               triggerUpdate();
             });
@@ -429,7 +430,7 @@ export const ExplorerTree = React.forwardRef(({
           ref={treeRef}
           treeWalker={treeWalker}
           itemSize={24}
-          itemData={{ onPathChange, onContextChange, currentPath }}
+          itemData={{ onPathChange, onSelect, currentPath }}
           height={height}
           async={true}
           width="100%">

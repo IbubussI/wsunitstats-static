@@ -11,7 +11,9 @@ public enum EngineNodeType {
     TAGS("tags", "Tags"),
     ROOT("root", "TreeRoot"),
     HOME("home", "Home"),
-    FOLDER("folder", "Folder");
+    FOLDER("folder", "Folder"),
+    // a subtree equal to one exported earlier, refers to it by its path
+    LINK("link", "Link");
 
     private final String id;
     private final String label;
