@@ -2,6 +2,7 @@ package com.wsunitstats.exporter.service.impl;
 
 import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
+import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.IconAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.AttackJsonModel;
@@ -106,6 +107,7 @@ public class IconAbilityTransformingServiceImpl implements IconAbilityTransformi
             model.setAbilityIds(Stream.concat(damageIds.stream(), scatterIds.stream()).toList());
             AbilityDataJsonModel damage = getAbility(unitJsonModel, damageIds.get(0)).getData();
             model.setDamages(getUnitDamages(damage));
+            model.setDamageExcludedUnits(getDamageExcludedUnits(damage));
             model.setDamageRadius(Utils.intToDoubleShift(damage.getRadius()));
             // units in the way move aside
             if (!scatterIds.isEmpty()) {
@@ -282,6 +284,21 @@ public class IconAbilityTransformingServiceImpl implements IconAbilityTransformi
         return modelTransformingService.transformDamages(data.getDamages()).stream()
                 .filter(damage -> damage.getValue() != null && damage.getValue() > 0)
                 .toList();
+    }
+
+    /**
+     * Tags the ability does no damage to: zero damage for a tag overrides the damage for the other tags
+     * (e.g. tanks damage alive units, but not large ones). Tag 0 is the basic damage, not a tag of units.
+     */
+    private List<TagModel> getDamageExcludedUnits(AbilityDataJsonModel data) {
+        if (data == null || data.getDamages() == null) {
+            return List.of();
+        }
+        long tags = data.getDamages().stream()
+                .filter(damage -> damage.get(0) != 0 && damage.get(1) == 0)
+                .mapToLong(damage -> 1L << damage.get(0))
+                .reduce(0L, (first, second) -> first | second);
+        return tagResolver.getUnitTags(tags);
     }
 
     private List<WeaponJsonModel> getWeaponsUsing(UnitJsonModel unitJsonModel, int abilityId) {

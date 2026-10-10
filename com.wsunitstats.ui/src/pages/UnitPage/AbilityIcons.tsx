@@ -16,13 +16,12 @@ const steps = (t: TFunction, value?: number) => t('abilityIconSteps', { count: v
 const tagNames = (t: TFunction, tags?: Tag[]) =>
   tags?.length ? tags.map(tag => t(tag.name)).join(', ') : t('abilityIconAllUnits');
 
-/** Unit tag "Large Land Collider": units with it are not moved aside by tanks */
+/** Unit tag "Large Land Collider": tanks don't damage units with it and don't move them aside */
 const LARGE_UNITS_TAG = 32;
 
 /** Suffix of the line about the affected units naming the excluded ones, e.g. ", except large units" */
-const except = (t: TFunction, ability: IconAbility) => {
-  const excluded = ability.excludedUnits ?? [];
-  if (!excluded.length) {
+const except = (t: TFunction, excluded?: Tag[]) => {
+  if (!excluded?.length) {
     return '';
   }
   return excluded.length === 1 && excluded[0].gameId === LARGE_UNITS_TAG
@@ -34,7 +33,7 @@ const targets = (t: TFunction, ability: IconAbility) => {
   const side = ability.affectsAllies === false ? 'abilityIconEnemies'
     : ability.affectsEnemies === false ? 'abilityIconAllies'
       : 'abilityIconAlliesAndEnemies';
-  return t('abilityIconTargets', { side: t(side), tags: tagNames(t, ability.affectedUnits) }) + except(t, ability);
+  return t('abilityIconTargets', { side: t(side), tags: tagNames(t, ability.affectedUnits) }) + except(t, ability.excludedUnits);
 };
 
 /** Title and lines of the tooltip describing what the ability does in the game */
@@ -50,9 +49,10 @@ const describe = (t: TFunction, ability: IconAbility): { title: string; lines: (
       return {
         title: t('abilityIconCrushUnits'),
         lines: [
-          ...(ability.damages ?? []).map(damage => t('abilityIconDamage', { value: damage.value, targets: t(damage.type) })),
+          ...(ability.damages ?? []).map(damage => t('abilityIconDamage', { value: damage.value, targets: t(damage.type) })
+            + except(t, ability.damageExcludedUnits)),
           ability.moveDistance != null
-            && t('abilityIconMoveAside', { radius: ability.radius, distance: steps(t, ability.moveDistance) }) + except(t, ability)
+            && t('abilityIconMoveAside', { radius: ability.radius, distance: steps(t, ability.moveDistance) }) + except(t, ability.excludedUnits)
         ]
       };
     case 'crushEnvs':
@@ -90,7 +90,7 @@ const describe = (t: TFunction, ability: IconAbility): { title: string; lines: (
         title: ability.createdUnit
           ? t('abilityIconPlants', { unit: t(ability.createdUnit.entityName) })
           : t('abilityIconScatter'),
-        lines: [t('abilityIconScatterUnits', { radius: ability.radius, distance: steps(t, ability.moveDistance) }) + except(t, ability)]
+        lines: [t('abilityIconScatterUnits', { radius: ability.radius, distance: steps(t, ability.moveDistance) }) + except(t, ability.excludedUnits)]
       };
     case 'dance':
       return {

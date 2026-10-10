@@ -194,6 +194,8 @@ export interface IconAbility {
   /** damage to units under the unit (crush units) */
   damages?: Damage[];
   damageRadius?: number;
+  /** units with these tags get no damage */
+  damageExcludedUnits?: Tag[];
   /** damage to envs (crush envs) */
   envDamage?: number;
   affectedEnvs?: Tag[];

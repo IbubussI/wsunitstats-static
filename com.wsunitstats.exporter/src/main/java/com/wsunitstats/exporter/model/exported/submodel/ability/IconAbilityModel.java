@@ -39,6 +39,8 @@ public class IconAbilityModel {
 
     /** damage to units (crush units) */
     private List<DamageModel> damages;
+    /** units with these tags get no damage */
+    private List<TagModel> damageExcludedUnits;
     private Double damageRadius;
     /** damage to envs (crush envs) */
     private Double envDamage;
