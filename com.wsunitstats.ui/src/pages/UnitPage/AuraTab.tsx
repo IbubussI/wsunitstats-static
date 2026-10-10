@@ -16,6 +16,8 @@ export const AuraTab = ({ unit }: { unit: Unit }) => {
     { label: t('auraAffectsAlliesCell'), value: t(String(aura.affectsAllies)) },
     { label: t('auraAffectsEnemiesCell'), value: t(String(aura.affectsEnemies)) },
   ];
+  // the game names attack kinds, e.g. 'projectile'; unknown ones are shown as they are
+  const attackUnits = (attack: string) => t(`auraAttackUnits_${attack}`, { defaultValue: attack });
 
   return (
     <TabLayout title={t('auraTitle')} minWidth={250} columnWidth={500} paddingTop={1}>
@@ -46,7 +48,9 @@ export const AuraTab = ({ unit }: { unit: Unit }) => {
               <Typography variant='body2' color='text.primary'>
                 {t('auraAffectedUnits')}
               </Typography>
-              <Typography sx={{ paddingTop: '3px' }}>{t('auraAllUnits')}</Typography>
+              <Typography sx={{ paddingTop: '3px' }}>
+                {aura.affectedAttack ? attackUnits(aura.affectedAttack) : t('auraAllUnits')}
+              </Typography>
             </Box>}
         </FrameSection>
       </Frame>

@@ -17,6 +17,8 @@ public class AuraModel {
     private List<EntityInfoModel> researches;
     /** empty - all units */
     private List<TagModel> affectedUnits;
+    /** only units with such an attack are affected, e.g. "projectile" */
+    private String affectedAttack;
     private boolean affectsAllies;
     private boolean affectsEnemies;
 }

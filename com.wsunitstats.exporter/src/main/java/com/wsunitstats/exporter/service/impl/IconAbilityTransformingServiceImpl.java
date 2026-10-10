@@ -13,6 +13,7 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityJson
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityOnActionJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.BuffJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.weapon.WeaponJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.work.WorkJsonModel;
 import com.wsunitstats.exporter.service.FileContentService;
 import com.wsunitstats.exporter.service.IconAbilityTransformingService;
 import com.wsunitstats.exporter.service.ModelTransformingService;
@@ -112,6 +113,7 @@ public class IconAbilityTransformingServiceImpl implements IconAbilityTransformi
                 model.setRadius(Utils.intToDoubleShift(scatter.getRadius()));
                 model.setMoveDistance(Utils.intToDoubleShift(scatter.getMoveDistance()));
                 model.setAffectedUnits(tagResolver.getUnitTags(scatter.getTags()));
+                model.setExcludedUnits(tagResolver.getUnitTags(scatter.getTagsExclude()));
             }
             result.add(0, withOnAction(model, onAction));
         } else {
@@ -123,10 +125,19 @@ public class IconAbilityTransformingServiceImpl implements IconAbilityTransformi
 
     /**
      * Abilities used when the unit moves through envs: damage to the envs (tanks break trees) with a buff to itself
-     * (slowed down in the forest)
+     * (slowed down in the forest). Or the work done when units come close or leave (gates open and close).
      */
     private List<IconAbilityModel> transformZoneEvent(UnitJsonModel unitJsonModel, ZoneEventJsonModel zoneEvent) {
         List<IconAbilityModel> result = new ArrayList<>();
+        if (zoneEvent.getWork() != null) {
+            IconAbilityModel autoTransform = transformZoneWork(unitJsonModel, zoneEvent);
+            if (autoTransform != null) {
+                result.add(autoTransform);
+            }
+        }
+        if (zoneEvent.getAbilities() == null) {
+            return result;
+        }
         IconAbilityModel crush = null;
         List<IconAbilityModel> buffs = new ArrayList<>();
         for (Integer abilityId : zoneEvent.getAbilities()) {
@@ -160,6 +171,27 @@ public class IconAbilityTransformingServiceImpl implements IconAbilityTransformi
         }
         result.addAll(buffs);
         return result;
+    }
+
+    /**
+     * Work done when own or allied units come within the distance, or leave it (gates open and close by themselves)
+     */
+    private IconAbilityModel transformZoneWork(UnitJsonModel unitJsonModel, ZoneEventJsonModel zoneEvent) {
+        List<WorkJsonModel> work = unitJsonModel.getAbility().getWork();
+        int workId = zoneEvent.getWork();
+        WorkJsonModel workJsonModel = work != null && workId >= 0 && workId < work.size() ? work.get(workId) : null;
+        AbilityJsonModel ability = workJsonModel == null ? null : getAbility(unitJsonModel, workJsonModel.getAbility());
+        if (ability == null || getType(ability) != AbilityType.TRANSFORM) {
+            LOG.warn("Zone event work {} is not shown", workId);
+            return null;
+        }
+        IconAbilityModel model = newModel(IconAbility.AUTO_TRANSFORM, AbilityTrigger.ZONE, workJsonModel.getAbility());
+        model.setTransformUnit(modelTransformingService.transformUnitInfo(ability.getData().getUnit()));
+        model.setRadius(Utils.intToDoubleShift(zoneEvent.getUnitSearchDistance()));
+        model.setUnitsAbsent(Utils.getDirectBoolean(zoneEvent.getUnitsAbsent()));
+        model.setAffectsOwn(Utils.getDirectBoolean(zoneEvent.getUnitOwn()));
+        model.setAffectsAllies(Utils.getDirectBoolean(zoneEvent.getUnitAlly()));
+        return model;
     }
 
     /**
@@ -207,6 +239,7 @@ public class IconAbilityTransformingServiceImpl implements IconAbilityTransformi
         model.setRadius(Utils.intToDoubleShift(data.getRadius()));
         model.setMoveDistance(Utils.intToDoubleShift(data.getMoveDistance()));
         model.setAffectedUnits(tagResolver.getUnitTags(data.getTags()));
+        model.setExcludedUnits(tagResolver.getUnitTags(data.getTagsExclude()));
         // affects all units, unless set otherwise
         model.setAffectsAllies(Utils.getInvertedBoolean(data.getAlly()));
         model.setAffectsEnemies(Utils.getInvertedBoolean(data.getEnemy()));

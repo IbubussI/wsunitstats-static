@@ -105,6 +105,15 @@ const ReverseIcon = (props: SvgIconProps) => (
   </SvgIcon>
 );
 
+/** Half-open gate: frame of two posts and a beam, the left leaf closed and the right one swung inwards */
+const GateIcon = (props: SvgIconProps) => (
+  <SvgIcon {...props}>
+    <path d='M2 22V5l2-2h16l2 2v17h-3V8H5v14Z' />
+    <path fillRule='evenodd' d='M5.8 8.8h5.8V22H5.8Z M8.3 10.6h.8v9.6h-.8Z' />
+    <path d='M18.2 8.8 14.4 10.8v9.4l3.8 1.8Z' />
+  </SvgIcon>
+);
+
 /** Icons of the abilities (see IconAbilityKind) and of the movement traits */
 export type GlyphKind = IconAbilityKind | 'accelerate' | 'uTurn' | 'reverse';
 
@@ -115,6 +124,7 @@ export const GLYPHS: Record<GlyphKind, React.ComponentType<SvgIconProps>> = {
   areaBuff: GhostIcon,
   scatter: BombIcon,
   dance: DanceIcon,
+  autoTransform: GateIcon,
   accelerate: AccelerateIcon,
   uTurn: UTurnRightIcon,
   reverse: ReverseIcon

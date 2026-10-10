@@ -19,4 +19,6 @@ public class AuraJsonModel {
     @JsonDeserialize(using = EntityRefDeserializer.Research.class)
     private EntityId research;
     private Long targetsTags;
+    // units with such an attack only, e.g. "projectile"
+    private String targetsAttack;
 }

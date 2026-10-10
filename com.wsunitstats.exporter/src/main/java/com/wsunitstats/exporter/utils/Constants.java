@@ -365,7 +365,9 @@ public class Constants {
         // units around move away (e.g. from a planted bomb)
         SCATTER("scatter"),
         // the unit can dance (stuns itself)
-        DANCE("dance");
+        DANCE("dance"),
+        // the unit transforms by itself when units come close or leave (gates open and close)
+        AUTO_TRANSFORM("autoTransform");
 
         private final String name;
 

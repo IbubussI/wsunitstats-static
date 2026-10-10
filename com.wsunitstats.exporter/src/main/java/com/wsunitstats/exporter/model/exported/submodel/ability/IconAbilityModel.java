@@ -49,9 +49,17 @@ public class IconAbilityModel {
     private Double moveDistance;
     /** empty - all units */
     private List<TagModel> affectedUnits;
+    /** units with these tags are not affected */
+    private List<TagModel> excludedUnits;
     private Boolean affectsAllies;
     private Boolean affectsEnemies;
 
     /** unit created together with the ability (e.g. the bomb of the saboteur) */
     private EntityInfoModel createdUnit;
+
+    /** auto transform: the unit transforms into it when own (allied) units come within the radius */
+    private EntityInfoModel transformUnit;
+    /** auto transform: when there are no such units within the radius instead */
+    private Boolean unitsAbsent;
+    private Boolean affectsOwn;
 }

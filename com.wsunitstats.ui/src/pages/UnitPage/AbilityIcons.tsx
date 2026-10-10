@@ -16,11 +16,25 @@ const steps = (t: TFunction, value?: number) => t('abilityIconSteps', { count: v
 const tagNames = (t: TFunction, tags?: Tag[]) =>
   tags?.length ? tags.map(tag => t(tag.name)).join(', ') : t('abilityIconAllUnits');
 
+/** Unit tag "Large Land Collider": units with it are not moved aside by tanks */
+const LARGE_UNITS_TAG = 32;
+
+/** Suffix of the line about the affected units naming the excluded ones, e.g. ", except large units" */
+const except = (t: TFunction, ability: IconAbility) => {
+  const excluded = ability.excludedUnits ?? [];
+  if (!excluded.length) {
+    return '';
+  }
+  return excluded.length === 1 && excluded[0].gameId === LARGE_UNITS_TAG
+    ? t('abilityIconExceptLargeUnits')
+    : t('abilityIconExcept', { tags: tagNames(t, excluded) });
+};
+
 const targets = (t: TFunction, ability: IconAbility) => {
   const side = ability.affectsAllies === false ? 'abilityIconEnemies'
     : ability.affectsEnemies === false ? 'abilityIconAllies'
       : 'abilityIconAlliesAndEnemies';
-  return t('abilityIconTargets', { side: t(side), tags: tagNames(t, ability.affectedUnits) });
+  return t('abilityIconTargets', { side: t(side), tags: tagNames(t, ability.affectedUnits) }) + except(t, ability);
 };
 
 /** Title and lines of the tooltip describing what the ability does in the game */
@@ -37,7 +51,8 @@ const describe = (t: TFunction, ability: IconAbility): { title: string; lines: (
         title: t('abilityIconCrushUnits'),
         lines: [
           ...(ability.damages ?? []).map(damage => t('abilityIconDamage', { value: damage.value, targets: t(damage.type) })),
-          ability.moveDistance != null && t('abilityIconMoveAside', { radius: ability.radius, distance: steps(t, ability.moveDistance) })
+          ability.moveDistance != null
+            && t('abilityIconMoveAside', { radius: ability.radius, distance: steps(t, ability.moveDistance) }) + except(t, ability)
         ]
       };
     case 'crushEnvs':
@@ -75,12 +90,18 @@ const describe = (t: TFunction, ability: IconAbility): { title: string; lines: (
         title: ability.createdUnit
           ? t('abilityIconPlants', { unit: t(ability.createdUnit.entityName) })
           : t('abilityIconScatter'),
-        lines: [t('abilityIconScatterUnits', { radius: ability.radius, distance: steps(t, ability.moveDistance) })]
+        lines: [t('abilityIconScatterUnits', { radius: ability.radius, distance: steps(t, ability.moveDistance) }) + except(t, ability)]
       };
     case 'dance':
       return {
         title: t('abilityIconDance'),
         lines: [t('abilityIconDanceStun', { value: ability.duration })]
+      };
+    case 'autoTransform':
+      // only gates do it: a closed gate opens when the units come, an open one closes when they leave
+      return {
+        title: t(ability.unitsAbsent ? 'abilityIconAutoClose' : 'abilityIconAutoOpen', { radius: ability.radius }),
+        lines: []
       };
   }
 };

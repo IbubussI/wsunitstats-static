@@ -84,6 +84,8 @@ export interface Aura {
   researches: EntityInfo[];
   /** absent - all units */
   affectedUnits?: Tag[];
+  /** only units with such an attack are affected, e.g. 'projectile' */
+  affectedAttack?: string;
   affectsAllies: boolean;
   affectsEnemies: boolean;
 }
@@ -173,7 +175,7 @@ export const CONTAINER_TYPE_WORK = 1;
 export const CONTAINER_TYPE_DEATH = 3;
 export const CONTAINER_TYPE_ICON = 4;
 
-export type IconAbilityKind = 'crushUnits' | 'crushEnvs' | 'selfBuff' | 'areaBuff' | 'scatter' | 'dance';
+export type IconAbilityKind = 'crushUnits' | 'crushEnvs' | 'selfBuff' | 'areaBuff' | 'scatter' | 'dance' | 'autoTransform';
 export type AbilityTrigger = 'action' | 'zone' | 'weapon' | 'script';
 
 /** Ability shown as an icon, only the fields of its kind are set */
@@ -200,10 +202,17 @@ export interface IconAbility {
   moveDistance?: number;
   /** absent - all units */
   affectedUnits?: Tag[];
+  /** units with these tags are not affected */
+  excludedUnits?: Tag[];
   affectsAllies?: boolean;
   affectsEnemies?: boolean;
   /** unit created together with the ability (e.g. the bomb of the saboteur) */
   createdUnit?: EntityInfo;
+  /** auto transform: the unit transforms into it when own (allied) units come within the radius */
+  transformUnit?: EntityInfo;
+  /** auto transform: when there are no such units within the radius instead */
+  unitsAbsent?: boolean;
+  affectsOwn?: boolean;
 }
 
 export interface AbilityContainer {

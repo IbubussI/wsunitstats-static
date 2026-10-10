@@ -79,7 +79,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
             specialIdList.addAll(abilityOnActionJsonModel.getAbilities());
         }
         ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getAbility().getZoneEvent();
-        if (zoneEventJsonModel != null) {
+        if (zoneEventJsonModel != null && zoneEventJsonModel.getAbilities() != null) {
             specialIdList.addAll(zoneEventJsonModel.getAbilities());
         }
         Integer abilityOnDeath = unitJsonModel.getAbility().getAbilityOnDeath();

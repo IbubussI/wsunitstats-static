@@ -543,6 +543,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         auraModel.setRadius(Utils.intToDoubleShift(unitAuraJsonModel.getRadius()));
         auraModel.setResearches(auraJsonModel.getResearch() == null ? List.of() : List.of(transformResearchInfo(auraJsonModel.getResearch())));
         auraModel.setAffectedUnits(tagResolver.getUnitTags(auraJsonModel.getTargetsTags()));
+        auraModel.setAffectedAttack(auraJsonModel.getTargetsAttack());
         // an aura affects allies only, unless set otherwise
         auraModel.setAffectsAllies(Utils.getInvertedBoolean(auraJsonModel.getAffectsAlly()));
         auraModel.setAffectsEnemies(Utils.getDirectBoolean(auraJsonModel.getAffectsEnemy()));

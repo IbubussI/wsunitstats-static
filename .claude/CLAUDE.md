@@ -38,6 +38,11 @@ touching the game file reading.
 `exportContext` → `output/files/{units,researches,localization,images,context.json}`; `exportEngineData` → `output/files/docs/tree`
 (docs page); `writeFile` → `entities.json`; `writeExcelSpecial`, `writeExcelCosts`, `writeBuildIdsSpecial` → special reports.
 
+The dumps are single log lines of tens of MB in `<game>/gen/log.txt` (rewritten on every game launch, so extract them before
+restarting the game); the gameplay one starts with `{"auraTypes"`, the visual one with `{"bugReport"`:
+`grep -a '^[0-9-]* [0-9:]* {"auraTypes"' "$LOG" | tail -n 1 | sed -E 's/^[0-9-]+ [0-9:]+ //' | tr -d '\r' > input/gameplay.json`
+(same with `bugReport` → `input/visual.json`). The `interface` part of the visual dump depends on which interfaces were open.
+
 Engine data (`exportEngineData`, `EngineDataBuilder`): every value of the dumps is a tree node `{k, v?, tp, ex?, as?, ch?}` holding
 only its key; the UI builds paths from the keys (`[n]` for keys starting with a digit) and derives all node details
 (`DocsPage/engineTree.ts`). Subtrees of 32+ values equal to an earlier one become `link` nodes with the path of the first one.
@@ -107,8 +112,9 @@ places below. Unit references are paths like `WarSelection/4/de/pillbox/heavy`; 
 ### Unit tag ids used in code
 
 From `onProjectLoad.lua unitTagNames` (`<*unitTag#N>`): 2 Building, 3 Worker, 4 Army, 5 Main building (TC), 9 Wonder,
-13 Equipment, 14 Aviation, 15 Land forces, 16 Fleet, 25 Horseman (any mount), 34 Heavy vehicle, 35 Horse.
-If the tag list changes, check `UnitCategoryServiceImpl`, `Awards/index.tsx` and the tag filters of the unit selector.
+13 Equipment, 14 Aviation, 15 Land forces, 16 Fleet, 25 Horseman (any mount), 32 Large Land Collider (not moved aside
+by tanks, "large units" in `UnitPage/AbilityIcons.tsx`), 34 Heavy vehicle, 35 Horse.
+If the tag list changes, check `UnitCategoryServiceImpl`, `Awards/index.tsx`, `AbilityIcons.tsx` and the tag filters of the unit selector.
 
 ### Values found by testing in game
 

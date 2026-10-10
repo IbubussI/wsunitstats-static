@@ -54,4 +54,5 @@ public class AbilityDataJsonModel extends DamageJsonModel {
     @JsonAlias({"radius", "radius_"})
     private Integer radius;
     private Long tags;
+    private Long tagsExclude;
 }
