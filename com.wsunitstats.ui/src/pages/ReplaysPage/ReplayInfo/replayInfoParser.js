@@ -185,9 +185,9 @@ export class ReplayInfoParser {
     match.region = this.#matchData.region;
     match.gameVersion = this.#version;
     match.matchSeed = this.#initData.seed;
-    match.isMatchmaking = this.#scriptParameters.matchmaking;
-    match.creator = match.isMatchmaking ? 0 : this.#playerScriptData[this.#scriptParameters.creator].nickname;
-    match.isDevMode = this.#scriptParameters.devMode;
+    match.isMatchmaking = isTrueParam(this.#scriptParameters.matchmaking);
+    match.creator = match.isMatchmaking ? 0 : this.#playerScriptData[this.#scriptParameters.creator]?.name;
+    match.isDevMode = isTrueParam(this.#scriptParameters.devMode);
     match.isComplete = this.#matchData.winners > 0;
     match.isWonderWin = this.#isWonderWin;
     match.replayCode = this.#replayCode;
@@ -839,6 +839,16 @@ export class ReplayInfoParser {
   }
 
   #parseScriptParams(scriptParamsString) {
+    // newer replays: '@GE2:' + json array of [key, value] string pairs
+    const ge2Match = scriptParamsString.match(/^@GE(\d+):/);
+    if (ge2Match) {
+      return Object.fromEntries(JSON.parse(scriptParamsString.slice(ge2Match[0].length)));
+    }
+    return this.#parseLegacyScriptParams(scriptParamsString);
+  }
+
+  // older replays: 'key=value,key=value' string, values may contain commas
+  #parseLegacyScriptParams(scriptParamsString) {
     const stringToHex = (str) => {
       return str.split('')
         .map(c => c.charCodeAt(0).toString(16).padStart(4, '0'))
@@ -1170,6 +1180,11 @@ function getSetBitPositions(bitset) {
     }
   }
   return result;
+}
+
+// script parameter values are strings: '1'/'0' (newer replays) or 'true'/'false'
+function isTrueParam(value) {
+  return value === true || value === '1' || value === 'true';
 }
 
 // taken from WS
