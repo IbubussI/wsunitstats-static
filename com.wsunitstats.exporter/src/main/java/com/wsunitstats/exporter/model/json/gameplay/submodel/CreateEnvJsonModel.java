@@ -1,5 +1,8 @@
 package com.wsunitstats.exporter.model.json.gameplay.submodel;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.service.serializer.EntityRefDeserializer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -12,6 +15,8 @@ import java.util.List;
 public class CreateEnvJsonModel {
     private Integer createEvent;
     private Integer endingLifeTime;
+    @JsonDeserialize(using = EntityRefDeserializer.Env.class)
+    private EntityId env;
     private Integer probability;
     private Long randomDir;
     private Integer startEndingEvent;

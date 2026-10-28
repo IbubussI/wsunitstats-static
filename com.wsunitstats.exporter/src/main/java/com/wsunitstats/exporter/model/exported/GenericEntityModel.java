@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -8,7 +9,7 @@ import lombok.ToString;
 @Getter
 @ToString
 public abstract class GenericEntityModel {
-    protected int gameId;
+    protected EntityId gameId;
     protected String name;
     protected String image;
 }

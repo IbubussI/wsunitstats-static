@@ -1,6 +1,8 @@
 package com.wsunitstats.exporter.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.entity.EntityProvider;
 import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
@@ -10,6 +12,7 @@ import com.wsunitstats.exporter.model.exported.submodel.DistanceModel;
 import com.wsunitstats.exporter.model.exported.submodel.EnvTagModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
 import com.wsunitstats.exporter.model.exported.submodel.HealModel;
+import com.wsunitstats.exporter.model.exported.submodel.AuraModel;
 import com.wsunitstats.exporter.model.exported.submodel.IncomeModel;
 import com.wsunitstats.exporter.model.exported.submodel.MovementModel;
 import com.wsunitstats.exporter.model.exported.submodel.ReserveModel;
@@ -30,6 +33,7 @@ import com.wsunitstats.exporter.model.exported.submodel.weapon.ProjectileModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ArmorJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.AuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.BuildingJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.DeathabilityJsonModel;
@@ -43,6 +47,7 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.SupplyJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TransportJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TransportingJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.TurretJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitAuraJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UpgradesScriptsJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.air.AerodromeJsonModel;
@@ -65,7 +70,6 @@ import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -75,7 +79,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -84,7 +87,14 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 @Slf4j
 @Service
 public class ModelTransformingServiceImpl implements ModelTransformingService {
-    private static final int PROBABILITY_MAX = 100;
+    /** Weight of an armor zone without probability (game shows blank/20 zones as 4%/95%) */
+    private static final int DEFAULT_ARMOR_ZONE_WEIGHT = 1;
+    /** game ticks are 50 ms */
+    private static final double TICKS_PER_SECOND = 20;
+    /** game angle to the exported rotation speed units (see Utils.getAngle) */
+    private static final double ANGLE_MODIFIER = 4096d * 1000d;
+    /** Folder of the upgrade scripts, relative to the project scripts folder */
+    private static final String DEFAULT_UPGRADES_SCRIPTS_PATH = "gameplay/upgrades";
 
     @Autowired
     private ImageService imageService;
@@ -96,35 +106,28 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     private TagResolver tagResolver;
 
     private LocalizationKeyModel localization;
-    private Map<Integer, EnvJsonModel> envMap;
-    private Map<Integer, ProjectileJsonModel> projectileMap;
+    private EntityProvider<EnvJsonModel> envs;
+    private EntityProvider<ProjectileJsonModel> projectiles;
     private UpgradesScriptsJsonModel upgradesScripts;
 
     @PostConstruct
     protected void postConstruct() {
         localization = fileContentService.getLocalizationKeyModel();
-        envMap = fileContentService.getGameplayFileModel().getScenes().getEnvs();
-        projectileMap = fileContentService.getGameplayFileModel().getScenes().getProjectiles();
+        envs = fileContentService.getEnvs();
+        projectiles = fileContentService.getProjectiles();
         upgradesScripts = fileContentService.getGameplayFileModel().getUpgradesScripts();
     }
 
     @Override
-    public ArmorModel transformArmor(ArmorJsonModel.Entry armorEntryJsonModel, int probabilitiesSum) {
+    public ArmorModel transformArmor(ArmorJsonModel.Entry armorEntryJsonModel) {
         if (armorEntryJsonModel == null) {
             return null;
         }
         ArmorModel armorModel = new ArmorModel();
         armorModel.setValue(Utils.intToDoubleShift(armorEntryJsonModel.getObject()));
-        Optional.ofNullable(armorEntryJsonModel.getProbability()).ifPresentOrElse(
-                (p) -> armorModel.setProbability(Range.between(0, 100).fit(p)),
-                () -> {
-                    if (probabilitiesSum == 0) {
-                        armorModel.setProbability(PROBABILITY_MAX);
-                    } else {
-                        armorModel.setProbability(PROBABILITY_MAX - probabilitiesSum);
-                    }
-                }
-        );
+        // the game uses probabilities of the zones as weights (shares of their sum), absent one is the default weight
+        Integer probability = armorEntryJsonModel.getProbability();
+        armorModel.setProbability(probability != null ? probability : DEFAULT_ARMOR_ZONE_WEIGHT);
         return armorModel;
     }
 
@@ -195,8 +198,20 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         MovementModel movementModel = new MovementModel();
-        movementModel.setSpeed(movementJsonModel.getSpeed() / Constants.MOVEMENT_SPEED_MODIFIER);
+        movementModel.setSpeed(movementJsonModel.getSpeed() / (double) Constants.MOVEMENT_SPEED_MODIFIER);
+        Integer speedReverse = movementJsonModel.getSpeedReverse();
+        movementModel.setSpeedReverse(speedReverse == null ? null : speedReverse / (double) Constants.MOVEMENT_SPEED_MODIFIER);
         movementModel.setRotationSpeed(Utils.getAngle(movementJsonModel.getRotationSpd()));
+        // game accelerations are per tick in the units of the speeds, shown per second
+        Integer accel = movementJsonModel.getAccel();
+        if (accel != null && accel > 0) {
+            movementModel.setAcceleration(accel / (double) Constants.MOVEMENT_SPEED_MODIFIER * TICKS_PER_SECOND);
+        }
+        Long rotationAccel = movementJsonModel.getRotationAccel();
+        if (rotationAccel != null && rotationAccel > 0) {
+            movementModel.setRotationAcceleration(rotationAccel / ANGLE_MODIFIER * TICKS_PER_SECOND);
+        }
+        movementModel.setSmoothTurn(Boolean.TRUE.equals(movementJsonModel.getSmoothTurn()) ? true : null);
         return movementModel;
     }
 
@@ -217,8 +232,8 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
             return null;
         }
         RequirementsModel requirementsModel = new RequirementsModel();
-        List<Integer> researchesAny = requirementsJsonModel.getResearchAny();
-        List<Integer> researchesAll = requirementsJsonModel.getResearchAll();
+        List<EntityId> researchesAny = requirementsJsonModel.getResearchAny();
+        List<EntityId> researchesAll = requirementsJsonModel.getResearchAll();
         List<ResearchRequirementModel> researchAnyRequirementModels = researchesToRequirements(researchesAny);
         List<ResearchRequirementModel> researchAllRequirementModels = researchesToRequirements(researchesAll);
                 List < UnitRequirementJsonModel > units = requirementsJsonModel.getUnits();
@@ -226,7 +241,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 .stream()
                 .map(unitJson -> {
                     UnitRequirementModel result = new UnitRequirementModel();
-                    int unitId = unitJson.getType();
+                    EntityId unitId = unitJson.getType();
                     setQuantity(result, unitJson.getMin(), unitJson.getMax());
                     result.setUnitImage(imageService.getImageName(Constants.EntityType.UNIT.getName(), unitId));
                     result.setUnitId(unitId);
@@ -257,8 +272,8 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         weaponModel.setAutoAttack(Utils.getInvertedBoolean(weaponJsonModel.getAutoAttack()));
         weaponModel.setDistance(transformDistance(weaponJsonModel.getDistance()));
         weaponModel.setEnabled(weaponJsonModel.getEnabled());
-        Integer projectileId = weaponJsonModel.getProjectile();
-        weaponModel.setProjectile(projectileId == null ? null : transformProjectile(projectileId, projectileMap.get(projectileId)));
+        EntityId projectileId = weaponJsonModel.getProjectile();
+        weaponModel.setProjectile(projectileId == null ? null : transformProjectile(projectileId, projectiles.get(projectileId)));
         weaponModel.setRechargePeriod(Utils.intToDoubleShift(weaponJsonModel.getRechargePeriod()));
         weaponModel.setSpread(Utils.intToPercent(weaponJsonModel.getSpread()));
         List<DirectionAttacksPointJsonModel> points = weaponJsonModel.getDirectionAttacks().getDefaultValue().getPoints();
@@ -286,6 +301,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         damageWrapperModel.setBuff(transformBuff(damageJsonModel.getBuff()));
         damageWrapperModel.setDamageFriendly(Utils.getDirectBoolean(damageJsonModel.getDamageFriendly()));
         damageWrapperModel.setDamages(transformDamages(damageJsonModel.getDamages()));
+        damageWrapperModel.setDamageType(damageJsonModel.getType());
         damageWrapperModel.setDamagesCount(getMultipliable(damageJsonModel.getDamagesCount()));
         damageWrapperModel.setEnvDamage(Utils.intToDoubleShift(damageJsonModel.getEnvDamage()));
         damageWrapperModel.setEnvsAffected(tagResolver.getEnvSearchTags(damageJsonModel.getEnvsAffected()));
@@ -321,7 +337,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
-    public ProjectileModel transformProjectile(int id, ProjectileJsonModel projectileJsonModel) {
+    public ProjectileModel transformProjectile(EntityId id, ProjectileJsonModel projectileJsonModel) {
         if (projectileJsonModel == null) {
             return null;
         }
@@ -341,13 +357,27 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         buffModel.setBuffId(buffJsonModel.getResearch());
         buffModel.setPeriod(Utils.intToDoubleShift(buffJsonModel.getPeriod()));
         buffModel.setAffectedUnits(tagResolver.getUnitTags(buffJsonModel.getTargetsTags()));
-        EntityInfoModel entityInfo = new EntityInfoModel();
-        int entityId = buffJsonModel.getResearch();
-        entityInfo.setEntityName(localization.getResearchNames().get(entityId));
-        entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), entityId));
-        entityInfo.setEntityId(entityId);
-        buffModel.setEntityInfo(entityInfo);
+        buffModel.setEntityInfo(transformResearchInfo(buffJsonModel.getResearch()));
         return buffModel;
+    }
+
+    @Override
+    public EntityInfoModel transformResearchInfo(EntityId researchId) {
+        EntityInfoModel entityInfo = new EntityInfoModel();
+        entityInfo.setEntityName(localization.getResearchNames().get(researchId));
+        entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UPGRADE.getName(), researchId));
+        entityInfo.setEntityId(researchId);
+        return entityInfo;
+    }
+
+    @Override
+    public EntityInfoModel transformUnitInfo(EntityId unitId) {
+        EntityInfoModel entityInfo = new EntityInfoModel();
+        entityInfo.setEntityName(localization.getUnitNames().get(unitId));
+        entityInfo.setEntityImage(imageService.getImageName(Constants.EntityType.UNIT.getName(), unitId));
+        entityInfo.setEntityNation(nationResolver.getUnitNation(unitId));
+        entityInfo.setEntityId(unitId);
+        return entityInfo;
     }
 
     @Override
@@ -465,18 +495,23 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 EnvTagModel envTag = new EnvTagModel();
                 envTag.setEnvId(tagId);
                 envTag.setEnvName(localization.getEnvSearchTagNames().get(tagId));
-                Map.Entry<Integer, EnvJsonModel> targetEnvEntry = envMap.entrySet().stream()
-                        .filter(envEntry -> envEntry.getValue().getSearchTags() != null)
-                        .filter(envEntry -> {
-                            List<Integer> searchTags = Utils.getPositiveBitIndices(envEntry.getValue().getSearchTags());
+                List<EntityId> taggedEnvIds = envs.getIds().stream()
+                        .filter(envId -> envs.get(envId).getSearchTags() != null)
+                        .filter(envId -> {
+                            List<Integer> searchTags = Utils.getPositiveBitIndices(envs.get(envId).getSearchTags());
                             if (searchTags.size() != 1) {
                                 throw new IllegalStateException("Should be only 1 search tag for single env");
                             }
                             return tagId == searchTags.get(0);
                         })
-                        .findAny()
-                        .orElseThrow();
-                envTag.setEnvImage(imageService.getImageName(Constants.EntityType.ENV.getName(), targetEnvEntry.getKey()));
+                        .toList();
+                // the image of an env that has one: some envs of the tag have no icon (e.g. omen wheat)
+                String envImage = taggedEnvIds.stream()
+                        .map(envId -> imageService.getImageName(Constants.EntityType.ENV.getName(), envId))
+                        .filter(fileContentService.getImages()::containsKey)
+                        .findFirst()
+                        .orElseGet(() -> imageService.getImageName(Constants.EntityType.ENV.getName(), taggedEnvIds.stream().findFirst().orElseThrow()));
+                envTag.setEnvImage(envImage);
                 envTags.add(envTag);
             }
         }
@@ -499,13 +534,30 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
+    public AuraModel transformAura(UnitAuraJsonModel unitAuraJsonModel, AuraJsonModel auraJsonModel) {
+        if (unitAuraJsonModel == null || auraJsonModel == null) {
+            return null;
+        }
+        AuraModel auraModel = new AuraModel();
+        auraModel.setAuraId(unitAuraJsonModel.getAura());
+        auraModel.setRadius(Utils.intToDoubleShift(unitAuraJsonModel.getRadius()));
+        auraModel.setResearches(auraJsonModel.getResearch() == null ? List.of() : List.of(transformResearchInfo(auraJsonModel.getResearch())));
+        auraModel.setAffectedUnits(tagResolver.getUnitTags(auraJsonModel.getTargetsTags()));
+        auraModel.setAffectedAttack(auraJsonModel.getTargetsAttack());
+        // an aura affects allies only, unless set otherwise
+        auraModel.setAffectsAllies(Utils.getInvertedBoolean(auraJsonModel.getAffectsAlly()));
+        auraModel.setAffectsEnemies(Utils.getDirectBoolean(auraJsonModel.getAffectsEnemy()));
+        return auraModel;
+    }
+
+    @Override
     public ConstructionModel transformConstruction(int id, BuildingJsonModel buildingJsonModel) {
         if (buildingJsonModel == null) {
             return null;
         }
         ConstructionModel constructionModel = new ConstructionModel();
         EntityInfoModel entityInfoModel = new EntityInfoModel();
-        Integer entityId = buildingJsonModel.getId();
+        EntityId entityId = buildingJsonModel.getId();
         entityInfoModel.setEntityId(entityId);
         entityInfoModel.setEntityNation(nationResolver.getUnitNation(entityId));
         entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
@@ -532,7 +584,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
     }
 
     @Override
-    public UpgradeModel transformUpgrade(int id, UpgradeJsonModel upgradeJsonModel) {
+    public UpgradeModel transformUpgrade(EntityId id, UpgradeJsonModel upgradeJsonModel) {
         if (upgradeJsonModel == null) {
             return null;
         }
@@ -541,10 +593,11 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
         upgradeModel.setParameters(transformParameters(upgradeJsonModel.getParameters()));
         int programId = upgradeJsonModel.getProgram();
         upgradeModel.setProgramId(programId);
-        upgradeModel.setProgramFile(upgradesScripts.getPath() + "/" + upgradesScripts.getList().get(programId).getFile());
+        String upgradesScriptsPath = upgradesScripts.getPath() != null ? upgradesScripts.getPath() : DEFAULT_UPGRADES_SCRIPTS_PATH;
+        upgradeModel.setProgramFile(upgradesScriptsPath + "/" + upgradesScripts.getList().get(programId));
 
         EntityInfoModel unitInfo = new EntityInfoModel();
-        Integer unitId = upgradeJsonModel.getUnit();
+        EntityId unitId = upgradeJsonModel.getUnit();
         if (unitId != null) {
             unitInfo.setEntityId(unitId);
             unitInfo.setEntityName(localization.getUnitNames().get(unitId));
@@ -565,7 +618,7 @@ public class ModelTransformingServiceImpl implements ModelTransformingService {
                 : new HashMap<>();
     }
 
-    private List<ResearchRequirementModel> researchesToRequirements(List<Integer> researches) {
+    private List<ResearchRequirementModel> researchesToRequirements(List<EntityId> researches) {
         return emptyIfNull(researches)
                 .stream()
                 .map(researchId -> {

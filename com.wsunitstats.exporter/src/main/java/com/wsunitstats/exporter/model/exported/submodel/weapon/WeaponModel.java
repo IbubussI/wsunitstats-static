@@ -17,6 +17,8 @@ public class WeaponModel {
     private DistanceModel distance;
     private Boolean enabled;
     private ProjectileModel projectile;
+    // exact game value (ms), needed to apply research upgrades to it
+    @FloatPrecision(3)
     private Double rechargePeriod;
     private Double spread;
     private Double angle;

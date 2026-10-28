@@ -9,11 +9,14 @@ import lombok.ToString;
 @Setter
 @ToString
 public class UnitTypeJsonModel {
+    private Object abilities;
     private Object attack;
     private Object corpses;
     private Object gather;
     private Object healthBar;
     private String externalData;
+    /** Interface image asset of the unit icon, absent if the icon is stored in the unit content pack */
+    private String icon;
     private Object occlusion;
     private Object reflection;
     private Object selectionPriority;

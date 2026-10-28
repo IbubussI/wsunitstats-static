@@ -1,12 +1,13 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.exported.EntityInfoModel;
 import com.wsunitstats.exporter.model.exported.submodel.ResourceModel;
-import com.wsunitstats.exporter.model.exported.submodel.ability.ActionAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.CreateEnvAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.CreateUnitAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.DamageAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.GenericAbility;
+import com.wsunitstats.exporter.model.exported.submodel.ability.IconAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.ParatrooperModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.ResearchAbilityModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.TransformAbilityModel;
@@ -14,12 +15,10 @@ import com.wsunitstats.exporter.model.exported.submodel.ability.UseWeaponModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.WorkModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.DeathAbilityContainer;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
-import com.wsunitstats.exporter.model.exported.submodel.ability.container.OnActionAbilityContainer;
+import com.wsunitstats.exporter.model.exported.submodel.ability.container.IconAbilityContainer;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.WorkAbilityContainer;
-import com.wsunitstats.exporter.model.exported.submodel.ability.container.ZoneEventAbilityContainer;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.CreateEnvJsonModel;
-import com.wsunitstats.exporter.model.json.gameplay.submodel.EnvJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ZoneEventJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityJsonModel;
@@ -27,6 +26,7 @@ import com.wsunitstats.exporter.model.json.gameplay.submodel.ability.AbilityOnAc
 import com.wsunitstats.exporter.model.json.gameplay.submodel.work.WorkJsonModel;
 import com.wsunitstats.exporter.service.AbilityTransformingService;
 import com.wsunitstats.exporter.service.FileContentService;
+import com.wsunitstats.exporter.service.IconAbilityTransformingService;
 import com.wsunitstats.exporter.service.ImageService;
 import com.wsunitstats.exporter.service.ModelTransformingService;
 import com.wsunitstats.exporter.service.NationResolver;
@@ -41,8 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -57,39 +55,32 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private NationResolver nationResolver;
     @Autowired
     private TagResolver tagResolver;
+    @Autowired
+    private IconAbilityTransformingService iconAbilityTransformingService;
 
     private LocalizationKeyModel localization;
-    private Map<Integer, EnvJsonModel> envMap;
 
     @PostConstruct
     protected void postConstruct() {
         localization = fileContentService.getLocalizationKeyModel();
-        envMap = fileContentService.getGameplayFileModel().getScenes().getEnvs();
     }
 
     @Override
-    public List<GenericAbilityContainer> transformAbilities(UnitJsonModel unitJsonModel) {
+    public List<GenericAbilityContainer> transformAbilities(EntityId unitId, UnitJsonModel unitJsonModel) {
         List<GenericAbilityContainer> result = new ArrayList<>();
         List<Integer> specialIdList = new ArrayList<>();
         List<Integer> defaultIdList = new ArrayList<>(IntStream.range(0, unitJsonModel.getAbility().getAbilities().size())
                 .boxed()
                 .toList());
 
+        // on action and zone event abilities are shown as icons
         AbilityOnActionJsonModel abilityOnActionJsonModel = unitJsonModel.getAbility().getAbilityOnAction();
         if (abilityOnActionJsonModel != null) {
             specialIdList.addAll(abilityOnActionJsonModel.getAbilities());
-            GenericAbilityContainer onActionAbility = mapOnActionAbility(unitJsonModel);
-            onActionAbility.setContainerName(Constants.AbilityContainerType.ACTION.getName());
-            onActionAbility.setContainerType(Constants.AbilityContainerType.ACTION.getType());
-            result.add(onActionAbility);
         }
         ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getAbility().getZoneEvent();
-        if (zoneEventJsonModel != null) {
+        if (zoneEventJsonModel != null && zoneEventJsonModel.getAbilities() != null) {
             specialIdList.addAll(zoneEventJsonModel.getAbilities());
-            GenericAbilityContainer zoneEventAbility = mapZoneEventAbility(unitJsonModel);
-            zoneEventAbility.setContainerName(Constants.AbilityContainerType.ZONE_EVENT.getName());
-            zoneEventAbility.setContainerType(Constants.AbilityContainerType.ZONE_EVENT.getType());
-            result.add(zoneEventAbility);
         }
         Integer abilityOnDeath = unitJsonModel.getAbility().getAbilityOnDeath();
         if (abilityOnDeath != null) {
@@ -101,30 +92,33 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         }
 
         defaultIdList.removeAll(specialIdList);
-        result.addAll(defaultIdList.stream()
-                .map(abilityId -> mapContainer(unitJsonModel, abilityId))
-                .filter(Objects::nonNull)
-                .toList());
+        // the other abilities (triggered by weapons or game scripts) are shown as icons too
+        List<Integer> otherIdList = new ArrayList<>();
+        for (Integer abilityId : defaultIdList) {
+            AbilityJsonModel abilitySource = unitJsonModel.getAbility().getAbilities().get(abilityId);
+            if (abilitySource != null && isWorkAbility(abilitySource)) {
+                result.add(mapWorkAbility(unitJsonModel, abilityId));
+            } else {
+                otherIdList.add(abilityId);
+            }
+        }
+
+        List<IconAbilityModel> iconAbilities = iconAbilityTransformingService.transformIconAbilities(unitId, unitJsonModel, otherIdList);
+        if (!iconAbilities.isEmpty()) {
+            IconAbilityContainer iconContainer = new IconAbilityContainer();
+            iconContainer.setContainerName(Constants.AbilityContainerType.ICON.getName());
+            iconContainer.setContainerType(Constants.AbilityContainerType.ICON.getType());
+            iconContainer.setAbilities(iconAbilities);
+            result.add(iconContainer);
+        }
         return result;
     }
 
-    private GenericAbilityContainer mapContainer(UnitJsonModel unitJsonModel, Integer abilityId) {
-        AbilityJsonModel abilitySource = unitJsonModel.getAbility().getAbilities().get(abilityId);
-        if (abilitySource == null) {
-            return null;
-        }
-        Constants.AbilityType abilityType = getAbilityType(abilitySource);
-        switch (abilityType) {
-            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV, SCRIPT -> {
-                GenericAbilityContainer workAbility = mapWorkAbility(unitJsonModel, abilityId);
-                workAbility.setContainerName(Constants.AbilityContainerType.WORK.getName());
-                workAbility.setContainerType(Constants.AbilityContainerType.WORK.getType());
-                return workAbility;
-            }
-            default -> {
-                return null;
-            }
-        }
+    private boolean isWorkAbility(AbilityJsonModel abilitySource) {
+        return switch (getAbilityType(abilitySource)) {
+            case CREATE_UNIT, TRANSFORM, RESEARCH, CREATE_ENV, SCRIPT -> true;
+            default -> false;
+        };
     }
 
     private WorkAbilityContainer mapWorkAbility(UnitJsonModel unitJsonModel, int abilityId) {
@@ -139,35 +133,9 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         }
 
         workAbilityContainer.setWork(mapWork(workJsonModel, workId));
+        workAbilityContainer.setContainerName(Constants.AbilityContainerType.WORK.getName());
+        workAbilityContainer.setContainerType(Constants.AbilityContainerType.WORK.getType());
         return workAbilityContainer;
-    }
-
-    private OnActionAbilityContainer mapOnActionAbility(UnitJsonModel unitJsonModel) {
-        OnActionAbilityContainer onActionAbilityContainer = new OnActionAbilityContainer();
-        AbilityOnActionJsonModel abilityOnActionJsonModel = unitJsonModel.getAbility().getAbilityOnAction();
-        List<GenericAbility> abilities = abilityOnActionJsonModel.getAbilities().stream()
-                .map(id -> mapAbility(unitJsonModel, unitJsonModel.getAbility().getAbilities().get(id), id))
-                .filter(Objects::nonNull)
-                .toList();
-        onActionAbilityContainer.setAbilities(abilities);
-        onActionAbilityContainer.setDistance(modelTransformingService.transformDistance(abilityOnActionJsonModel.getDistance()));
-        onActionAbilityContainer.setOnAgro(abilityOnActionJsonModel.getOnAgro());
-        onActionAbilityContainer.setEnabled(abilityOnActionJsonModel.getEnabled() != null ? abilityOnActionJsonModel.getEnabled() : true );
-        onActionAbilityContainer.setRechargeTime(Utils.intToDoubleShift(abilityOnActionJsonModel.getRestore()));
-        return onActionAbilityContainer;
-    }
-
-    private ZoneEventAbilityContainer mapZoneEventAbility(UnitJsonModel unitJsonModel) {
-        ZoneEventAbilityContainer zoneEventAbilityContainer = new ZoneEventAbilityContainer();
-        ZoneEventJsonModel zoneEventJsonModel = unitJsonModel.getAbility().getZoneEvent();
-        List<Integer> abilityIds = zoneEventJsonModel.getAbilities();
-        zoneEventAbilityContainer.setAbilities(abilityIds.stream()
-                .map(abilityId -> mapAbility(unitJsonModel, unitJsonModel.getAbility().getAbilities().get(abilityId), abilityId))
-                .collect(Collectors.toList()));
-        zoneEventAbilityContainer.setSize(zoneEventJsonModel.getSize());
-        zoneEventAbilityContainer.setEnvSearchDistance(zoneEventJsonModel.getEnvSearchDistance());
-        zoneEventAbilityContainer.setEnvTags(tagResolver.getEnvSearchTags(zoneEventJsonModel.getEnvTags()));
-        return zoneEventAbilityContainer;
     }
 
     private DeathAbilityContainer mapDeathAbility(UnitJsonModel unitJsonModel, int abilityId) {
@@ -180,7 +148,6 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         GenericAbility genericAbility;
         Constants.AbilityType abilityType = getAbilityType(abilityJsonModel);
         switch (abilityType) {
-            case SELF_BUFF -> genericAbility = mapActionAbility(abilityJsonModel);
             case DAMAGE -> genericAbility = mapDamageAbility(abilityJsonModel);
             case RESEARCH -> genericAbility = mapResearchAbility(abilityJsonModel);
             case TRANSFORM -> genericAbility = mapTransformAbility(abilityJsonModel);
@@ -197,19 +164,6 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
         return genericAbility;
     }
 
-    private GenericAbility mapActionAbility(AbilityJsonModel abilityJsonModel) {
-        ActionAbilityModel abilityModel = new ActionAbilityModel();
-        EntityInfoModel entityInfoModel = new EntityInfoModel();
-        Integer entityId = abilityJsonModel.getData().getResearch();
-        String entityType = Constants.EntityType.UPGRADE.getName();
-        entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
-        entityInfoModel.setEntityName(localization.getResearchNames().get(entityId));
-        entityInfoModel.setEntityId(entityId);
-        abilityModel.setEntityInfo(entityInfoModel);
-        abilityModel.setDuration(Utils.intToDoubleShift(abilityJsonModel.getData().getDuration()));
-        return abilityModel;
-    }
-
     private GenericAbility mapDamageAbility(AbilityJsonModel abilityJsonModel) {
         DamageAbilityModel abilityModel = new DamageAbilityModel();
         abilityModel.setDamage(modelTransformingService.transformDamage(abilityJsonModel.getData()));
@@ -219,7 +173,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private GenericAbility mapResearchAbility(AbilityJsonModel abilityJsonModel) {
         ResearchAbilityModel abilityModel = new ResearchAbilityModel();
         EntityInfoModel entityInfoModel = new EntityInfoModel();
-        Integer entityId = abilityJsonModel.getData().getResearch();
+        EntityId entityId = abilityJsonModel.getData().getResearch();
         String entityType = Constants.EntityType.UPGRADE.getName();
         entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
         entityInfoModel.setEntityName(localization.getResearchNames().get(entityId));
@@ -231,7 +185,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private GenericAbility mapTransformAbility(AbilityJsonModel abilityJsonModel) {
         TransformAbilityModel abilityModel = new TransformAbilityModel();
         EntityInfoModel entityInfoModel = new EntityInfoModel();
-        Integer entityId = abilityJsonModel.getData().getUnit();
+        EntityId entityId = abilityJsonModel.getData().getUnit();
         String entityType = Constants.EntityType.UNIT.getName();
         entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
         entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
@@ -247,12 +201,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
 
         Integer createEnvId = abilityJsonModel.getData().getId();
         CreateEnvJsonModel createEnvSource = unitJsonModel.getCreateEnvs().get(createEnvId);
-        String createEnvTag = createEnvSource.getTag();
-        int entityId = envMap.entrySet().stream()
-                .filter(env -> createEnvTag.equals(env.getValue().getCreateTag()))
-                .findAny()
-                .orElseThrow()
-                .getKey();
+        EntityId entityId = createEnvSource.getEnv();
 
         String entityType = Constants.EntityType.ENV.getName();
         entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
@@ -266,7 +215,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private GenericAbility mapCreateUnitAbility(AbilityJsonModel abilityJsonModel) {
         CreateUnitAbilityModel abilityModel = new CreateUnitAbilityModel();
         EntityInfoModel entityInfoModel = new EntityInfoModel();
-        Integer entityId = abilityJsonModel.getData().getUnit();
+        EntityId entityId = abilityJsonModel.getData().getUnit();
         String entityType = Constants.EntityType.UNIT.getName();
         entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
         entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
@@ -305,7 +254,7 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
     private GenericAbility mapParatrooperAbility(Map<String, String> params) {
         ParatrooperModel abilityModel = new ParatrooperModel();
         EntityInfoModel entityInfoModel = new EntityInfoModel();
-        int entityId = Integer.parseInt(params.get("pType"));
+        EntityId entityId = fileContentService.getUnits().resolve(params.get("pType"));
         String entityType = Constants.EntityType.UNIT.getName();
         entityInfoModel.setEntityImage(imageService.getImageName(entityType, entityId));
         entityInfoModel.setEntityName(localization.getUnitNames().get(entityId));
@@ -318,6 +267,10 @@ public class AbilityTransformingServiceImpl implements AbilityTransformingServic
 
     private int getWorkId(UnitJsonModel unitJsonModel, int abilityId) {
         List<WorkJsonModel> work = unitJsonModel.getAbility().getWork();
+        if (work == null) {
+            // e.g. abilities triggered by weapons
+            return -1;
+        }
         return IntStream.range(0, work.size())
                 .filter(i -> work.get(i) != null && abilityId == work.get(i).getAbility())
                 .findFirst()

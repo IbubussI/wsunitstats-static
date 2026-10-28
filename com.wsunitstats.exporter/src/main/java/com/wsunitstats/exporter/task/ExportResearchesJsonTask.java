@@ -28,7 +28,7 @@ public class ExportResearchesJsonTask extends BulkFileJsonExportTask<ResearchMod
 
     @Override
     protected String getFilename(ResearchModel researchModel) {
-        return String.valueOf(researchModel.getGameId());
+        return researchModel.getGameId().toString();
     }
 
     @Override

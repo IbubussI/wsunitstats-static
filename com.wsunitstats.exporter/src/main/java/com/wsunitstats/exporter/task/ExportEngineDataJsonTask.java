@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,14 +65,21 @@ public class ExportEngineDataJsonTask implements ExecutionTask {
             ObjectNode visualRoot = fileReaderService.readJson(visualInputFilePath, ObjectNode.class);
             EngineDataBuilder gameplayBuilder = new EngineDataBuilder();
             LOG.info("Generating output");
-            gameplayBuilder.build(Map.of(gameplayPath, gameplayRoot, visualPath, visualRoot));
+            // gameplay first: the subtrees of visual equal to the ones of gameplay link to them
+            Map<String, ObjectNode> roots = new LinkedHashMap<>();
+            roots.put(gameplayPath, gameplayRoot);
+            roots.put(visualPath, visualRoot);
+            gameplayBuilder.build(roots);
             LOG.info("Generating output completed");
 
-            List<FileEntry> treeFileEntries = gameplayBuilder.getTreeFileEntries();
-            List<FileEntry> contextFileEntries = gameplayBuilder.getContextFileEntries();
+            processEntryList(gameplayBuilder.getTreeFileEntries(), String.join("/", outputRootPath, treePath));
 
-            processEntryList(treeFileEntries, String.join("/", outputRootPath, treePath));
-            processEntryList(contextFileEntries, String.join("/", outputRootPath, contextPath));
+            // node details are derived from the tree in the UI now, the files of the earlier exports are not needed
+            File contextDir = new File(String.join("/", outputRootPath, contextPath));
+            if (contextDir.exists()) {
+                LOG.info("Removing obsolete node details directory {}", contextDir);
+                FileUtils.deleteDirectory(contextDir);
+            }
         } catch (Exception ex) {
             throw new TaskExecutionException(ex);
         }

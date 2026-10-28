@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @ToString
 public class DirectionAttacksPointJsonModel {
+    private List<Integer> elevationPivot;
     private List<Integer> position;
     private Integer time;
 }

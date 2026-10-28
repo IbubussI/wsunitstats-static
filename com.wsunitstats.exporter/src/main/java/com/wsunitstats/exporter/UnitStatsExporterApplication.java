@@ -28,6 +28,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -87,6 +88,8 @@ public class UnitStatsExporterApplication {
             researchSelector.setResearchTypes(researchTypeOptions);
 
             ContextModel context = new ContextModel();
+            context.setGameVersion(fileContentService.getGameVersion());
+            context.setExportDate(LocalDate.now().toString());
             context.setResearches(researchOptions);
             context.setUnits(unitOptions);
             context.setLocaleOptions(localeOptions);

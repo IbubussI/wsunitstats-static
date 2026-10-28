@@ -10,6 +10,7 @@ import com.wsunitstats.exporter.model.exported.submodel.weapon.DamageWrapperMode
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
 import com.wsunitstats.exporter.service.LocalizationService;
 import com.wsunitstats.exporter.service.ModelExporterService;
+import com.wsunitstats.exporter.utils.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
@@ -41,16 +42,17 @@ public class WriteExcelSpecialTask implements ExecutionTask {
     private static final String LOCALE = "en";
     private static final int COLUMNS_PER_WEAPON = 19;
     private static final int WEAPONS_MAX = 10;
+    private static final String UNIT_TAG_LOCALIZATION_KEY = "<*unitTag>";
 
     private static final List<String> DAMAGE_NAMES_LIST = List.of(
             BASIC_DAMAGE_TYPE, //base
-            "<*unitTag/1>", //building
-            "<*unitTag/14>", //land forces
-            "<*unitTag/13>", //aviation
-            "<*unitTag/19>", //underwater
-            "<*unitTag/15>", //fleet
-            "<*unitTag/5>", //repairable
-            "<*unitTag/7>" //disassemblable
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 1), //building
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 14), //land forces
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 13), //aviation
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 19), //underwater
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 15), //fleet
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 5), //repairable
+            Utils.getLocalizationPartKey(UNIT_TAG_LOCALIZATION_KEY, 7) //disassemblable
     );
     private static final List<String> COLUMNS = List.of(
             "Nation",
@@ -332,7 +334,7 @@ public class WriteExcelSpecialTask implements ExecutionTask {
             addStringCell(row, counter, unitModel.getName(), localizationModel);
             counter++;
 
-            addNumericCell(row, counter, unitModel.getGameId());
+            addStringCell(row, counter, unitModel.getGameId().toString(), localizationModel);
             counter++;
 
             addNumericCell(row, counter, unitModel.getHealth());
@@ -359,21 +361,15 @@ public class WriteExcelSpecialTask implements ExecutionTask {
             }
             counter += 2;
 
-            List<ArmorModel> armor = unitModel.getArmor();
+            List<ArmorModel> armor = unitModel.getArmorZonal();
             if (armor != null && !armor.isEmpty()) {
-                addNumericCell(row, counter, armor.get(0).getValue());
-                addStringCell(row, counter + 1, armor.get(0).getProbability() + "%", localizationModel);
-                if (armor.size() > 1) {
-                    addNumericCell(row, counter + 2, armor.get(1).getValue());
-                    addStringCell(row, counter + 3, armor.get(1).getProbability() + "%", localizationModel);
-                    if (armor.size() > 2) {
-                        addNumericCell(row, counter + 4, armor.get(2).getValue());
-                        addStringCell(row, counter + 5, armor.get(2).getProbability() + "%", localizationModel);
-                        if (armor.size() > 3) {
-                            addNumericCell(row, counter + 6, armor.get(3).getValue());
-                            addStringCell(row, counter + 7, armor.get(3).getProbability() + "%", localizationModel);
-                        }
-                    }
+                // probabilities are weights, shown as whole percents of their sum like the game does
+                int weightSum = armor.stream().mapToInt(zone -> Math.max(zone.getProbability(), 0)).sum();
+                for (int zoneIndex = 0; zoneIndex < Math.min(armor.size(), 4); ++zoneIndex) {
+                    ArmorModel zone = armor.get(zoneIndex);
+                    int percent = weightSum > 0 ? Math.max(zone.getProbability(), 0) * 100 / weightSum : zone.getProbability();
+                    addNumericCell(row, counter + zoneIndex * 2, zone.getValue());
+                    addStringCell(row, counter + zoneIndex * 2 + 1, percent + "%", localizationModel);
                 }
             }
             counter += 8;

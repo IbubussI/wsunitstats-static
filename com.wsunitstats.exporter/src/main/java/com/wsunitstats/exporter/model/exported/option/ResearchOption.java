@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported.option;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,6 +12,6 @@ public class ResearchOption {
     private String description;
     private String name;
     private String image;
-    private int gameId;
+    private EntityId gameId;
     private String type;
 }

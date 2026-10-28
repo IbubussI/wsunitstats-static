@@ -1,7 +1,9 @@
 package com.wsunitstats.exporter.model.exported;
 
+import com.wsunitstats.exporter.model.exported.submodel.AdditionalClassifiersModel;
 import com.wsunitstats.exporter.model.exported.submodel.AirplaneModel;
 import com.wsunitstats.exporter.model.exported.submodel.ArmorModel;
+import com.wsunitstats.exporter.model.exported.submodel.AuraModel;
 import com.wsunitstats.exporter.model.exported.submodel.BuildingModel;
 import com.wsunitstats.exporter.model.exported.submodel.ConstructionModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
@@ -13,10 +15,12 @@ import com.wsunitstats.exporter.model.exported.submodel.SupplyModel;
 import com.wsunitstats.exporter.model.exported.submodel.TagModel;
 import com.wsunitstats.exporter.model.exported.submodel.TransportingModel;
 import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
+import com.wsunitstats.exporter.model.exported.submodel.TypedArmorModel;
 import com.wsunitstats.exporter.model.exported.submodel.UnitSourceModel;
 import com.wsunitstats.exporter.model.exported.submodel.ability.container.GenericAbilityContainer;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
 import com.wsunitstats.exporter.model.exported.submodel.weapon.WeaponModel;
+import com.wsunitstats.exporter.service.serializer.FloatPrecision;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -34,6 +38,8 @@ public class UnitModel extends GenericEntityModel {
     private Double size;
     private Double viewRange;
     private Double health;
+    // exact game value (per tick), needed to apply research upgrades to it
+    @FloatPrecision(2)
     private Double regenerationSpeed;
     private Integer weaponOnDeath;
     private boolean controllable;
@@ -48,11 +54,13 @@ public class UnitModel extends GenericEntityModel {
     private List<GenericAbilityContainer> abilities;
     private List<WeaponModel> weapons;
     private List<TurretModel> turrets;
-    private List<ArmorModel> armor;
+    private List<ArmorModel> armorZonal;
+    private List<TypedArmorModel> armorTyped;
     private List<UnitSourceModel> sources;
     private String category;
     private String advancedCategory;
     private double killValue;
+    private AdditionalClassifiersModel additionalClassifiers;
 
     // Technical data to render research selector
     private Collection<UnitResearchModel> applicableResearches;
@@ -65,6 +73,7 @@ public class UnitModel extends GenericEntityModel {
     // Worker traits
     private List<GatherModel> gather;
     private HealModel heal;
+    private AuraModel aura;
     private List<ConstructionModel> construction;
 
     // Building traits

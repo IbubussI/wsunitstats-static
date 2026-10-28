@@ -1,7 +1,7 @@
 package com.wsunitstats.exporter.utils;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Constants {
@@ -9,42 +9,85 @@ public class Constants {
         // Utility class
     }
 
-    public static final Pattern LOCALIZATION_KEY_PATTERN = Pattern.compile("<\\*[a-zA-Z0-9/]+>");
+    /**
+     * Localization key; keys of entities include entity ids, which may be paths (e.g. "<*unitNameWarSelection/3/ae/asigaru-yari>"),
+     * keys of parts of multipart entries include the part index (e.g. "<*upgrade12#0>")
+     */
+    public static final Pattern LOCALIZATION_KEY_PATTERN = Pattern.compile("<\\*[a-zA-Z0-9/_.\\-]+(#[0-9]+)?>");
     public static final double TICK_TIME = 50d;
     public static final double SHIFT_VALUE_MULTIPLIER = 1000d;
     public static final double PROJECTILE_SPEED_VALUE_MULTIPLIER = 1_000_000d;
     public static final double PERCENT_VALUE_MULTIPLIER = 10d;
     public static final double POPULATION_VALUE_MULTIPLIER = 10d;
     public static final int LONG_SIZE = 64;
+    /**
+     * Livestock (domestic fowl, goats, cows) can be created while the player has fewer than this number of them.
+     * Not found in the game files, checked in the game: cows created by 7 stop after 8 times (49 -> 56)
+     */
     public static final int LIVESTOCK_LIMIT = 50;
-    public static final List<Integer> LIVESTOCK_IDS = List.of(62, 130); // fowl, goat
+    /** Index of the livestock supply in unit supply costs: livestock costs this supply instead of population */
+    public static final int LIVESTOCK_SUPPLY_INDEX = 1;
     public static final double INIT_HEALTH_MODIFIER = 1.5; // calculated by experiment
-    public static final double BUILD_SPEED_MODIFIER = 0.238095; // calculated by experiment
+    /**
+     * Building progress of a finished construction (2^23): every tick each builder adds its building progress
+     * (tickProgress) to it, see the game UI script scripts/common/sessionSelection.lua
+     */
+    public static final int BUILDING_PROGRESS_FULL = 8388608;
     public static final int ACTIVE_RESOURCES = 3;
     public static final double DEFAULT_GATHER_FIND_TARGET_DISTANCE = 100d;
     public static final double DEFAULT_GATHER_FIND_STORAGE_DISTANCE = 16640d;
     public static final double STORAGE_MULTIPLIER_MODIFIER = 100d / 65536d;
     public static final double STORAGE_MULTIPLIER_DEFAULT = 65536d;
     public static final int MOVEMENT_SPEED_MODIFIER = 16;
+    /** Typed armor multiplier of 1.0 in the game files */
+    public static final double TYPED_ARMOR_MAX = 65535d;
 
     private static final String UNDEF = "N/A";
 
     public static final String LOCALIZATION_MULTI_VALUE_DELIMITER_REGEX = "\\|";
     public static final String SLASH = "/";
-    public static final String LOCALIZATION_INDEX_DELIMITER = SLASH;
+    /**
+     * Separates a localization key from the index of a part of a multipart entry (e.g. "<*upgrade12#0>").
+     * The game uses "/" for that, which the exporter can't: "/" also separates segments of entity paths in keys.
+     */
+    public static final String LOCALIZATION_INDEX_DELIMITER = "#";
     public static final String FILE_PATH_DELIMITER = SLASH;
     public static final String CLOSING_ANGLE_BRACKET = ">";
 
     public static final String BASIC_DAMAGE_TYPE = "damageTypeBase";
+    /** Localization keys of damage types (weapon damage type, typed armor); unmapped types are exported as their number */
+    public static final Map<Integer, String> DAMAGE_TYPE_NAMES = Map.of(
+            1, "damageTypeRanged"
+    );
     public static final String GENERIC_UNIT_TAG = "genericUnitTag";
     public static final String NIL = "nil";
     public static final String JSON_EXTENSION = ".json";
 
-    public static final List<Integer> WALL_UNITS = Arrays.asList(
-            182, 183, 184, 185, 186, 187, 188, 189,
-            198, 199,
-            211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
-            232, 375
+    /** References to the wall units, resolved by the unit provider */
+    public static final List<String> WALL_UNITS = List.of(
+            "WarSelection/2/e/wall_big", "WarSelection/2/e/wall_medium", "WarSelection/2/e/wall_tower",
+            "WarSelection/2/e/wall_gate_close", "WarSelection/2/e/wall_gate_open",
+            "WarSelection/2/a/wall_big", "WarSelection/2/a/wall_medium", "WarSelection/2/a/wall_tower",
+            "WarSelection/2/a/wall_gate_close", "WarSelection/2/a/wall_gate_open",
+            "WarSelection/3/ew/wall_big", "WarSelection/3/ew/wall_medium", "WarSelection/3/ew/wall_tower",
+            "WarSelection/3/ew/wall_gate_close", "WarSelection/3/ew/wall_gate_open",
+            "WarSelection/3/ee/wall_big", "WarSelection/3/ee/wall_medium", "WarSelection/3/ee/wall_tower",
+            "WarSelection/3/ee/wall_gate_close", "WarSelection/3/ee/wall_gate_open",
+            "WarSelection/3/aw/wall_big", "WarSelection/3/aw/wall_medium", "WarSelection/3/aw/wall_tower",
+            "WarSelection/3/aw/wall_gate_close", "WarSelection/3/aw/wall_gate_open",
+            "WarSelection/3/ae/wall_big", "WarSelection/3/ae/wall_medium", "WarSelection/3/ae/wall_tower",
+            "WarSelection/3/ae/wall_gate_close", "WarSelection/3/ae/wall_gate_open",
+            "WarSelection/4/wall", // antitank hedgehog
+            "WarSelection/4/pl/wall" // dragon's teeth
+    );
+
+    /**
+     * Ground combat vehicles that the rule (turret, equipment, land forces, can hit land units) misses:
+     * the polish tankettes have no turret in the game files. Resolved by the unit provider
+     */
+    public static final List<String> GROUND_COMBAT_VEHICLE_EXTRA_UNITS = List.of(
+            "WarSelection/4/pl/tank_heavy", // tankette KD
+            "WarSelection/4/pl/tank_light" // tankette KS
     );
 
     public enum TagGroupName {
@@ -70,10 +113,11 @@ public class Constants {
         TRANSFORM(2, "abilityTransform"),
         CREATE_ENV(3, "abilityCreateEnv"),
         SELF_BUFF(4, "abilitySelfBuff"),
-        //SELF_STUN(5, "abilityDance"),
+        SELF_STUN(5, "abilitySelfStun"),
         DAMAGE(6, "abilityDamage"),
-        SCRIPT(7, "abilityScript");
-        //SEARCH_UNITS_CIRCLE(8, ""); - need to clarify what is it responsible for
+        SCRIPT(7, "abilityScript"),
+        // units in a circle move away (and can get a buff)
+        UNITS_IN_RADIUS(8, "abilityUnitsInRadius");
 
         private final int type;
         private final String name;
@@ -103,10 +147,10 @@ public class Constants {
 
     public enum AbilityContainerType {
         UNDEFINED(-1, UNDEF),
-        ACTION(0, "abilityContainerAction"),
         WORK(1, "abilityContainerWork"),
-        ZONE_EVENT(2, "abilityContainerZone"),
-        DEATH(3, "abilityContainerDeath");
+        DEATH(3, "abilityContainerDeath"),
+        // abilities shown as icons: on action, zone event and the ones triggered by weapons or game scripts
+        ICON(4, "abilityContainerIcon");
 
         private final int type;
         private final String name;
@@ -173,35 +217,27 @@ public class Constants {
     }
 
     public enum ResourceIcon {
-        FOOD(0, 579),
-        WOOD(1, 580),
-        METAL(2, 584),
-        GOLD(3, 581),
-        FUEL(4, 582);
+        FOOD(0, "WarSelection/atlases/resources#1-res_meat.png"),
+        WOOD(1, "WarSelection/atlases/resources#2-res_materials.png"),
+        METAL(2, "WarSelection/atlases/resources#6-res_metall.png"),
+        GOLD(3, "WarSelection/atlases/resources#3-res_gold.png"),
+        FUEL(4, "WarSelection/atlases/resources#4-res_oil.png");
 
         private final int gameId;
-        private final int imageId;
+        /** Interface image asset of the resource icon */
+        private final String asset;
 
-        ResourceIcon(int gameId, int imageId) {
+        ResourceIcon(int gameId, String asset) {
             this.gameId = gameId;
-            this.imageId = imageId;
+            this.asset = asset;
         }
 
         public int getGameId() {
             return gameId;
         }
 
-        public int getImageId() {
-            return imageId;
-        }
-
-        public static ResourceIcon getByGameId(int gameId) {
-            for (ResourceIcon resourceIconMappings : ResourceIcon.values()) {
-                if (resourceIconMappings.getGameId() == gameId) {
-                    return resourceIconMappings;
-                }
-            }
-            throw new IllegalArgumentException("Resource icon not found for gameId:" + gameId);
+        public String getAsset() {
+            return asset;
         }
     }
 
@@ -316,6 +352,52 @@ public class Constants {
         }
     }
 
+    /** Kinds of abilities shown as icons, the names are the icon names in the UI */
+    public enum IconAbility {
+        // damages units under the unit when it moves (tanks)
+        CRUSH_UNITS("crushUnits"),
+        // damages envs it moves through, may slow the unit down (tanks in forest)
+        CRUSH_ENVS("crushEnvs"),
+        // buff the unit gives itself (e.g. speed when charging)
+        SELF_BUFF("selfBuff"),
+        // buff the unit gives to units around (e.g. panic of horses near elephants)
+        AREA_BUFF("areaBuff"),
+        // units around move away (e.g. from a planted bomb)
+        SCATTER("scatter"),
+        // the unit can dance (stuns itself)
+        DANCE("dance"),
+        // the unit transforms by itself when units come close or leave (gates open and close)
+        AUTO_TRANSFORM("autoTransform");
+
+        private final String name;
+
+        IconAbility(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    /** What triggers an ability shown as an icon */
+    public enum AbilityTrigger {
+        ACTION("action"),
+        ZONE("zone"),
+        WEAPON("weapon"),
+        SCRIPT("script");
+
+        private final String name;
+
+        AbilityTrigger(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     public enum ResearchType {
         AGE_TRANSITION("researchTypeAgeTransition"),
         ECO("researchTypeEco"),
@@ -325,6 +407,7 @@ public class Constants {
         UNIT("researchTypeUnit"),
         BUFF("researchTypeBuff"),
         WONDER_TRANSITION("researchTypeWonderTransition"),
+        AURA("researchTypeAura"),
         OTHER("researchTypeOther");
 
         private final String type;
@@ -338,9 +421,20 @@ public class Constants {
         }
     }
 
+    /**
+     * How a unit can be obtained, in the order the sources are listed
+     */
     public enum UnitCostSourceType {
-        ABILITY("unitCostSourceTypeAbility"),
-        BUILDING("unitCostSourceTypeBuilding");
+        /** created by a work ability of the parent (trained, produced) */
+        CREATE("unitCostSourceTypeCreate"),
+        /** the parent turns into the unit by a work ability */
+        TRANSFORM("unitCostSourceTypeTransform"),
+        /** built by the parent (a unit that can construct it) */
+        BUILDING("unitCostSourceTypeBuilding"),
+        /** appears when the parent dies, free */
+        DEATH("unitCostSourceTypeDeath"),
+        /** created by the parent's weapon, free */
+        WEAPON("unitCostSourceTypeWeapon");
 
         private final String type;
 

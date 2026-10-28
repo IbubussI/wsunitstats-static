@@ -16,6 +16,8 @@ public class DamageWrapperModel {
     private BuffModel buff;
     private Boolean damageFriendly;
     private List<DamageModel> damages;
+    // damage type, armor of the target may have a multiplier for it (see armorTyped of units)
+    private Integer damageType;
     // Death Scythe specific
     private int damagesCount;
     private Double envDamage;

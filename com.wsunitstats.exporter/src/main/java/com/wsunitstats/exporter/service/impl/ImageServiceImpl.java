@@ -1,13 +1,11 @@
 package com.wsunitstats.exporter.service.impl;
 
-import com.wsunitstats.exporter.model.json.main.MainFileJsonModel;
-import com.wsunitstats.exporter.model.json.main.submodel.GlobalContentJsonModel;
-import com.wsunitstats.exporter.model.json.main.submodel.ImageJsonModel;
-import com.wsunitstats.exporter.model.json.main.submodel.TextureJsonModel;
-import com.wsunitstats.exporter.model.json.main.submodel.VisualSessionContentJsonModel;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wsunitstats.exporter.content.Ktx2Reader;
+import com.wsunitstats.exporter.entity.EntityId;
+import com.wsunitstats.exporter.model.ImageSource;
 import com.wsunitstats.exporter.service.ImageService;
-import com.wsunitstats.exporter.utils.Constants;
-import com.wsunitstats.exporter.utils.Constants.ResourceIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,138 +13,111 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.awt.image.RasterFormatException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.TreeMap;
 
 @Service
 public class ImageServiceImpl implements ImageService {
     private static final Logger LOG = LoggerFactory.getLogger(ImageServiceImpl.class);
-    private static final String PATH_DELIMITER = "/";
+    /** Separates the atlas from the image name in an interface image asset name */
+    private static final String ASSET_IMAGE_DELIMITER = "#";
+    /** Image name of an asset referencing a whole single-image atlas */
+    private static final String DEFAULT_ASSET_IMAGE = "default";
+    private static final String ATLAS_DESCRIPTOR_EXTENSION = ".json";
+    private static final String PNG_EXTENSION = ".png";
 
     @Value("${image.file.extension}")
     private String imageExtension;
 
     @Override
-    public Map<String, BufferedImage> resolveImages(MainFileJsonModel mainFileJsonModel, String rootFolderPath) {
-        Map<String, BufferedImage> result = new HashMap<>();
-        readVisualSessionContentImages(result, mainFileJsonModel, rootFolderPath);
-        readGlobalContentImages(result, mainFileJsonModel, rootFolderPath);
+    public Map<String, BufferedImage> resolveImages(Map<String, ImageSource> sources, String uiContentFolderPath) {
+        Map<String, BufferedImage> result = new TreeMap<>();
+        Map<String, Atlas> atlases = new HashMap<>();
+        sources.forEach((name, source) -> {
+            try {
+                BufferedImage image = source.texture() != null
+                        ? Ktx2Reader.read(source.texture())
+                        : readAsset(source.asset(), uiContentFolderPath, atlases);
+                result.put(name, image);
+            } catch (IOException | RuntimeException e) {
+                LOG.error("Cannot read image {} from {}: {}", name, source, e.getMessage());
+            }
+        });
         return result;
     }
 
     @Override
-    public String getImageName(String type, int id) {
-        return type + id + "." + imageExtension;
+    public String getImageName(String type, EntityId id) {
+        return type + "/" + id + "." + imageExtension;
     }
 
-    private void readVisualSessionContentImages(Map<String, BufferedImage> result,
-                                                MainFileJsonModel mainFileJsonModel,
-                                                String rootFolderPath) {
-        VisualSessionContentJsonModel visualSessionContentJsonModel = mainFileJsonModel.getVisualSessionContent();
-        Map<Integer, ImageJsonModel> imageJsonModels = visualSessionContentJsonModel.getImages();
-        Map<Integer, TextureJsonModel> textureJsonModels = visualSessionContentJsonModel.getTextures();
-
-        // Resource images
-        Map<Integer, String> imageNames = IntStream.range(0, ResourceIcon.values().length).boxed()
-                .collect(Collectors.toMap(imageGameId -> ResourceIcon.getByGameId(imageGameId).getImageId(),
-                        imageGameId -> getImageName(Constants.EntityType.RESOURCE.getName(), imageGameId)));
-
-        Map<Integer, BufferedImage> textures = readTextures(rootFolderPath, textureJsonModels);
-        readImages(result, imageJsonModels, textures, imageNames, true);
+    @Override
+    public String getImageName(String type, int index) {
+        return type + "/" + index + "." + imageExtension;
     }
 
-    private void readGlobalContentImages(Map<String, BufferedImage> result,
-                                         MainFileJsonModel mainFileJsonModel,
-                                         String rootFolderPath) {
-        GlobalContentJsonModel globalContentJsonModel = mainFileJsonModel.getGlobalContent();
-        Map<Integer, ImageJsonModel> imageJsonModels = globalContentJsonModel.getImages();
-        Map<Integer, TextureJsonModel> textureJsonModels = globalContentJsonModel.getTextures();
-        Map<Integer, String> imageNames = globalContentJsonModel.getImagesNames();
-        Map<Integer, BufferedImage> textures = readTextures(rootFolderPath, textureJsonModels);
-        readImages(result, imageJsonModels, textures, imageNames, false);
+    private BufferedImage readAsset(String asset, String uiContentFolderPath, Map<String, Atlas> atlases) throws IOException {
+        int delimiterIndex = asset.indexOf(ASSET_IMAGE_DELIMITER);
+        String atlasName = delimiterIndex < 0 ? asset : asset.substring(0, delimiterIndex);
+        String imageName = delimiterIndex < 0 ? DEFAULT_ASSET_IMAGE : asset.substring(delimiterIndex + 1);
+
+        Atlas atlas = atlases.get(atlasName);
+        if (atlas == null) {
+            atlas = readAtlas(new File(uiContentFolderPath, atlasName).getPath());
+            atlases.put(atlasName, atlas);
+        }
+        JsonNode region = atlas.descriptor().path("images").get(imageName);
+        if (region == null) {
+            throw new IllegalArgumentException("No image [" + imageName + "] in atlas " + atlasName);
+        }
+        return crop(atlas.texture(), region);
+    }
+
+    private Atlas readAtlas(String basePath) throws IOException {
+        JsonNode descriptor = new ObjectMapper().readTree(new File(basePath + ATLAS_DESCRIPTOR_EXTENSION));
+        File ktx2File = new File(basePath + Ktx2Reader.KTX2_FILE_EXTENSION);
+        BufferedImage texture;
+        if (ktx2File.exists()) {
+            texture = Ktx2Reader.read(Files.readAllBytes(ktx2File.toPath()));
+        } else {
+            texture = ImageIO.read(new File(basePath + PNG_EXTENSION));
+        }
+        if (texture == null) {
+            throw new IOException("No texture found for atlas " + basePath);
+        }
+        return new Atlas(descriptor, texture);
     }
 
     /**
-     * @param result            map to store results, where key - image name, value - image that was read
-     * @param imageJsonModels   map, where key - IMAGE ID, value - image json data
-     * @param textures          map, where key - TEXTURE ID, value - texture image
-     * @param imagesNames       map, where key - IMAGE ID, value - image name (should be unique)
-     * @param isPositiveYOffset true if images with positive y-offset,
-     *                          false if images with negative y-offset
+     * Cuts the region out of the atlas texture. Region position and size are in texture coordinates:
+     * fractions of the texture size, with the vertical axis pointing up from the bottom of the image
+     * (so the whole texture is pos = [0, 1], size = [1, -1]).
      */
-    private void readImages(Map<String, BufferedImage> result,
-                            Map<Integer, ImageJsonModel> imageJsonModels,
-                            Map<Integer, BufferedImage> textures,
-                            Map<Integer, String> imagesNames,
-                            boolean isPositiveYOffset) {
-        imagesNames.entrySet().stream()
-                .filter(entry -> entry.getValue() != null)
-                .forEach(entry -> {
-                    ImageJsonModel imageJsonModel = imageJsonModels.get(entry.getKey());
-                    int textureId = imageJsonModel.getTexture();
-                    BufferedImage texture = textures.get(textureId);
-                    List<Double> pos = imageJsonModel.getPos();
-                    List<Double> size = imageJsonModel.getSize();
-                    double xOffset = 0.0;
-                    double yOffset = 0.0;
-                    if (pos != null) {
-                        xOffset = pos.get(0);
-                        yOffset = pos.get(1);
-                    }
-                    double xSize = size.get(0);
-                    double ySize = size.get(1);
-                    BufferedImage icon = getIcon(texture, xOffset, yOffset, xSize, ySize, isPositiveYOffset);
-                    result.put(entry.getValue(), icon);
-                });
+    private BufferedImage crop(BufferedImage texture, JsonNode region) {
+        int width = texture.getWidth();
+        int height = texture.getHeight();
+        double u = region.path("pos").path(0).asDouble(0);
+        double v = region.path("pos").path(1).asDouble(0);
+        double sizeU = region.path("size").path(0).asDouble();
+        double sizeV = region.path("size").path(1).asDouble();
+
+        double left = Math.min(u, u + sizeU);
+        double top = Math.max(v, v + sizeV);
+        int x = (int) Math.round(left * width);
+        int y = (int) Math.round((1 - top) * height);
+        int w = (int) Math.round(Math.abs(sizeU) * width);
+        int h = (int) Math.round(Math.abs(sizeV) * height);
+        if (x < 0 || y < 0 || w <= 0 || h <= 0 || x + w > width || y + h > height) {
+            throw new IllegalArgumentException(String.format("Image region is out of texture bounds: texture %dx%d, region x=%d y=%d w=%d h=%d",
+                    width, height, x, y, w, h));
+        }
+        return texture.getSubimage(x, y, w, h);
     }
 
-    private Map<Integer, BufferedImage> readTextures(String rootFolderPath, Map<Integer, TextureJsonModel> textureJsonModels) {
-        Map<Integer, BufferedImage> textures = new HashMap<>();
-        textureJsonModels.forEach((id, texture) -> {
-            List<Object> urls = texture.getUrls();
-            if (urls == null || urls.isEmpty() || !(urls.get(0) instanceof List<?>)) {
-                // skip non-gui item
-                return;
-            }
-            String texturePath = (String) ((List<?>) urls.get(0)).get(0);
-            try {
-                File textureFile = new File(rootFolderPath + PATH_DELIMITER + texturePath);
-                if (!textureFile.exists()) {
-                    return;
-                }
-                BufferedImage textureImg = ImageIO.read(textureFile);
-                textures.put(id, textureImg);
-            } catch (IOException ex) {
-                LOG.error("Cannot load the image: {}", texturePath);
-                throw new IllegalStateException(ex);
-            }
-        });
-        return textures;
-    }
-
-    private BufferedImage getIcon(BufferedImage icon, double xOffset, double yOffset, double xSize, double ySize, boolean isPositiveYOffset) {
-        int width = icon.getWidth();
-        int height = icon.getHeight();
-        int x = (int) Math.round(xOffset * width);
-        int y;
-        if (isPositiveYOffset) {
-            y = (int) Math.round(yOffset * height);
-        } else {
-            y = (int) Math.round((1 - yOffset) * height);
-        }
-        int w = (int) Math.round(xSize * width);
-        int h = (int) Math.round(Math.abs(ySize) * height);
-        try {
-            return icon.getSubimage(x, y, w, h);
-        } catch (RasterFormatException ex) {
-            LOG.error("Image bounds exceeded. height = {}, width = {}, x = {}, y = {}, w = {}, h = {}", height, width, x, y, w, h);
-            throw new IllegalArgumentException(ex);
-        }
+    private record Atlas(JsonNode descriptor, BufferedImage texture) {
     }
 }

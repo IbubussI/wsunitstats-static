@@ -12,6 +12,7 @@ import java.util.List;
 @ToString
 public class AbilityOnActionJsonModel {
     private List<Integer> abilities;
+    private Boolean anyAction;
     private DistanceJsonModel distance;
     private Boolean enabled;
     private Boolean onAgro;

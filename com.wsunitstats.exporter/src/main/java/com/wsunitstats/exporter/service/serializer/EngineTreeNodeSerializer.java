@@ -20,8 +20,10 @@ public class EngineTreeNodeSerializer extends StdSerializer<EngineTreeNode> {
     public void serialize(EngineTreeNode value, JsonGenerator gen, SerializerProvider serializers)
             throws IOException {
         gen.writeStartObject();
-        gen.writeStringField("id", value.getEnginePath());
-        gen.writeStringField("lb", value.getLabel());
+        gen.writeStringField("k", value.getKey());
+        if (value.getValue() != null) {
+            gen.writeStringField("v", value.getValue());
+        }
         gen.writeStringField("tp", value.getType());
         if (value.isExpanded()) {
             gen.writeBooleanField("ex", true);
@@ -38,7 +40,6 @@ public class EngineTreeNodeSerializer extends StdSerializer<EngineTreeNode> {
             }
             gen.writeEndArray();
         }
-        gen.writeStringField("cb", value.getContextBatch());
         gen.writeEndObject();
     }
 }

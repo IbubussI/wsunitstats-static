@@ -23,11 +23,15 @@ public class MovementJsonModel {
     private Integer pathTracker;
     private Integer radius;
     private Map<String, Object> randomMove;
+    private Long rotationAccel;
     private Long rotationSpd;
     private Boolean runOnDamage;
     @JsonProperty("speed_")
     private Integer speed;
+    @JsonProperty("speedReverse_")
+    private Integer speedReverse;
     private TransportingJsonModel transporting;
+    private Integer turnPivot;
     private Integer weight;
     @JsonProperty("accel_")
     private Integer accel;

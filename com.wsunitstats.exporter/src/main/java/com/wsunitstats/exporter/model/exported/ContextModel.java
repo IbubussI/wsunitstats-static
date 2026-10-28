@@ -15,6 +15,10 @@ import java.util.Collection;
 @Setter
 @ToString
 public class ContextModel {
+    /** see FileContentService#getGameVersion */
+    private String gameVersion;
+    /** date of the export, ISO format (yyyy-MM-dd) */
+    private String exportDate;
     private Collection<String> localeOptions;
     private Collection<ResearchOption> researches;
     private Collection<UnitOption> units;

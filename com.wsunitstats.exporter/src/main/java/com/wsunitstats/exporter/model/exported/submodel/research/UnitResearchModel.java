@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.model.exported.submodel.research;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -13,7 +14,7 @@ import java.util.List;
 public class UnitResearchModel {
     private String name;
     private String image;
-    private int gameId;
+    private EntityId gameId;
     private List<UnitResearchUpgrade> upgrades = new ArrayList<>();
 
     public void addUpgrade(UnitResearchUpgrade upgrade) {

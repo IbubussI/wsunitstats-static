@@ -1,9 +1,9 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.NationName;
 import com.wsunitstats.exporter.model.exported.submodel.NationModel;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
-import com.wsunitstats.exporter.model.lua.CulturesFileModel;
 import com.wsunitstats.exporter.service.FileContentService;
 import com.wsunitstats.exporter.service.NationResolver;
 import jakarta.annotation.PostConstruct;
@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.wsunitstats.exporter.utils.Constants.NIL;
+import java.util.Map;
 
 @Service
 public class NationResolverImpl implements NationResolver {
@@ -21,15 +20,14 @@ public class NationResolverImpl implements NationResolver {
     private FileContentService fileContentService;
 
     private List<NationModel> nations;
-    private List<String> unitNations;
+    private Map<EntityId, Integer> unitNations;
 
     @PostConstruct
     protected void postConstruct() {
         LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
-        CulturesFileModel mainModel = fileContentService.getCulturesFileModel();
         List<NationName> nationNames = localizationKeyModel.getNationNames();
 
-        unitNations = mainModel.getUnitNations();
+        unitNations = fileContentService.getUnitNations();
         nations = new ArrayList<>();
 
         for (int i = 0; i < nationNames.size(); i++) {
@@ -49,9 +47,8 @@ public class NationResolverImpl implements NationResolver {
     }
 
     @Override
-    public NationModel getUnitNation(int unitId) {
-        String unitNation = unitNations.get(unitId);
-        Integer nationId = NIL.equals(unitNation) ? null : Integer.parseInt(unitNation);
+    public NationModel getUnitNation(EntityId unitId) {
+        Integer nationId = unitNations.get(unitId);
         // if unit has no nation - get 'unknown' nation from the end
         return nationId == null ? nations.get(nations.size() - 1) : nations.get(nationId);
     }

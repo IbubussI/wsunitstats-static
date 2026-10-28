@@ -30,6 +30,8 @@ public abstract class BulkFileJsonExportTask<T> implements ExecutionTask {
                     LOG.info("Converting object {} to json...", filename);
                     String json = exporterService.exportToJson(getExportedObject(object));
                     File file = new File(path + "/" + filename + JSON_EXTENSION);
+                    // file names derived from entity ids may contain folders
+                    file.getParentFile().mkdirs();
                     try (Writer fileWriter = new FileWriter(file)) {
                         fileWriter.write(json);
                         fileWriter.flush();
