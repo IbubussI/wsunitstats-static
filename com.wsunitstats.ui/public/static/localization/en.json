@@ -301,6 +301,7 @@
   "replayMatchTypeTOW": "Tug Of War",
   "replayMatchTypeCustom": "Custom Map",
   "replayMatchTypeMafia": "Mafia",
+  "replayMatchTypePrivate": "Private match",
   "replayMatchTypeUndef": "?",
   "replaySymmetryTypeNo": "No symmetry",
   "replaySymmetryTypeHorizontal": "Horizontal",

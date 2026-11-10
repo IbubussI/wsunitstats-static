@@ -181,14 +181,15 @@ export class ReplayInfoParser {
     const match = new Match();
     match.startTime = this.#start;
     match.duration = this.#matchData.duration * 1000;
-    match.mode = MatchType.fromId(this.#matchData.mode).type;
+    // private rooms have no mode of the matchmaking queue
+    match.mode = this.#matchData.mode == null ? PRIVATE_MATCH_TYPE : MatchType.fromId(this.#matchData.mode).type;
     match.winnerTeams = Array.from(this.#teamWinners.keys());
     match.playersCount = this.#initData.players.length;
     match.factionsCount = this.#initData.factions;
     match.region = this.#matchData.region;
     match.gameVersion = this.#version;
     match.matchSeed = this.#initData.seed;
-    match.isMatchmaking = isTrueParam(this.#scriptParameters.matchmaking);
+    match.isMatchmaking = this.#isMatchmaking();
     match.creator = match.isMatchmaking ? 0 : this.#playerScriptData[this.#scriptParameters.creator]?.name;
     match.isDevMode = isTrueParam(this.#scriptParameters.devMode);
     match.isComplete = this.#matchData.winners > 0;
@@ -825,6 +826,15 @@ export class ReplayInfoParser {
     }
   }
 
+  /**
+   * The server sets the matchmaking parameter for rated searches only (team match, ranked): an automatically matched
+   * FFA has matchmaking=0 and creator=0. Matches of the matchmaking queue have its mode in the match data,
+   * private rooms have no mode
+   */
+  #isMatchmaking() {
+    return isTrueParam(this.#scriptParameters.matchmaking) || this.#matchData.mode != null;
+  }
+
   #getFactionColor(factionId) {
     return FACTION_COLORS[this.#factionColorIndices?.[factionId] ?? factionId];
   }
@@ -1218,6 +1228,9 @@ function getSetBitPositions(bitset) {
   }
   return result;
 }
+
+/** Match type of a private room (its match data has no mode) */
+const PRIVATE_MATCH_TYPE = 'replayMatchTypePrivate';
 
 // script parameter values are strings: '1'/'0' (newer replays) or 'true'/'false'
 function isTrueParam(value) {

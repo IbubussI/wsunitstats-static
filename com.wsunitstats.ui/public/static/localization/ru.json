@@ -303,6 +303,7 @@
   "replayMatchTypeTOW": "Перетягивание каната",
   "replayMatchTypeCustom": "Пользовательская карта",
   "replayMatchTypeMafia": "Мафия",
+  "replayMatchTypePrivate": "Приватный матч",
   "replayMatchTypeUndef": "?",
   "replaySymmetryTypeNo": "Без симметрии",
   "replaySymmetryTypeHorizontal": "Горизонтальная",
