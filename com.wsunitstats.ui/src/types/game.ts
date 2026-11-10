@@ -388,6 +388,8 @@ export interface UnitSource {
   fullChainRoute?: EntityInfo[];
   /** transformations only: the parent can be obtained by more than one route, so the cheapest one is worth showing */
   fullChainRouteHasAlternatives?: boolean;
+  /** creation and transformation only: time of the parent's work, seconds (for all the units the work creates) */
+  makeTime?: number;
   /** unit that creates, turns into or builds this unit */
   sourceInfo?: EntityInfo;
   requirements?: Requirements;
@@ -400,6 +402,16 @@ export interface Research {
   image: string;
   type: string;
   upgrades?: Upgrade[];
+  /** units that research it, absent for researches applied otherwise (e.g. buffs) */
+  sources?: ResearchSource[];
+}
+
+export interface ResearchSource {
+  sourceInfo: EntityInfo;
+  cost?: Resource[];
+  /** seconds */
+  makeTime?: number;
+  requirements?: Requirements;
 }
 
 // context.json

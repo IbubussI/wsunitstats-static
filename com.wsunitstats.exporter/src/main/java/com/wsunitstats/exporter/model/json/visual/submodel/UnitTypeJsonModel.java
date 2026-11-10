@@ -18,6 +18,8 @@ public class UnitTypeJsonModel {
     /** Interface image asset of the unit icon, absent if the icon is stored in the unit content pack */
     private String icon;
     private Object occlusion;
+    /** visual only (engine 277), e.g. 1 */
+    private Object placerAnimation;
     private Object reflection;
     private Object selectionPriority;
     private Object selectionType;

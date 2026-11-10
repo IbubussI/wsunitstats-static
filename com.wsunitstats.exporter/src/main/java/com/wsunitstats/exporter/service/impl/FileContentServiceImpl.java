@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.wsunitstats.exporter.content.ContentAssets;
 import com.wsunitstats.exporter.content.JsonMergePatch;
 import com.wsunitstats.exporter.content.entity.IndexEntityProvider;
 import com.wsunitstats.exporter.content.entity.PathEntityProvider;
@@ -20,6 +23,7 @@ import com.wsunitstats.exporter.model.FilePathWrapper;
 import com.wsunitstats.exporter.model.ImageSource;
 import com.wsunitstats.exporter.model.LocalizationKeyModel;
 import com.wsunitstats.exporter.model.json.gameplay.GameplayFileJsonModel;
+import com.wsunitstats.exporter.model.json.gameplay.submodel.UpgradesScriptsJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.EnvJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.ProjectileJsonModel;
 import com.wsunitstats.exporter.model.json.gameplay.submodel.UnitJsonModel;
@@ -50,6 +54,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -223,9 +228,11 @@ public class FileContentServiceImpl implements FileContentService {
         localizationFileModels = fileReaderService.readLocalizations(filePathWrapper.getLocalizationFolderPath());
 
         LOG.info("Reading game content packs...");
-        Map<String, Map<String, byte[]>> unitPacks = fileReaderService.readPacks(filePathWrapper.getUnitsContentFolderPath(), contentNamespace);
-        Map<String, Map<String, byte[]>> envPacks = fileReaderService.readPacks(filePathWrapper.getEnvsContentFolderPath(), contentNamespace);
-        Map<String, Map<String, byte[]>> projectilePacks = fileReaderService.readPacks(filePathWrapper.getProjectilesContentFolderPath(), contentNamespace);
+        ContentAssets assets = ContentAssets.read(Paths.get(filePathWrapper.getContentFolderPath()),
+                Paths.get(filePathWrapper.getAssetRedirectsFilePath()), Paths.get(filePathWrapper.getModsStorageFolderPath()));
+        Map<String, Map<String, byte[]>> unitPacks = fileReaderService.readPacks(assets, filePathWrapper.getUnitsContentFolderPath(), contentNamespace);
+        Map<String, Map<String, byte[]>> envPacks = fileReaderService.readPacks(assets, filePathWrapper.getEnvsContentFolderPath(), contentNamespace);
+        Map<String, Map<String, byte[]>> projectilePacks = fileReaderService.readPacks(assets, filePathWrapper.getProjectilesContentFolderPath(), contentNamespace);
         LOG.info("Content packs read: {} units, {} envs, {} projectiles", unitPacks.size(), envPacks.size(), projectilePacks.size());
 
         // Identifiers of all the entities are known before reading them, so the references between them
@@ -234,6 +241,11 @@ public class FileContentServiceImpl implements FileContentService {
         unitTypes = new PathEntityProvider<>(EntityKind.UNIT, unitPacks.keySet());
         envs = new PathEntityProvider<>(EntityKind.ENV, envPacks.keySet());
         projectiles = new PathEntityProvider<>(EntityKind.PROJECTILE, projectilePacks.keySet());
+        Map<String, String> unitAliases = assets.getAddressAliases(filePathWrapper.getUnitsContentFolderPath(), contentNamespace);
+        units.addAliases(unitAliases);
+        unitTypes.addAliases(unitAliases);
+        envs.addAliases(assets.getAddressAliases(filePathWrapper.getEnvsContentFolderPath(), contentNamespace));
+        projectiles.addAliases(assets.getAddressAliases(filePathWrapper.getProjectilesContentFolderPath(), contentNamespace));
         researches = new IndexEntityProvider<>(EntityKind.RESEARCH, gameplayTree.path("researches").path("list").size());
         upgrades = new IndexEntityProvider<>(EntityKind.UPGRADE, gameplayTree.path("researches").path("upgrades").size());
 
@@ -245,6 +257,11 @@ public class FileContentServiceImpl implements FileContentService {
                 .withAttribute(EntityKind.RESEARCH, researches)
                 .withAttribute(EntityKind.UPGRADE, upgrades);
         gameplayFileModel = readValue(reader, gameplayTree, GameplayFileJsonModel.class, "gameplay.json");
+        if (gameplayFileModel.getUpgradesScripts() == null) {
+            // moved from gameplay.json to the group.json of the gameplay scripts
+            JsonNode upgradesScripts = fileReaderService.readJsonTree(filePathWrapper.getGameplayScriptsGroupFilePath()).path("upgradesScripts");
+            gameplayFileModel.setUpgradesScripts(readValue(reader, upgradesScripts, UpgradesScriptsJsonModel.class, "gameplay scripts group.json"));
+        }
         gameVersion = readGameVersion(filePathWrapper);
         LOG.info("Game version: {}", gameVersion);
         researches.setAll(gameplayFileModel.getResearches().getList());
@@ -255,7 +272,8 @@ public class FileContentServiceImpl implements FileContentService {
                 model.getFilename().substring(0, model.getFilename().length() - LOCALIZATION_FILE_EXTENSION.length()), model));
         Map<String, ImageSource> imageSources = new LinkedHashMap<>();
 
-        readUnits(unitPacks, gameplayTree.path("scenes").path("unitOverrides"), visualTree.path("unitOverrides"),
+        readUnits(unitPacks, withAliasesResolved(gameplayTree.path("scenes").path("unitOverrides"), unitAliases),
+                withAliasesResolved(visualTree.path("unitOverrides"), unitAliases),
                 reader, localizationsByLocale, imageSources);
         readEnvs(envPacks, reader, localizationsByLocale, imageSources);
         readProjectiles(projectilePacks, reader);
@@ -270,7 +288,7 @@ public class FileContentServiceImpl implements FileContentService {
                 imageService.getImageName(Constants.EntityType.RESOURCE.getName(), resource.getGameId()), ImageSource.ofAsset(resource.getAsset())));
 
         LOG.info("Reading images...");
-        images = imageService.resolveImages(imageSources, filePathWrapper.getUiContentFolderPath());
+        images = imageService.resolveImages(imageSources, assets, filePathWrapper.getUiContentFolderPath());
         if (images.size() < imageSources.size()) {
             LOG.warn("{} of {} images could not be read", imageSources.size() - images.size(), imageSources.size());
         }
@@ -402,6 +420,18 @@ public class FileContentServiceImpl implements FileContentService {
                 localization.getValues().put(key, List.of(entry.getValue().asText()));
             }
         }
+    }
+
+    /**
+     * @return the overrides by unit address with the asset addresses of the units replaced by their paths
+     */
+    private JsonNode withAliasesResolved(JsonNode overrides, Map<String, String> aliases) {
+        if (!overrides.isObject()) {
+            return overrides;
+        }
+        ObjectNode result = JsonNodeFactory.instance.objectNode();
+        overrides.fields().forEachRemaining(entry -> result.set(aliases.getOrDefault(entry.getKey(), entry.getKey()), entry.getValue()));
+        return result;
     }
 
     private void warnAboutUnknownOverrides(JsonNode overrides, Map<String, Map<String, byte[]>> packs, String type) {

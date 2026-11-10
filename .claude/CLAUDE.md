@@ -55,18 +55,26 @@ All relative to `<game>/Cache`, configured in `com.wsunitstats.exporter/src/main
 | File | Used for |
 |---|---|
 | `Content/units/WarSelection/**.pack`, `Content/envs/...`, `Content/projectiles/...` | GEMPACK packs: `unit.json` / `env.json` / `projectile.json` (`gameplay`, `visual`, `localization`, `version`) + `icon.ktx2` |
-| `Projects/WarSelection/gameplay.json` | researches, upgrades, upgrade scripts list, build list, `scenes.unitOverrides` (patches over unit packs), `version` |
+| `Projects/WarSelection/gameplay.json` | researches, upgrades, build list, `scenes.unitOverrides` (patches over unit packs), `version` |
+| `Projects/WarSelection/scripts/gameplay.pack#group.json` | `upgradesScripts.list`: upgrade scripts by program id (in `gameplay.json` before engine 277) |
 | `Projects/WarSelection/visual.json` | `unitOverrides` (patches over the visual part of unit packs) |
 | `Projects/WarSelection/main.json` | `version` |
 | `../engine-version.txt` (game root) | engine version. Game version shown on the site = `<engine>.<gameplay version>_<main version>`, e.g. `252.4009_29231` |
 | `Projects/WarSelection/localization/*.loc` | game texts (`<*key>value|part2`) |
-| `Projects/WarSelection/scripts/main/onProjectLoad.lua` | tables `unitTagNames`, `unitSearchTagNames`, `envTagNames`, `envSearchTagNames`, `resourceNames` |
-| `Projects/WarSelection/scripts/common/cultures.lua` | `nationNames`, `nationsByAddress` (unit path → nation id) |
-| `Projects/WarSelection/scripts/common/envNames.lua` | env path → shared name key (`tags` table) |
-| `CommonScripts/interface/WarSelection/researchIcons.lua` | `assets`: research id → icon asset |
-| `Content/interfaces/WarSelection/session/scripts/_init.lua` | `ageNames` |
-| `Content/interfaces/WarSelection/session/scripts/_start.lua` | `setCanDance({...})` calls: units that can dance (source Lua only) |
+| `Projects/WarSelection/scripts/main.pack#onProjectLoad.lua` | tables `unitTagNames`, `unitSearchTagNames`, `envTagNames`, `envSearchTagNames`, `resourceNames` |
+| `Projects/WarSelection/scripts/common.pack#cultures.lua` | `nationNames`, `nationsByAddress` (unit path → nation id) |
+| `Projects/WarSelection/scripts/common.pack#envNames.lua` | env path → shared name key (`tags` table) |
+| `CommonScripts/scripts.pack#interface/WarSelection/researchIcons.lua` | `assets`: research id → icon asset |
+| `Content/interfaces/WarSelection/session/interface.pack#scripts/_init.lua` | `ageNames` |
+| `Content/interfaces/WarSelection/session/interface.pack#scripts/_start.lua` | `setCanDance({...})` calls: units that can dance (source Lua only) |
 | `Content/ui/**` | UI atlases (`.ktx2` + `.json`) for icons referenced as `atlas#image` |
+
+Since engine 277 scripts are entries of GEMPACK files: a configured path `<file>.pack#<entry>` is read from the pack.
+Part of the content is stored as assets in `<game>/modsStorage` (`ContentAssets`): `Content/asset-redirects.json` maps a content
+path (`projectiles/WarSelection/bow.pack`) to an asset path (`projectiles/asset-<code>_<ver>/bow.pack`), the manifest
+`modsStorage/manifests/<code>_<ver>-*.json` gives its sha256, the file is `modsStorage/blobs/<sha256>.pack` (any file type).
+All projectiles, the horde units and some UI atlases are there. Data inside the assets refers to them by asset address
+(`asset-<code>_<ver>/horde/elves/king`), resolved to the entity path through the redirects.
 
 Lua tables are read from source (`LuaSourceReader`) or from compiled bytecode (`LuaBytecodeReader`); the dance units
 are found by a text pattern, so they are unknown (warning only) if `_start.lua` is compiled.
@@ -101,7 +109,7 @@ places below. Unit references are paths like `WarSelection/4/de/pillbox/heavy`; 
 |---|---|
 | `utils/constants.ts` | `STONE_AGE_UNIT_ID` (stone age town hall), engine scales (`TICK_RATE`, `ENGINE_FLOAT_SHIFT`, `ENGINE_STORAGE_MULTIPLIER`), ability type ids, file paths |
 | `utils/researches.ts` | `UPGRADE_SCRIPTS`: upgrade program id (index in `gameplay.json upgradesScripts.list`) → JS port of the Lua script; value scales (`BUILD_SPEED_SCALE` = 2^23 / (20 × 100)). New or reordered scripts change the ids |
-| `pages/ReplaysPage/ReplayInfo/replayInfoParser.js` | replay `extraData` layout: `0` match, `1` players lost, `2` timeline (per period: units created, killed, land, workers [points, workers, boats, tractors], resources [delta×3, collected×3, now×3]), `3` stats, `4` researches, `6` kills, `7` unit index → path (absent in legacy replays → `public/static/legacyIds.json`); timeline period 30 s; faction/team colors; research types `researchTypeAgeTransition` / `researchTypeWonderTransition` |
+| `pages/ReplaysPage/ReplayInfo/replayInfoParser.js` | replay `extraData` layout: `0` match, `1` players lost, `2` timeline (per period: units created, killed, land, workers [points, workers, boats, tractors], resources [delta×3, collected×3, now×3]), `3` stats, `4` researches, `6` kills, `7` unit index → path (absent in legacy replays → `public/static/legacyIds.json`); timeline period 30 s; faction/team colors (faction palette and a port of the game's regrouping of the palette by hue in two team matches, `groupFactionColorsByHue` in `scripts/common.pack`); research types `researchTypeAgeTransition` / `researchTypeWonderTransition` |
 | `pages/ReplaysPage/ReplayInfo/ageNationFinder.ts` | research ids of every age/nation transition (port of a game mod script) |
 | `pages/ReplaysPage/ReplayInfo/gatherEfficiencyLookupTable.js` | gather speeds and warehouse efficiency by age/nation (MVP score) |
 | `pages/ReplaysPage/ReplayInfo/scoreCalculator.js` | `MVP_CONST` tuning |

@@ -20,11 +20,20 @@ public class PathEntityProvider<T> implements EntityProvider<T> {
     private final EntityKind kind;
     private final Map<EntityId, T> entities = new HashMap<>();
     private final List<EntityId> ids;
+    /** other references to the entities → their paths */
+    private final Map<String, String> aliases = new HashMap<>();
 
     public PathEntityProvider(EntityKind kind, Collection<String> paths) {
         this.kind = kind;
         this.ids = new TreeSet<>(paths).stream().<EntityId>map(PathEntityId::new).toList();
         ids.forEach(id -> entities.put(id, null));
+    }
+
+    /**
+     * @param aliases other references to the entities (e.g. asset addresses) → their paths
+     */
+    public void addAliases(Map<String, String> aliases) {
+        this.aliases.putAll(aliases);
     }
 
     public void set(String path, T entity) {
@@ -54,7 +63,7 @@ public class PathEntityProvider<T> implements EntityProvider<T> {
 
     @Override
     public Optional<EntityId> find(String reference) {
-        EntityId id = new PathEntityId(reference);
+        EntityId id = new PathEntityId(aliases.getOrDefault(reference, reference));
         return contains(id) ? Optional.of(id) : Optional.empty();
     }
 }

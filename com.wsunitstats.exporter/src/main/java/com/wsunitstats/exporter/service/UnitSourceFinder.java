@@ -56,6 +56,7 @@ public class UnitSourceFinder {
                 List<ResourceModel> singleCost = toSingleCost(cost, count);
                 UnitSourceModel unitSourceModel = createSource(UnitCostSourceType.CREATE, entityInfo, ability.getRequirements());
                 unitSourceModel.setCost(singleCost);
+                unitSourceModel.setMakeTime(workAbilityContainer.getWork().getMakeTime());
                 addToMap(sourcesLookupMap, ability.getEntityInfo().getEntityId(), unitSourceModel);
             });
 
@@ -83,6 +84,7 @@ public class UnitSourceFinder {
                 TransformAbilityModel ability = (TransformAbilityModel) workAbilityContainer.getAbility();
                 UnitSourceModel unitSourceModel = createSource(UnitCostSourceType.TRANSFORM, entityInfo, ability.getRequirements());
                 unitSourceModel.setCost(workAbilityContainer.getWork().getCost());
+                unitSourceModel.setMakeTime(workAbilityContainer.getWork().getMakeTime());
                 EntityId childId = ability.getEntityInfo().getEntityId();
                 addToMap(transformSourcesMap, childId, unitSourceModel);
                 transformations.add(new Transformation(unit.getGameId(), childId, unitSourceModel));
@@ -141,7 +143,7 @@ public class UnitSourceFinder {
         mergeSourceMaps(sourcesLookupMap, freeSourcesMap);
     }
 
-    private static EntityInfoModel toEntityInfo(UnitModel unit) {
+    public static EntityInfoModel toEntityInfo(UnitModel unit) {
         EntityInfoModel entityInfo = new EntityInfoModel();
         entityInfo.setEntityId(unit.getGameId());
         entityInfo.setEntityImage(unit.getImage());
@@ -187,7 +189,10 @@ public class UnitSourceFinder {
                 }).toList();
     }
 
-    private <Ability> void forEachWorkAbility(UnitModel unit, Class<Ability> abilityType, Consumer<WorkAbilityContainer> callback) {
+    /**
+     * Calls the callback for each work ability of the given type that has a work (can be ordered)
+     */
+    public static <Ability> void forEachWorkAbility(UnitModel unit, Class<Ability> abilityType, Consumer<WorkAbilityContainer> callback) {
         List<GenericAbilityContainer> abilities = unit.getAbilities();
         if (abilities != null) {
             // add upgrade ability sources

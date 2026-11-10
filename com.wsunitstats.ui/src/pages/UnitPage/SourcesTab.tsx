@@ -3,7 +3,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useTranslation } from 'react-i18next';
 import * as Constants from '@/utils/constants';
-import { localizeNation } from '@/utils/utils';
+import { localizeNation, withUnits } from '@/utils/utils';
 import { GridGroup, ResizableGrid } from '@/components/layout/ResizableGrid';
 import { Frame, FrameSection } from '@/components/layout/Frame';
 import { CostTable } from '@/components/layout/KeyValueTable';
@@ -17,13 +17,17 @@ const COLUMN_WIDTH = 480;
 /** Same as the borders between frame sections */
 const FRAME_BORDER = { border: 0, borderStyle: 'solid', borderColor: 'primary.dark' } as const;
 
+/** Units that research a research, listed as sources of it */
+export const RESEARCH_SOURCE_TYPE = 'researchSourceTypeResearch';
+
 /** Source types in the order they are listed, with the label of their parent units */
 const SOURCE_TYPES: Record<string, string> = {
   unitCostSourceTypeBuilding: 'sourceParentsBuilding',
   unitCostSourceTypeCreate: 'sourceParentsCreate',
   unitCostSourceTypeTransform: 'sourceParentsTransform',
   unitCostSourceTypeDeath: 'sourceParentsDeath',
-  unitCostSourceTypeWeapon: 'sourceParentsWeapon'
+  unitCostSourceTypeWeapon: 'sourceParentsWeapon',
+  [RESEARCH_SOURCE_TYPE]: 'sourceParentsResearch'
 };
 const TYPE_ORDER = Object.keys(SOURCE_TYPES);
 
@@ -33,10 +37,12 @@ interface SourceVariant {
   parents: Entity[];
 }
 
-/** Sources of the same type, cost and full chain cost */
-interface SourceEntry {
+/** Sources of the same type, cost, time and full chain cost */
+export interface SourceEntry {
   type: string;
   cost?: Resource[];
+  /** seconds */
+  makeTime?: number;
   /** whole chain cost of the transformation */
   fullChainCost?: Resource[];
   /** distinct cheapest routes from the first created or built unit to the parents, chosen among alternatives */
@@ -50,14 +56,21 @@ const costKey = (cost?: Resource[]) => cost?.map(resource => `${resource.resourc
 const costValue = (cost?: Resource[]) => cost?.reduce((sum, resource) =>
   sum + resource.value * (resource.resourceId === 2 ? 1.5 : 1), 0) ?? 0;
 
-/** Groups the sources by type, cost and full chain cost; parents of a group are split by their requirements */
+/** Groups the sources by type, cost, time and full chain cost; parents of a group are split by their requirements */
 export const groupSources = (sources: UnitSource[]): SourceEntry[] => {
   const entries = new Map<string, SourceEntry>();
   for (const source of sources) {
-    const key = [source.sourceType, costKey(source.cost), costKey(source.fullChainCost)].join('|');
+    const key = [source.sourceType, costKey(source.cost), source.makeTime ?? '', costKey(source.fullChainCost)].join('|');
     let entry = entries.get(key);
     if (!entry) {
-      entry = { type: source.sourceType, cost: source.cost, fullChainCost: source.fullChainCost, routes: [], variants: [] };
+      entry = {
+        type: source.sourceType,
+        cost: source.cost,
+        makeTime: source.makeTime,
+        fullChainCost: source.fullChainCost,
+        routes: [],
+        variants: []
+      };
       entries.set(key, entry);
     }
     const route = source.fullChainRoute;
@@ -82,33 +95,38 @@ export const groupSources = (sources: UnitSource[]): SourceEntry[] => {
   return [...entries.values()].sort((first, second) =>
     TYPE_ORDER.indexOf(first.type) - TYPE_ORDER.indexOf(second.type)
     || costValue(first.cost) - costValue(second.cost)
-    || costValue(first.fullChainCost) - costValue(second.fullChainCost));
+    || costValue(first.fullChainCost) - costValue(second.fullChainCost)
+    || (first.makeTime ?? 0) - (second.makeTime ?? 0));
 };
 
 export const SourcesTab = ({ unit }: { unit: Unit }) => {
   const { t } = useTranslation();
   const entries = groupSources(unit.sources ?? []);
+  const self: Entity = { entityId: unit.gameId, entityName: unit.name, entityImage: unit.image, entityNation: unit.nation };
 
   return (
     <>
       <h3>{t('sourcesTabTitle')}</h3>
       <ResizableGrid minWidth={MIN_WIDTH}>
         <GridGroup columnWidth={COLUMN_WIDTH}>
-          {entries.map((entry, index) => <SourceTable key={index} entry={entry} unit={unit} />)}
+          {entries.map((entry, index) => <SourceTable key={index} entry={entry} self={self} />)}
         </GridGroup>
       </ResizableGrid>
     </>
   );
 };
 
-const SourceTable = ({ entry, unit }: { entry: SourceEntry; unit: Unit }) => {
+/**
+ * Cost, time and parents of a group of sources
+ * @param self the unit the routes lead to; routes are not shown without it
+ */
+export const SourceTable = ({ entry, self }: { entry: SourceEntry; self?: Entity }) => {
   const { t } = useTranslation();
   // a chain cost equal to the cost tells nothing new
   const fullChainCost = entry.fullChainCost && costKey(entry.fullChainCost) !== costKey(entry.cost)
     ? entry.fullChainCost
     : undefined;
-  const self: Entity = { entityId: unit.gameId, entityName: unit.name, entityImage: unit.image, entityNation: unit.nation };
-  const routes = fullChainCost ? entry.routes : [];
+  const routes = fullChainCost && self ? entry.routes : [];
 
   return (
     <Frame column label={<HeaderChip label={t(entry.type)} />} labelShift='80px'>
@@ -143,6 +161,10 @@ const SourceTable = ({ entry, unit }: { entry: SourceEntry; unit: Unit }) => {
               </Box>
               <RequirementsButton requirements={variant.requirements} fitContent />
             </Stack>)}
+            {entry.makeTime != null && <Stack direction='row' sx={{ padding: '7px', gap: '8px' }}>
+              <Typography variant='body2' color='text.primary'>{t('workAbilityMakeTimeCell')}:</Typography>
+              <Typography variant='body2'>{withUnits(entry.makeTime, t(Constants.SECONDS_END_MARKER))}</Typography>
+            </Stack>}
           </Box>
         </Stack>
       </FrameSection>
@@ -151,7 +173,7 @@ const SourceTable = ({ entry, unit }: { entry: SourceEntry; unit: Unit }) => {
           <Typography variant='body2' color='text.primary'>
             {t('sourceCheapestRouteLabel')}
           </Typography>
-          {routes.map((route, index) => <RouteChain key={index} route={[...route, self]} />)}
+          {routes.map((route, index) => <RouteChain key={index} route={[...route, self!]} />)}
         </Box>
       </FrameSection>}
     </Frame>

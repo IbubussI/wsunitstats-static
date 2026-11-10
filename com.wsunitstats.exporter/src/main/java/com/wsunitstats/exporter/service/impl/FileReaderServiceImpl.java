@@ -2,6 +2,7 @@ package com.wsunitstats.exporter.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wsunitstats.exporter.content.ContentAssets;
 import com.wsunitstats.exporter.content.GemPackReader;
 import com.wsunitstats.exporter.exception.FileReadingException;
 import com.wsunitstats.exporter.lua.LuaBytecodeReader;
@@ -64,7 +65,7 @@ public class FileReaderServiceImpl implements FileReaderService {
     public <T> T readJson(String path, Class<T> clazz) {
         LOG.debug("Reading json file at path: {}", path);
         try {
-            return new ObjectMapper().readValue(new File(path), clazz);
+            return new ObjectMapper().readValue(readGameFile(path), clazz);
         } catch (IOException e) {
             throw new FileReadingException("Reading json file failed", e);
         }
@@ -74,7 +75,7 @@ public class FileReaderServiceImpl implements FileReaderService {
     public JsonNode readJsonTree(String path) {
         LOG.debug("Reading json file at path: {}", path);
         try {
-            return new ObjectMapper().readTree(new File(path));
+            return new ObjectMapper().readTree(readGameFile(path));
         } catch (IOException e) {
             throw new FileReadingException("Reading json file failed", e);
         }
@@ -130,7 +131,7 @@ public class FileReaderServiceImpl implements FileReaderService {
     public List<String> readDanceUnitsLua(String path) {
         LOG.debug("Reading session/_start.lua file at path: {}", path);
         try {
-            byte[] bytes = Files.readAllBytes(Paths.get(path));
+            byte[] bytes = readGameFile(path);
             if (Arrays.equals(bytes, 0, Math.min(bytes.length, LUA_BYTECODE_SIGNATURE.length),
                     LUA_BYTECODE_SIGNATURE, 0, LUA_BYTECODE_SIGNATURE.length)) {
                 LOG.warn("Units that can dance are unknown: {} is compiled", path);
@@ -223,30 +224,56 @@ public class FileReaderServiceImpl implements FileReaderService {
     }
 
     @Override
-    public Map<String, Map<String, byte[]>> readPacks(String folderPath, String addressPrefix) {
-        LOG.debug("Reading content packs at path: {}", folderPath);
-        Path folder = Paths.get(folderPath);
-        Map<String, Map<String, byte[]>> result = new TreeMap<>();
-        try (Stream<Path> files = Files.walk(folder)) {
-            List<Path> packs = files
-                    .filter(Files::isRegularFile)
-                    .filter(file -> file.getFileName().toString().endsWith(GemPackReader.PACK_FILE_EXTENSION))
-                    .toList();
-            for (Path pack : packs) {
-                String relativePath = folder.relativize(pack).toString().replace(File.separatorChar, '/');
-                String address = addressPrefix + SLASH
-                        + relativePath.substring(0, relativePath.length() - GemPackReader.PACK_FILE_EXTENSION.length());
-                try {
-                    result.put(address, GemPackReader.read(Files.readAllBytes(pack)));
-                } catch (IllegalArgumentException e) {
-                    throw new FileReadingException("Malformed content pack: " + pack, e);
-                }
+    public Map<String, Map<String, byte[]>> readPacks(ContentAssets assets, String folderContentPath, String addressPrefix) {
+        LOG.debug("Reading content packs at path: {}", folderContentPath);
+        Path folder = assets.getContentFolder().resolve(folderContentPath);
+        // pack paths relative to the folder → files holding them; redirected packs replace the ones in the folder
+        Map<String, Path> packs = new TreeMap<>();
+        if (Files.isDirectory(folder)) {
+            try (Stream<Path> files = Files.walk(folder)) {
+                files.filter(Files::isRegularFile)
+                        .filter(file -> file.getFileName().toString().endsWith(GemPackReader.PACK_FILE_EXTENSION))
+                        .forEach(pack -> packs.put(folder.relativize(pack).toString().replace(File.separatorChar, '/'), pack));
+            } catch (IOException e) {
+                throw new FileReadingException("Reading content packs failed", e);
             }
-        } catch (IOException e) {
-            throw new FileReadingException("Reading content packs failed", e);
         }
-        LOG.debug("Read {} content packs at path: {}", result.size(), folderPath);
+        int redirected = 0;
+        for (String contentPath : assets.listRedirected(folderContentPath, GemPackReader.PACK_FILE_EXTENSION)) {
+            packs.put(contentPath.substring(folderContentPath.length() + SLASH.length()), assets.resolve(contentPath));
+            redirected++;
+        }
+
+        Map<String, Map<String, byte[]>> result = new TreeMap<>();
+        packs.forEach((relativePath, pack) -> {
+            String address = addressPrefix + SLASH
+                    + relativePath.substring(0, relativePath.length() - GemPackReader.PACK_FILE_EXTENSION.length());
+            try {
+                result.put(address, GemPackReader.read(Files.readAllBytes(pack)));
+            } catch (IOException e) {
+                throw new FileReadingException("Reading content pack failed: " + pack, e);
+            } catch (IllegalArgumentException e) {
+                throw new FileReadingException("Malformed content pack: " + pack, e);
+            }
+        });
+        LOG.debug("Read {} content packs at path: {} ({} of them are assets)", result.size(), folderContentPath, redirected);
         return result;
+    }
+
+    /**
+     * Reads a file, or an entry of a pack file if the path is {@code <pack file>#<entry name>}
+     */
+    private byte[] readGameFile(String path) throws IOException {
+        String entryName = GemPackReader.getEntryName(path);
+        byte[] bytes = Files.readAllBytes(Paths.get(GemPackReader.getFilePath(path)));
+        if (entryName == null) {
+            return bytes;
+        }
+        byte[] entry = GemPackReader.read(bytes).get(entryName);
+        if (entry == null) {
+            throw new FileReadingException("Pack entry not found: " + path);
+        }
+        return entry;
     }
 
     /**
@@ -254,7 +281,7 @@ public class FileReaderServiceImpl implements FileReaderService {
      */
     private Map<String, Object> readLuaValues(String path) {
         try {
-            byte[] bytes = Files.readAllBytes(Paths.get(path));
+            byte[] bytes = readGameFile(path);
             if (Arrays.equals(bytes, 0, Math.min(bytes.length, LUA_BYTECODE_SIGNATURE.length),
                     LUA_BYTECODE_SIGNATURE, 0, LUA_BYTECODE_SIGNATURE.length)) {
                 LuaPrototype main = LuaBytecodeReader.read(bytes);

@@ -60,6 +60,7 @@ export class ReplayInfoParser {
   #groupMapByParsedId;
   #playerResearchesData;
   #unitsKilledLostData;
+  #factionColorIndices; // faction id -> index in FACTION_COLORS
 
   #isMatchDataOn;
   #isPlayersLostOn;
@@ -110,7 +111,8 @@ export class ReplayInfoParser {
       this.#playersLost = replayApiResponseData.extraData?.['1'] && JSON.parse(replayApiResponseData.extraData['1']);
       this.#timeLine = replayApiResponseData.extraData?.['2'] && JSON.parse(replayApiResponseData.extraData['2']);
       this.#stats = replayApiResponseData.extraData?.['3'] && JSON.parse(replayApiResponseData.extraData['3']);
-      this.#researches = replayApiResponseData.extraData?.['4'] && JSON.parse(replayApiResponseData.extraData['4']);
+      // 'null' when nobody researched anything (e.g. a match that lasted a minute)
+      this.#researches = replayApiResponseData.extraData?.['4'] && (JSON.parse(replayApiResponseData.extraData['4']) ?? {});
       // 5 is internal data and should not be available publicly
       this.#unitsKilled = replayApiResponseData.extraData?.['6'] && JSON.parse(replayApiResponseData.extraData['6']);
       // newer replays contain the mapping of unit indexes to path ids, older ones use legacy numeric ids
@@ -138,6 +140,7 @@ export class ReplayInfoParser {
         );
       }
 
+      this.#factionColorIndices = this.#generateFactionColorIndices();
       this.#playerResearchTimeLine = this.#generatePlayerResearchTimeLine();
       this.#unitsKilledLostData = this.#parseUnitsKilledAndLost();
       const teamEntries = this.#generateTeamsData();
@@ -230,7 +233,7 @@ export class ReplayInfoParser {
       player.rating = playerScriptEntry.rating;
       player.team = this.#factionTeams.get(factionId);
       player.group = this.#groupMapByGameId.get(playerScriptEntry.group)?.id;
-      player.color = FACTION_COLORS[factionId];
+      player.color = this.#getFactionColor(factionId);
       player.isWinner = this.#playerWinners.has(playerId);
 
       if (this.#isPlayersLostOn) {
@@ -355,7 +358,7 @@ export class ReplayInfoParser {
         const playerTeamsNumber = Array.from(this.#playerTeams.values()).filter(arr => arr.length > 0).length;
         playerTeamCounter = playerTeam.length > 0 ? playerTeamCounter + 1 : playerTeamCounter;
         const leadingFaction = this.#getPlayerFaction(playerTeam[0]);
-        const color = playerTeamsNumber === 2 ? TEAM_COLORS[i % 2].light : FACTION_COLORS[leadingFaction];
+        const color = playerTeamsNumber === 2 ? TEAM_COLORS[i % 2].light : this.#getFactionColor(leadingFaction);
         let dataset;
         if (type === 'multiRow') {
           dataset = new TimeLineMultiRowDataset('replayTeam', true, playerTeamCounter, getTeamResult(i), rowNum, tlSize);
@@ -386,9 +389,9 @@ export class ReplayInfoParser {
         if (type === 'multiRow') {
           dataset = new TimeLineMultiRowDataset(playerNickname, false, null, getPlayerResult(i), rowNum, tlSize);
         } else if (type === 'events') {
-          dataset = new TimeLineEventDataset(playerNickname, false, null, getPlayerResult(i), FACTION_COLORS[playerFaction], playersCount - i);
+          dataset = new TimeLineEventDataset(playerNickname, false, null, getPlayerResult(i), this.#getFactionColor(playerFaction), playersCount - i);
         } else {
-          dataset = new TimeLineDataset(playerNickname, false, null, getPlayerResult(i), FACTION_COLORS[playerFaction], tlSize, kFunc);
+          dataset = new TimeLineDataset(playerNickname, false, null, getPlayerResult(i), this.#getFactionColor(playerFaction), tlSize, kFunc);
         }
         playerDatasetGroup.addDataset(dataset);
       }
@@ -822,6 +825,40 @@ export class ReplayInfoParser {
     }
   }
 
+  #getFactionColor(factionId) {
+    return FACTION_COLORS[this.#factionColorIndices?.[factionId] ?? factionId];
+  }
+
+  /**
+   * The game gives the players of a two team match the palette colors of their factions regrouped by hue, so the teams
+   * differ in color (initFactionColorGroups__ of Projects/WarSelection/scripts/visual.pack). Maps with their own data
+   * keep the usual colors, as matches where the reserved factions 0/1 are controlled (ToW, horde)
+   * @returns faction id -> palette index, or undefined if the colors are not regrouped
+   */
+  #generateFactionColorIndices() {
+    if (this.#scriptParameters.mapData) {
+      return undefined;
+    }
+    const controlled = this.#initData.players.reduce((mask, playerMask) => mask | playerMask, 0);
+    if ((controlled & 3) !== 0) {
+      return undefined;
+    }
+    const factions = [];
+    const teams = new Map();
+    for (let factionId = 2; factionId < this.#initData.factions; factionId++) {
+      if (((controlled >> factionId) & 1) !== 0) {
+        const teamId = this.#initData.teams.findIndex(team => team.includes(factionId));
+        if (!teams.has(teamId)) {
+          teams.set(teamId, []);
+        }
+        teams.get(teamId).push(factionId);
+        factions.push(factionId);
+      }
+    }
+    const groups = [...teams.keys()].sort((a, b) => a - b).map(teamId => teams.get(teamId));
+    return groupFactionColorsByHue(factions, groups);
+  }
+
   #getPlayerFaction(playerId) {
     const playerBitset = this.#initData.players[playerId];
     return getSetBitPositions(playerBitset)[0];
@@ -1187,7 +1224,77 @@ function isTrueParam(value) {
   return value === true || value === '1' || value === 'true';
 }
 
-// taken from WS
+/**
+ * Port of groupFactionColorsByHue (factionColorGroups.lua of Projects/WarSelection/scripts/common.pack): splits
+ * the palette colors of the factions into two parts of similar hues, the first team takes the first part.
+ * @param factions faction ids, ascending
+ * @param groups faction ids by team, teams ordered by id
+ * @returns faction id -> palette index, or undefined if the colors are kept
+ */
+function groupFactionColorsByHue(factions, groups) {
+  if (groups.length !== 2 || factions.length < 3 || factions.some(factionId => factionId >= FACTION_COLORS.length)) {
+    return undefined;
+  }
+  const hues = new Map();
+  const saturation = new Map();
+  for (const factionId of factions) {
+    const color = parseInt(FACTION_COLORS[factionId].slice(1), 16);
+    const r = (color >> 16) & 255, g = (color >> 8) & 255, b = color & 255;
+    const hi = Math.max(r, g, b), lo = Math.min(r, g, b);
+    const delta = hi - lo;
+    let hue = 0;
+    if (delta !== 0) {
+      if (hi === r) hue = (g - b) / delta;
+      else if (hi === g) hue = (b - r) / delta + 2;
+      else hue = (r - g) / delta + 4;
+    }
+    // Lua modulo is never negative
+    hues.set(factionId, ((hue * 60) % 360 + 360) % 360);
+    saturation.set(factionId, hi === 0 ? 0 : delta / hi);
+  }
+
+  const sorted = [...factions].sort((a, b) => hues.get(a) !== hues.get(b) ? hues.get(a) - hues.get(b) : a - b);
+  const similarity = (a, b) => {
+    let angle = Math.abs(hues.get(a) - hues.get(b));
+    angle = Math.min(angle, 360 - angle);
+    // nearby hues across teams are costly, muted colors have less hue identity
+    return Math.exp(-angle * angle / (2 * 35 * 35)) * Math.sqrt(saturation.get(a) * saturation.get(b));
+  };
+
+  const size = groups[0].length;
+  const count = sorted.length;
+  let bestCut, bestCost, bestMoves;
+  for (let cut = 0; cut < count; cut++) {
+    let cost = 0, moves = 0;
+    for (let i = 0; i < size; i++) {
+      const a = sorted[(cut + i) % count];
+      for (let j = size; j < count; j++) {
+        cost += similarity(a, sorted[(cut + j) % count]);
+      }
+      // equal-quality splits keep as many original team colors as possible
+      if (!groups[0].includes(a)) {
+        moves++;
+      }
+    }
+    if (bestCost === undefined || cost < bestCost - 1e-9 || (Math.abs(cost - bestCost) <= 1e-9 && moves < bestMoves)) {
+      bestCut = cut;
+      bestCost = cost;
+      bestMoves = moves;
+    }
+  }
+
+  const result = [];
+  let offset = 0;
+  for (const group of groups) {
+    for (const factionId of group) {
+      result[factionId] = sorted[(bestCut + offset) % count];
+      offset++;
+    }
+  }
+  return result;
+}
+
+// taken from WS (factionColors of Projects/WarSelection/scripts/visual.pack, AABBGGRR there)
 const FACTION_COLORS = [
   '#7f7f7f',
   '#dadada',

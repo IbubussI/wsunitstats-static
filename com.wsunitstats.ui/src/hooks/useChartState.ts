@@ -49,11 +49,13 @@ export function useChartState(chartRef: React.RefObject<Chart<any> | null | unde
   }, [chartId, zoomInButtonId, chartRef]);
 
   const smooth = React.useCallback((points: number[]) => {
-    if (smoothLevel === 0) {
+    // the window is odd and at least 5 points; a window wider than the line (short matches) distorts it
+    const maxWSize = points.length % 2 === 0 ? points.length - 1 : points.length;
+    if (smoothLevel === 0 || maxWSize < 5) {
       // no-smooth
       return points;
     }
-    const wSize = 2 * Math.ceil(Math.exp(smoothLevel * 6 / SMOOTH_MAX)) + 3;
+    const wSize = Math.min(2 * Math.ceil(Math.exp(smoothLevel * 6 / SMOOTH_MAX)) + 3, maxWSize);
     return savitzkyGolay(points, 1, { derivative: 0, windowSize: wSize, pad: 'pre', polynomial: 3 })
       .map(point => point > 0 ? point : 0);
   }, [smoothLevel]);

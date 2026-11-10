@@ -32,6 +32,10 @@ public class UnitSourceModel {
      */
     private List<ResourceModel> cost;
     /**
+     * creation/transformation only: time of the parent's work, seconds (for all the units the work creates)
+     */
+    private Double makeTime;
+    /**
      * unit that creates, turns into or builds the unit; null for a building nobody can construct
      */
     private EntityInfoModel sourceInfo;

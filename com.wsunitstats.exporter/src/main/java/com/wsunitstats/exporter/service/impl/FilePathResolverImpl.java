@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.service.impl;
 
+import com.wsunitstats.exporter.content.GemPackReader;
 import com.wsunitstats.exporter.exception.GameFilesResolvingException;
 import com.wsunitstats.exporter.jvdf.VDFNode;
 import com.wsunitstats.exporter.jvdf.VDFParser;
@@ -62,6 +63,8 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String wsInterfacesSessionInitFilePath;
     @Value("${warselection.interfaces.session.start.file}")
     private String wsInterfacesSessionStartFilePath;
+    @Value("${warselection.gameplay.scripts.group.file}")
+    private String wsGameplayScriptsGroupFilePath;
     @Value("${warselection.on.project.load.file}")
     private String wsOnProjectLoadFilePath;
     @Value("${warselection.cultures.file}")
@@ -70,6 +73,12 @@ public class FilePathResolverImpl implements FilePathResolver {
     private String wsEnvNamesFilePath;
     @Value("${warselection.research.icons.file}")
     private String wsResearchIconsFilePath;
+    @Value("${warselection.content.folder}")
+    private String wsContentFolderPath;
+    @Value("${warselection.content.redirects.file}")
+    private String wsAssetRedirectsFilePath;
+    @Value("${warselection.mods.storage.folder}")
+    private String wsModsStorageFolderPath;
     @Value("${warselection.content.units.folder}")
     private String wsUnitsContentFolderPath;
     @Value("${warselection.content.envs.folder}")
@@ -106,14 +115,19 @@ public class FilePathResolverImpl implements FilePathResolver {
         result.setLocalizationFolderPath(resolveRequired(wsRootAbsFolderPath, wsLocalizationFolderPath));
         result.setSessionInitFilePath(resolveRequired(wsRootAbsFolderPath, wsInterfacesSessionInitFilePath));
         result.setSessionStartFilePath(resolveRequired(wsRootAbsFolderPath, wsInterfacesSessionStartFilePath));
+        result.setGameplayScriptsGroupFilePath(resolveRequired(wsRootAbsFolderPath, wsGameplayScriptsGroupFilePath));
         result.setOnProjectLoadFilePath(resolveRequired(wsRootAbsFolderPath, wsOnProjectLoadFilePath));
         result.setCulturesFilePath(resolveRequired(wsRootAbsFolderPath, wsCulturesFilePath));
         result.setEnvNamesFilePath(resolveRequired(wsRootAbsFolderPath, wsEnvNamesFilePath));
         result.setResearchIconsFilePath(resolveRequired(wsRootAbsFolderPath, wsResearchIconsFilePath));
-        result.setUnitsContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsUnitsContentFolderPath));
-        result.setEnvsContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsEnvsContentFolderPath));
-        result.setProjectilesContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsProjectilesContentFolderPath));
-        result.setUiContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsUiContentFolderPath));
+        result.setContentFolderPath(resolveRequired(wsRootAbsFolderPath, wsContentFolderPath));
+        result.setAssetRedirectsFilePath(wsRootAbsFolderPath + wsAssetRedirectsFilePath);
+        result.setModsStorageFolderPath(gameDirPath + wsModsStorageFolderPath);
+        // content folders may be empty, their files being assets of the mods storage
+        result.setUnitsContentFolderPath(wsUnitsContentFolderPath);
+        result.setEnvsContentFolderPath(wsEnvsContentFolderPath);
+        result.setProjectilesContentFolderPath(wsProjectilesContentFolderPath);
+        result.setUiContentFolderPath(wsUiContentFolderPath);
         return result;
     }
 
@@ -175,7 +189,8 @@ public class FilePathResolverImpl implements FilePathResolver {
     }
 
     private void validateFile(String absPath) throws GameFilesResolvingException {
-        File file = new File(absPath);
+        // an entry of a pack is checked when it is read
+        File file = new File(GemPackReader.getFilePath(absPath));
         if (!file.exists()) {
             throw new GameFilesResolvingException("File not found: " + absPath);
         }

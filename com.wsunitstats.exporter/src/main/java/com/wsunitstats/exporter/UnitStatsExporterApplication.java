@@ -66,7 +66,7 @@ public class UnitStatsExporterApplication {
 
             LOG.info("Transforming files to data model...");
             List<UnitModel> unitModels = modelBuilder.buildUnits();
-            List<ResearchModel> researchModels = modelBuilder.buildResearches();
+            List<ResearchModel> researchModels = modelBuilder.buildResearches(unitModels);
             List<LocalizationModel> localizationModels = fileContentService.getLocalizationFileModels().stream()
                     .map(locFile -> localizationModelBuilder.buildFromFileModel(locFile))
                     .toList();

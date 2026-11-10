@@ -12,6 +12,8 @@ import com.wsunitstats.exporter.model.exported.submodel.ConstructionModel;
 import com.wsunitstats.exporter.model.exported.submodel.GatherModel;
 import com.wsunitstats.exporter.model.exported.submodel.TurretModel;
 import com.wsunitstats.exporter.model.exported.submodel.TypedArmorModel;
+import com.wsunitstats.exporter.model.exported.submodel.ability.ResearchAbilityModel;
+import com.wsunitstats.exporter.model.exported.submodel.research.ResearchSourceModel;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchModel;
 import com.wsunitstats.exporter.model.exported.submodel.research.UnitResearchUpgrade;
 import com.wsunitstats.exporter.model.exported.submodel.research.UpgradeModel;
@@ -225,8 +227,9 @@ public class ModelBuilderImpl implements ModelBuilder {
     }
 
     @Override
-    public List<ResearchModel> buildResearches() {
+    public List<ResearchModel> buildResearches(List<UnitModel> units) {
         LocalizationKeyModel localizationKeyModel = fileContentService.getLocalizationKeyModel();
+        Map<EntityId, List<ResearchSourceModel>> researchSources = getResearchSources(units);
 
         List<ResearchModel> result = new ArrayList<>();
         // insertion order here is crucial, since in Replay Info UI we have a retrieval of research by index in this array
@@ -238,8 +241,26 @@ public class ModelBuilderImpl implements ModelBuilder {
             researchModel.setDescription(localizationKeyModel.getResearchTexts().get(id));
             researchModel.setUpgrades(getUpgrades(researchJsonModel));
             researchModel.setType(getResearchType(id));
+            researchModel.setSources(researchSources.get(id));
             result.add(researchModel);
         });
+        return result;
+    }
+
+    /**
+     * @return research ID to the units that research it by a work ability
+     */
+    private Map<EntityId, List<ResearchSourceModel>> getResearchSources(List<UnitModel> units) {
+        Map<EntityId, List<ResearchSourceModel>> result = new LinkedHashMap<>();
+        units.forEach(unit -> UnitSourceFinder.forEachWorkAbility(unit, ResearchAbilityModel.class, container -> {
+            ResearchAbilityModel ability = (ResearchAbilityModel) container.getAbility();
+            ResearchSourceModel source = new ResearchSourceModel();
+            source.setSourceInfo(UnitSourceFinder.toEntityInfo(unit));
+            source.setCost(container.getWork().getCost());
+            source.setMakeTime(container.getWork().getMakeTime());
+            source.setRequirements(ability.getRequirements());
+            result.computeIfAbsent(ability.getEntityInfo().getEntityId(), k -> new ArrayList<>()).add(source);
+        }));
         return result;
     }
 

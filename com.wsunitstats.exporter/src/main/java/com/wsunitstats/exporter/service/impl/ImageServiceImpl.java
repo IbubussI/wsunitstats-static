@@ -2,6 +2,7 @@ package com.wsunitstats.exporter.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wsunitstats.exporter.content.ContentAssets;
 import com.wsunitstats.exporter.content.Ktx2Reader;
 import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.ImageSource;
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,14 +35,14 @@ public class ImageServiceImpl implements ImageService {
     private String imageExtension;
 
     @Override
-    public Map<String, BufferedImage> resolveImages(Map<String, ImageSource> sources, String uiContentFolderPath) {
+    public Map<String, BufferedImage> resolveImages(Map<String, ImageSource> sources, ContentAssets assets, String uiContentFolderPath) {
         Map<String, BufferedImage> result = new TreeMap<>();
         Map<String, Atlas> atlases = new HashMap<>();
         sources.forEach((name, source) -> {
             try {
                 BufferedImage image = source.texture() != null
                         ? Ktx2Reader.read(source.texture())
-                        : readAsset(source.asset(), uiContentFolderPath, atlases);
+                        : readAsset(source.asset(), assets, uiContentFolderPath, atlases);
                 result.put(name, image);
             } catch (IOException | RuntimeException e) {
                 LOG.error("Cannot read image {} from {}: {}", name, source, e.getMessage());
@@ -60,14 +61,14 @@ public class ImageServiceImpl implements ImageService {
         return type + "/" + index + "." + imageExtension;
     }
 
-    private BufferedImage readAsset(String asset, String uiContentFolderPath, Map<String, Atlas> atlases) throws IOException {
+    private BufferedImage readAsset(String asset, ContentAssets assets, String uiContentFolderPath, Map<String, Atlas> atlases) throws IOException {
         int delimiterIndex = asset.indexOf(ASSET_IMAGE_DELIMITER);
         String atlasName = delimiterIndex < 0 ? asset : asset.substring(0, delimiterIndex);
         String imageName = delimiterIndex < 0 ? DEFAULT_ASSET_IMAGE : asset.substring(delimiterIndex + 1);
 
         Atlas atlas = atlases.get(atlasName);
         if (atlas == null) {
-            atlas = readAtlas(new File(uiContentFolderPath, atlasName).getPath());
+            atlas = readAtlas(assets, uiContentFolderPath + "/" + atlasName);
             atlases.put(atlasName, atlas);
         }
         JsonNode region = atlas.descriptor().path("images").get(imageName);
@@ -77,14 +78,17 @@ public class ImageServiceImpl implements ImageService {
         return crop(atlas.texture(), region);
     }
 
-    private Atlas readAtlas(String basePath) throws IOException {
-        JsonNode descriptor = new ObjectMapper().readTree(new File(basePath + ATLAS_DESCRIPTOR_EXTENSION));
-        File ktx2File = new File(basePath + Ktx2Reader.KTX2_FILE_EXTENSION);
+    /**
+     * @param basePath content path of the atlas files without extension
+     */
+    private Atlas readAtlas(ContentAssets assets, String basePath) throws IOException {
+        JsonNode descriptor = new ObjectMapper().readTree(assets.resolve(basePath + ATLAS_DESCRIPTOR_EXTENSION).toFile());
+        Path ktx2File = assets.resolve(basePath + Ktx2Reader.KTX2_FILE_EXTENSION);
         BufferedImage texture;
-        if (ktx2File.exists()) {
-            texture = Ktx2Reader.read(Files.readAllBytes(ktx2File.toPath()));
+        if (Files.exists(ktx2File)) {
+            texture = Ktx2Reader.read(Files.readAllBytes(ktx2File));
         } else {
-            texture = ImageIO.read(new File(basePath + PNG_EXTENSION));
+            texture = ImageIO.read(assets.resolve(basePath + PNG_EXTENSION).toFile());
         }
         if (texture == null) {
             throw new IOException("No texture found for atlas " + basePath);

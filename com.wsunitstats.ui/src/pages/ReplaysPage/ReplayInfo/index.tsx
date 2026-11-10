@@ -31,11 +31,12 @@ export const ReplayInfo = () => {
         {/* remount to have the default view when replay changes */}
         <StatsTable key={id} replayInfo={replayInfo} />
       </Box>
-      <Box>
+      {/* no timeline in incomplete replays and in matches that ended before the first timeline period */}
+      {!!replayInfo.timeLine?.length && <Box>
         <SectionTitle>{t('replayChartsTitle')}</SectionTitle>
         {/* remount charts to have a default view when replay changes */}
         <ChartViewer key={id} id={id} replayInfo={replayInfo} />
-      </Box>
+      </Box>}
     </Stack>
   );
 };

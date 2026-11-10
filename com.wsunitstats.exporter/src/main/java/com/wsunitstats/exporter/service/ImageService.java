@@ -1,5 +1,6 @@
 package com.wsunitstats.exporter.service;
 
+import com.wsunitstats.exporter.content.ContentAssets;
 import com.wsunitstats.exporter.entity.EntityId;
 import com.wsunitstats.exporter.model.ImageSource;
 
@@ -9,10 +10,11 @@ import java.util.Map;
 public interface ImageService {
     /**
      * @param sources             image sources by image name
-     * @param uiContentFolderPath folder the interface image assets are stored in
+     * @param assets              content files
+     * @param uiContentFolderPath folder the interface image assets are stored in, relative to the content folder
      * @return images by image name. Images which can't be read are logged and skipped.
      */
-    Map<String, BufferedImage> resolveImages(Map<String, ImageSource> sources, String uiContentFolderPath);
+    Map<String, BufferedImage> resolveImages(Map<String, ImageSource> sources, ContentAssets assets, String uiContentFolderPath);
 
     /**
      * @return name of the image of an entity: "<type>/<entity id>.<extension>"

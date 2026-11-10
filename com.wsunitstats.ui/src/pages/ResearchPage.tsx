@@ -8,9 +8,11 @@ import { Frame, FrameSection } from '@/components/layout/Frame';
 import { EntityInfo } from '@/components/common/EntityInfo';
 import { EntityImage } from '@/components/common/misc';
 import type { EntityInfo as EntityInfoData, Research } from '@/types/game';
+import { groupSources, RESEARCH_SOURCE_TYPE, SourceTable } from './UnitPage/SourcesTab';
 
 const MIN_WIDTH = 400;
 const COLUMN_WIDTH = 500;
+const SOURCE_COLUMN_WIDTH = 480;
 const GRID_ITEM_WIDTH = 170;
 const GRID_ITEM_GAP = 4;
 
@@ -30,6 +32,8 @@ export const ResearchPage = () => {
     .map(upgrade => upgrade.unit)
     .filter((unit, index, array): unit is EntityInfoData =>
       !!unit && array.findIndex(other => other?.entityId === unit.entityId) === index);
+  // units that research it, grouped by cost and time as the sources of units
+  const sources = groupSources((research.sources ?? []).map(source => ({ ...source, sourceType: RESEARCH_SOURCE_TYPE })));
 
   return (
     <Box sx={{ p: 2, width: '100%' }}>
@@ -74,6 +78,9 @@ export const ResearchPage = () => {
               </Stack>
             </FrameSection>}
           </Frame>
+        </GridGroup>
+        <GridGroup heading='researchPageSourcesTitle' columnWidth={SOURCE_COLUMN_WIDTH}>
+          {sources.map((entry, index) => <SourceTable key={index} entry={entry} />)}
         </GridGroup>
       </ResizableGrid>
     </Box>

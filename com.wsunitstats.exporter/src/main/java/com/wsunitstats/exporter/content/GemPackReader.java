@@ -27,6 +27,8 @@ import java.util.Map;
  */
 public class GemPackReader {
     public static final String PACK_FILE_EXTENSION = ".pack";
+    /** Separates the path of a pack file and the name of an entry inside it: {@code scripts/common.pack#cultures.lua} */
+    public static final String ENTRY_SEPARATOR = "#";
 
     private static final byte[] MAGIC = "GEMPACK\0".getBytes(StandardCharsets.US_ASCII);
     private static final int SUPPORTED_VERSION = 1;
@@ -34,6 +36,22 @@ public class GemPackReader {
 
     private GemPackReader() {
         // Utility class
+    }
+
+    /**
+     * @return path of the file: of the pack for a pack entry path ({@code <pack file>#<entry name>}), else the path itself
+     */
+    public static String getFilePath(String path) {
+        int separator = path.indexOf(PACK_FILE_EXTENSION + ENTRY_SEPARATOR);
+        return separator < 0 ? path : path.substring(0, separator + PACK_FILE_EXTENSION.length());
+    }
+
+    /**
+     * @return name of the entry for a pack entry path ({@code <pack file>#<entry name>}), else null
+     */
+    public static String getEntryName(String path) {
+        int separator = path.indexOf(PACK_FILE_EXTENSION + ENTRY_SEPARATOR);
+        return separator < 0 ? null : path.substring(separator + PACK_FILE_EXTENSION.length() + ENTRY_SEPARATOR.length());
     }
 
     /**

@@ -7,5 +7,8 @@ import java.util.List;
 
 public interface ModelBuilder {
     List<UnitModel> buildUnits();
-    List<ResearchModel> buildResearches();
+    /**
+     * @param units built units, to find the units that research each research
+     */
+    List<ResearchModel> buildResearches(List<UnitModel> units);
 }

@@ -1,6 +1,7 @@
 package com.wsunitstats.exporter.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wsunitstats.exporter.content.ContentAssets;
 import com.wsunitstats.exporter.model.localization.LocalizationFileModel;
 import com.wsunitstats.exporter.model.lua.CulturesFileModel;
 import com.wsunitstats.exporter.model.lua.EnvNamesFileModel;
@@ -38,12 +39,13 @@ public interface FileReaderService {
     ResearchIconsFileModel readResearchIconsLua(String path);
 
     /**
-     * Reads every content pack under the given folder (recursively)
+     * Reads every content pack under the given folder (recursively), the ones in the folder and the ones redirected
+     * to assets
      *
-     * @param folderPath    content folder of a kind of entities (e.g. Content/units/WarSelection)
-     * @param addressPrefix prefix of the entity paths in this folder (e.g. WarSelection)
+     * @param folderContentPath content folder of a kind of entities, relative to the content folder (e.g. units/WarSelection)
+     * @param addressPrefix     prefix of the entity paths in this folder (e.g. WarSelection)
      * @return pack entries (by entry name) by entity path, which is the address prefix followed by
      * the pack file path relative to the folder, without extension (e.g. WarSelection/2/e/archer)
      */
-    Map<String, Map<String, byte[]>> readPacks(String folderPath, String addressPrefix);
+    Map<String, Map<String, byte[]>> readPacks(ContentAssets assets, String folderContentPath, String addressPrefix);
 }

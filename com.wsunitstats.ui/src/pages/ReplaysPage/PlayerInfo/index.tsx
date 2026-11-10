@@ -42,7 +42,7 @@ export const PlayerInfo = () => {
           <SectionTitle>{t('playerInfoUnitsTitle')}</SectionTitle>
           <UnitsInfoTabs player={player} />
         </Box>}
-      {replayInfo.timeLine &&
+      {!!replayInfo.timeLine?.length &&
         <Box>
           <SectionTitle>{t('playerInfoChartsTitle')}</SectionTitle>
           <PlayerChartViewer charts={replayInfo.timeLine} timeLinePeriod={replayInfo.timeLinePeriod} playerId={playerIndex} />
