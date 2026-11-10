@@ -258,7 +258,7 @@
   "sourceParentsBuilding": "Кем строится",
   "sourceParentsDeath": "Появляется при гибели",
   "sourceParentsWeapon": "Создаётся оружием",
-  "sourceParentsResearch": "Кем исследуется",
+  "sourceParentsResearch": "Где исследуется",
   "researchSourceTypeResearch": "Исследование",
   "sourceFree": "Бесплатно",
   "sourceFullChainCostLabel": "Полная цена",
