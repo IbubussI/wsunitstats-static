@@ -6,14 +6,20 @@ import com.wsunitstats.exporter.model.exported.UnitModel;
 import com.wsunitstats.exporter.model.exported.option.NationOption;
 import com.wsunitstats.exporter.model.exported.option.ResearchOption;
 import com.wsunitstats.exporter.model.exported.option.ResearchTypeOption;
+import com.wsunitstats.exporter.model.exported.option.ResourceOption;
 import com.wsunitstats.exporter.model.exported.option.TagOption;
 import com.wsunitstats.exporter.model.exported.option.UnitOption;
 import com.wsunitstats.exporter.model.exported.submodel.NationModel;
 import com.wsunitstats.exporter.model.exported.submodel.TagModel;
+import com.wsunitstats.exporter.service.FileContentService;
+import com.wsunitstats.exporter.service.ImageService;
 import com.wsunitstats.exporter.service.OptionsBuilder;
+import com.wsunitstats.exporter.utils.Constants;
 import com.wsunitstats.exporter.utils.Constants.ResearchType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -22,6 +28,29 @@ import java.util.TreeSet;
 
 @Service
 public class OptionsBuilderImpl implements OptionsBuilder {
+    @Autowired
+    private FileContentService fileContentService;
+    @Autowired
+    private ImageService imageService;
+
+    /** All resources of the game in game list order (resourceNames of onProjectLoad.lua) */
+    public Collection<ResourceOption> buildResourceOptions() {
+        List<String> names = fileContentService.getLocalizationKeyModel().getResourceNames();
+        List<ResourceOption> result = new ArrayList<>();
+        for (int i = 0; i < names.size(); i++) {
+            int gameId = i;
+            ResourceOption option = new ResourceOption();
+            option.setGameId(gameId);
+            option.setName(names.get(i));
+            // icons are exported only for the resources listed in Constants.ResourceIcon
+            if (Arrays.stream(Constants.ResourceIcon.values()).anyMatch(icon -> icon.getGameId() == gameId)) {
+                option.setImage(imageService.getImageName(Constants.EntityType.RESOURCE.getName(), gameId));
+            }
+            result.add(option);
+        }
+        return result;
+    }
+
     public Collection<UnitOption> buildUnitOptions(List<UnitModel> unitModels) {
         return unitModels.stream().map(unit -> {
             UnitOption unitOption = new UnitOption();

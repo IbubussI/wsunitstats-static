@@ -24,6 +24,8 @@ import { loadLegacyUnitIds } from '@/pages/ReplaysPage/ReplayInfo/legacyUnitIds'
 import type { ReplayParseResult } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 import { ReplayHistory } from '@/pages/ReplaysPage/ReplayHistory';
 import { useReplayHistoryStore } from '@/store/replayHistoryStore';
+import { loadReplayExtraData, type ReplayExtraData } from '@/pages/ReplaysPage/ReplayInfo/replayAnalyzer';
+import { ReplayEvents } from '@/pages/ReplaysPage/ReplayEvents';
 
 const FormContainer = styled('form')(({ theme }) => ({
   display: 'flex',
@@ -45,8 +47,7 @@ export const ReplayPage = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const isDebug = searchParams.get('debug') || false;  const addReplayToHistory = useReplayHistoryStore(state => state.addReplay);
   // on small screens only one window is shown, switched by the menu
-  const isWide = useMediaQuery((theme: Theme) =>
-    `(min-width:${theme.breakpoints.values.md + 2 * (SIDE_ZONE_SPACING * 2 + SIDE_MIN_WIDTH)}px)`);
+  const isWide = useMediaQuery(`(min-width:${REPLAY_MIN_WIDTH + 2 * (SIDE_ZONE_SPACING * 2 + SIDE_MIN_WIDTH)}px)`);
   const [view, setView] = React.useState<ReplayPageView>('replay');
 
   const openReplay = (replayCode: string) => {
@@ -89,8 +90,59 @@ export const ReplayPage = () => {
     }
   }, [params.replayCode, gameContext, isDebug, addReplayToHistory]);
 
+  // optional: the panels are shown only if the data is loaded, failures are ignored
+  const [extraData, setExtraData] = React.useState<{ replayCode: string; data: ReplayExtraData } | null>(null);
+  React.useEffect(() => {
+    const replayCode = parseReplayCode(params.replayCode);
+    if (!replayCode) {
+      return;
+    }
+    let isActual = true;
+    loadReplayExtraData(replayCode).then(data => {
+      if (isActual && data) {
+        setExtraData({ replayCode, data });
+      }
+    });
+    return () => {
+      isActual = false;
+    };
+  }, [params.replayCode]);
+
   const isSuccess = replayInfo?.error === 0;
-  const showReplay = isWide || view === 'replay';
+  const parsedReplay = isSuccess ? replayInfo as ReplayParseResult : null;
+  // both parts must be of the same replay: either can still be loading for the previous one
+  const replayExtraData = extraData && extraData.replayCode === parsedReplay?.match.replayCode ? extraData.data : null;
+  const views: ReplayPageView[] = replayExtraData ? ['replay', 'events', 'history'] : ['replay', 'history'];
+  const activeView = views.includes(view) ? view : 'replay';
+  const showReplay = isWide || activeView === 'replay';
+
+  // side panels grow with the list up to a part of the screen height, so they always fit the screen and never
+  // make the page longer; on small screens the panel fills the window below the form
+  const sidePanelListSx = isWide
+    ? { maxHeight: `${SIDE_PANEL_LIST_MAX_HEIGHT_VH}vh` }
+    : { height: 'calc(100vh - 300px)', minHeight: 260 };
+  const sidePanelSx = (side: 'left' | 'right') => isWide
+    ? {
+      gridColumn: side === 'left' ? 1 : 3,
+      gridRow: 1,
+      justifySelf: side === 'left' ? 'end' : 'start',
+      boxSizing: 'border-box',
+      width: '100%',
+      maxWidth: SIDE_MAX_WIDTH,
+      position: 'sticky',
+      top: SIDE_PANEL_MARGIN,
+      my: `${SIDE_PANEL_MARGIN}px`
+    } as const
+    : undefined;
+
+  const events = parsedReplay && replayExtraData &&
+    <ReplayEvents
+      replayInfo={parsedReplay}
+      extraData={replayExtraData}
+      embedded={!isWide}
+      collapsible={isWide}
+      sx={sidePanelSx('left')}
+      listSx={sidePanelListSx} />;
 
   const history = (
     <ReplayHistory
@@ -103,33 +155,22 @@ export const ReplayPage = () => {
       embedded={!isWide}
       // the side panel collapses to its header; on small screens the window is chosen by the menu instead
       collapsible={isWide}
-      sx={isWide
-        ? {
-          gridColumn: 3,
-          justifySelf: 'start',
-          boxSizing: 'border-box',
-          width: '100%',
-          maxWidth: SIDE_MAX_WIDTH,
-          position: 'sticky',
-          top: 32,
-          my: 4
-        }
-        : undefined}
-      listSx={isWide
-        // the panel grows with the list up to the screen height (minus the page margins and the panel header)
-        ? { maxHeight: 'min(calc(100vh - 190px), 540px)' }
-        : { height: 'calc(100vh - 300px)', minHeight: 260 }} />
+      sx={sidePanelSx('right')}
+      listSx={sidePanelListSx} />
   );
 
   return (
     // the page root centers its children with their content width: take the screen width, as the replay
     // container did before, so wide content scrolls inside its own scroller instead of widening the page
-    // on wide screens the replay stays in the middle column and the history takes the right side zone
+    // on wide screens the replay stays in the middle column, the history takes the right side zone
+    // and the replay events the left one. The replay takes its full width only if the side zones keep
+    // their minimum width, otherwise it shrinks first (its wide content scrolls)
     <Box sx={[
       { width: '100%', boxSizing: 'border-box' },
       isWide && {
         display: 'grid',
-        gridTemplateColumns: (theme: Theme) => `1fr minmax(0, ${theme.breakpoints.values.md}px) 1fr`,
+        gridTemplateColumns: (theme: Theme) =>
+          `minmax(${SIDE_MIN_WIDTH}px, 1fr) minmax(0, ${theme.breakpoints.values.md}px) minmax(${SIDE_MIN_WIDTH}px, 1fr)`,
         alignItems: 'start',
         columnGap: `${SIDE_ZONE_SPACING}px`,
         px: `${SIDE_ZONE_SPACING}px`
@@ -139,7 +180,7 @@ export const ReplayPage = () => {
         {/* side columns share the free space, so the form stays centered while the menu button fits */}
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr minmax(0, max-content) 1fr', alignItems: 'center', gap: 1 }}>
           <Box>
-            {!isWide && <ReplayViewMenu view={view} onChange={setView} />}
+            {!isWide && <ReplayViewMenu views={views} view={activeView} onChange={setView} />}
           </Box>
           <ReplayForm
             onSubmit={(event: React.FormEvent) => {
@@ -166,30 +207,46 @@ export const ReplayPage = () => {
             ? <Outlet context={replayInfo} />
             : <ErrorViewer errorData={replayInfo} />}
         </Box>
-        {!showReplay && history}
+        {!showReplay && (activeView === 'events' ? events : history)}
       </Container>
       {isWide && history}
+      {isWide && events}
     </Box>
   );
 };
 
-type ReplayPageView = 'replay' | 'history';
+type ReplayPageView = 'replay' | 'events' | 'history';
 
-/** Width range of the history in the side zone; below the minimum it is switched by the menu instead */
-// fits 1366px screens (900 + 2 × (200 + 2 × 16) = 1364)
-const SIDE_MIN_WIDTH = 200;
+const VIEW_NAMES: Record<ReplayPageView, string> = {
+  replay: 'replayViewReplay',
+  events: 'replayEventsTitle',
+  history: 'replayHistoryTitle'
+};
+
+/** Width range of the side panels; below the minimum the replay shrinks */
+const SIDE_MIN_WIDTH = 300;
 const SIDE_MAX_WIDTH = 480;
+/**
+ * Narrowest replay next to the side panels; below it one window is shown, switched by the menu.
+ * Fits 1366px screens (700 + 2 × (300 + 2 × 16) = 1364)
+ */
+const REPLAY_MIN_WIDTH = 700;
 /** Gap between the side zone and the replay, and between the side zone and the screen edge, px */
 const SIDE_ZONE_SPACING = 16;
+/** Space above and below the side panels, and between a sticky panel and the top of the screen, px */
+const SIDE_PANEL_MARGIN = 32;
+/** Max height of a side panel list, % of the screen height (the panel header and margins take the rest) */
+const SIDE_PANEL_LIST_MAX_HEIGHT_VH = 70;
 
 /** Switches the window shown on small screens, where the replay and the history do not fit side by side */
-const ReplayViewMenu = ({ view, onChange }: { view: ReplayPageView; onChange: (view: ReplayPageView) => void }) => {
+const ReplayViewMenu = ({ views, view, onChange }: {
+  views: ReplayPageView[];
+  view: ReplayPageView;
+  onChange: (view: ReplayPageView) => void
+}) => {
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-  const items: { view: ReplayPageView; name: string }[] = [
-    { view: 'replay', name: t('replayViewReplay') },
-    { view: 'history', name: t('replayHistoryTitle') }
-  ];
+  const items = views.map(view => ({ view, name: t(VIEW_NAMES[view]) }));
 
   return (
     <>

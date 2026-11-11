@@ -437,6 +437,15 @@ export interface ResearchOption {
   type: string;
 }
 
+export interface ResourceOption {
+  /** index in the game resource list */
+  gameId: number;
+  /** localization key */
+  name: string;
+  /** null if the resource has no icon */
+  image?: string | null;
+}
+
 export interface GameContext {
   /** "{engine}.{gameplay}_{main}" versions of the game files, e.g. 252.4005_29231 */
   gameVersion?: string;
@@ -445,6 +454,8 @@ export interface GameContext {
   localeOptions: string[];
   units: UnitOption[];
   researches: ResearchOption[];
+  /** all resources of the game in game list order */
+  resources: ResourceOption[];
 }
 
 // units/unitSelector.json

@@ -5,11 +5,8 @@ import * as Constants from '@/utils/constants';
 import {
   alpha,
   Box,
-  ButtonBase,
   Chip,
-  Collapse,
   IconButton,
-  Paper,
   Stack,
   Typography,
   type ChipProps,
@@ -18,40 +15,20 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import HistoryIcon from '@mui/icons-material/History';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import GroupIcon from '@mui/icons-material/Group';
 import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
 import { useTranslation } from 'react-i18next';
 import { useReplayHistoryStore, type ReplayHistoryEntry } from '@/store/replayHistoryStore';
+import { SidePanel, SidePanelEmpty, type SidePanelProps } from '@/pages/ReplaysPage/SidePanel';
 
-interface ReplayHistoryProps {
+/** Layout props of the side panels of the replay page */
+export type SidePanelLayoutProps = Pick<SidePanelProps, 'embedded' | 'collapsible' | 'sx' | 'listSx'>;
+
+interface ReplayHistoryProps extends SidePanelLayoutProps {
   currentReplayCode?: string;
   onOpen: (replayCode: string) => void;
-  /** Shown inside another container: no own background and padding */
-  embedded?: boolean;
-  /** The header collapses the list; the state is stored in the browser, open by default */
-  collapsible?: boolean;
-  sx?: SxProps<Theme>;
-  /** Size of the scrolled list */
-  listSx?: SxProps<Theme>;
 }
-
-const readStoredOpen = () => {
-  try {
-    return localStorage.getItem(Constants.LOCAL_REPLAY_HISTORY_OPEN) !== 'false';
-  } catch {
-    return true;
-  }
-};
-
-const storeOpen = (isOpen: boolean) => {
-  try {
-    localStorage.setItem(Constants.LOCAL_REPLAY_HISTORY_OPEN, String(isOpen));
-  } catch {
-    // storage is blocked: the state is kept until the page is reloaded
-  }
-};
 
 /** Match type localization key → chip color; other types use the neutral one */
 const MODE_COLORS: Record<string, ChipProps['color']> = {
@@ -69,17 +46,11 @@ interface DayGroup {
 }
 
 /** Log of the replays loaded before (stored in the browser), in match start order like the in-game replay list */
-export const ReplayHistory = ({ currentReplayCode, onOpen, embedded = false, collapsible = false, sx, listSx }: ReplayHistoryProps) => {
+export const ReplayHistory = ({ currentReplayCode, onOpen, ...layoutProps }: ReplayHistoryProps) => {
   const { t } = useTranslation();
   const entries = useReplayHistoryStore(state => state.entries);
   const removeReplay = useReplayHistoryStore(state => state.removeReplay);
   const listRef = React.useRef<HTMLDivElement>(null);
-  const [isStoredOpen, setStoredOpen] = React.useState(readStoredOpen);
-  const isOpen = !collapsible || isStoredOpen;
-  const toggle = () => {
-    storeOpen(!isStoredOpen);
-    setStoredOpen(!isStoredOpen);
-  };
 
   // entries in match start order, split by the match day
   const groups = React.useMemo(() => {
@@ -105,76 +76,36 @@ export const ReplayHistory = ({ currentReplayCode, onOpen, embedded = false, col
   }, [entries.length]);
 
   return (
-    <Paper
-      elevation={embedded ? 0 : undefined}
-      sx={[
-        { p: embedded ? 0 : 1.5, display: 'flex', flexDirection: 'column' },
-        embedded && { backgroundColor: 'transparent', backgroundImage: 'none' },
-        ...(Array.isArray(sx) ? sx : [sx])
-      ]}>
-      <Stack direction='row' alignItems='center' justifyContent='center' gap={1}
-        {...(collapsible && {
-          component: ButtonBase,
-          onClick: toggle,
-          'aria-expanded': isOpen,
-          title: t(isOpen ? 'replayHistoryCollapse' : 'replayHistoryExpand')
-        })}
-        sx={{
-          position: 'relative',
-          width: '100%',
-          py: 0.5,
-          borderRadius: 1,
-          '&:hover': collapsible ? { backgroundColor: 'action.hover' } : undefined
-        }}>
-        <HistoryIcon fontSize='small' color='primary' />
-        <Typography variant='subtitle2'>
-          {t('replayHistoryTitle')}
-        </Typography>
-        {entries.length > 0 &&
-          <Chip label={entries.length} size='small' sx={{ height: 18, fontSize: '0.7rem' }} />}
-        {collapsible &&
-          <ExpandMoreIcon fontSize='small' sx={(theme) => ({
-            position: 'absolute',
-            right: 4,
-            color: 'text.secondary',
-            transform: isOpen ? 'rotate(180deg)' : 'none',
-            transition: theme.transitions.create('transform')
-          })} />}
-      </Stack>
-      <Collapse in={isOpen}>
-        <Box ref={listRef} sx={[
-          { overflowY: 'auto', pr: 0.5, mt: 0.5, pt: 0.5, borderTop: 1, borderColor: 'divider' },
-          ...(Array.isArray(listSx) ? listSx : [listSx])
-        ]}>
-          {groups.length === 0
-            ? <Stack alignItems='center' gap={1} sx={{ py: 4, color: 'text.secondary' }}>
-              <HistoryIcon sx={{ fontSize: 40, opacity: 0.4 }} />
-              <Typography variant='body2' sx={{ textAlign: 'center' }}>
-                {t('replayHistoryEmpty')}
-              </Typography>
+    <SidePanel
+      icon={<HistoryIcon />}
+      title={t('replayHistoryTitle')}
+      count={entries.length}
+      storageKey={Constants.LOCAL_REPLAY_HISTORY_OPEN}
+      listRef={listRef}
+      {...layoutProps}>
+      {groups.length === 0
+        ? <SidePanelEmpty icon={<HistoryIcon />} text={t('replayHistoryEmpty')} />
+        : groups.map(group => (
+          <Box key={group.day}>
+            <DayHeader day={group.day} />
+            <Stack gap={0.5}>
+              {group.entries.map(entry => (
+                <HistoryEntry
+                  key={entry.replayCode}
+                  entry={entry}
+                  isCurrent={entry.replayCode === currentReplayCode}
+                  onOpen={onOpen}
+                  onRemove={removeReplay} />
+              ))}
             </Stack>
-            : groups.map(group => (
-              <Box key={group.day}>
-                <DayHeader day={group.day} />
-                <Stack gap={0.5}>
-                  {group.entries.map(entry => (
-                    <HistoryEntry
-                      key={entry.replayCode}
-                      entry={entry}
-                      isCurrent={entry.replayCode === currentReplayCode}                    onOpen={onOpen}
-                      onRemove={removeReplay} />
-                  ))}
-                </Stack>
-              </Box>
-            ))}
-        </Box>
-      </Collapse>
-    </Paper>
+          </Box>
+        ))}
+    </SidePanel>
   );
 };
 
 /** Date with lines on both sides */
-const DayHeader = ({ day }: { day: string }) => (
+const DayHeader =({ day }: { day: string }) => (
   <Stack direction='row' alignItems='center' gap={1} sx={{
     py: 0.75,
     color: 'text.secondary',

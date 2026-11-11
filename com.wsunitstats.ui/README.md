@@ -10,8 +10,11 @@ Site labels are in `public/static/localization/{en,ru}.json`, game texts come fr
 ## Scripts
 
 - `npm start` - dev server on http://localhost:3000
+- `npm run start:pulled` - dev server with the installed `ws-replay-analyzer`
 - `npm run typecheck` - TypeScript check
 - `npm run build` - type check and production build into `../output`
+
+`ws-replay-analyzer` (optional dependency) loads additional replay data.
 
 ## Structure
 

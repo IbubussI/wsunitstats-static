@@ -17,6 +17,7 @@ touching the game file reading.
 | `com.wsunitstats.ui` | React + TypeScript (Vite, MUI, i18next, zustand). See its `README.md` |
 | `com.wsunitstats.ui/public/files` | Copy of `output/files` the dev server reads. Not in git |
 | `com.wsunitstats.ui/public/static` | Site assets in git: `localization/{en,ru}.json` (site labels), `legacyIds.json`, wonder icons |
+| `ws-replay-analyzer` (UI optional dependency) | Loads additional replay data |
 
 ## Build and run
 
