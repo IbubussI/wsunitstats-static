@@ -221,7 +221,8 @@ public class ModelBuilderImpl implements ModelBuilder {
         UnitSourceFinder unitSourceFinder = new UnitSourceFinder(units);
         for (UnitModel unit : units) {
             unit.setSources(unitSourceFinder.getUnitSources(unit.getGameId()));
-            unit.setKillValue(unitValueCalculator.calcKillValue(unit));
+            unit.setScoreValue(unitValueCalculator.calcScoreValue(unit));
+            unit.setCostValue(unitValueCalculator.calcCostValue(unit));
         }
         return units;
     }

@@ -119,7 +119,8 @@ export const SidePanel = ({
       <Collapse in={isOpen}>
         {toolbar && <Box sx={{ mt: 0.5 }}>{toolbar}</Box>}
         <Box ref={listRef} sx={[
-          { overflowY: 'auto', pr: 0.5, mt: 0.5, pt: 0.5, borderTop: 1, borderColor: 'divider' },
+          // the wheel scrolls the list only, also at its ends: the page does not take over the rest of the scroll
+          { overflowY: 'auto', overscrollBehavior: 'contain', pr: 0.5, mt: 0.5, pt: 0.5, borderTop: 1, borderColor: 'divider' },
           // the scrollbar takes most of the panel padding on the right instead of the content width:
           // classic scrollbars get their space reserved (no shift when they appear), overlay ones are drawn
           // over the content, so the list keeps the space for them inside

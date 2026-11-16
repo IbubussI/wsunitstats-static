@@ -57,7 +57,8 @@ public class Constants {
     public static final String BASIC_DAMAGE_TYPE = "damageTypeBase";
     /** Localization keys of damage types (weapon damage type, typed armor); unmapped types are exported as their number */
     public static final Map<Integer, String> DAMAGE_TYPE_NAMES = Map.of(
-            1, "damageTypeRanged"
+            1, "damageTypeRanged",
+            2, "damageTypeFire"
     );
     public static final String GENERIC_UNIT_TAG = "genericUnitTag";
     public static final String NIL = "nil";

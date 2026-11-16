@@ -354,7 +354,9 @@ export interface Unit {
   armorTyped?: TypedArmor[];
   category: string;
   advancedCategory: string;
-  killValue: number;
+  scoreValue: number;
+  /** Cost value / 100 (cost 100 = 1), the same for any category, age and nation; used for K/D */
+  costValue: number;
   additionalClassifiers: AdditionalClassifiers;
   applicableResearches?: UnitResearch[];
   movement?: Movement;
@@ -423,7 +425,9 @@ export interface UnitOption {
   nationId: number;
   category: string;
   advancedCategory: string;
-  killValue: number;
+  scoreValue: number;
+  /** Cost value / 100 (cost 100 = 1), the same for any category, age and nation; used for K/D */
+  costValue: number;
   additionalClassifiers: AdditionalClassifiers;
   searchTags: number[];
   unitTags: number[];

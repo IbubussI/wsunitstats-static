@@ -119,7 +119,7 @@ const UnitsSingleColumn = ({ units, category, categoryTotal }) => {
             return (
               <NoBottomBorderRow key={unit.id} hover sx={{ position: 'relative' }}>
                 <BodyCell>
-                  {isDebug && <UnitScorePointsDebug num={unit.number} killValue={unitContext.killValue} />}
+                  {isDebug && <UnitScorePointsDebug num={unit.number} scoreValue={unitContext.scoreValue} />}
                   <EntityInfo
                     clearLinkStyle
                     primary={t(unitContext.name)}
@@ -141,8 +141,8 @@ const UnitsSingleColumn = ({ units, category, categoryTotal }) => {
   );
 };
 
-const UnitScorePointsDebug = ({ num, killValue }) => (
+const UnitScorePointsDebug = ({ num, scoreValue }) => (
   <div style={{ position: 'absolute', right: '50px', fontSize: '11px' }}>
-    {(num * killValue * MVP_CONST.unitKillK).toFixed(1)}
+    {(num * scoreValue * MVP_CONST.unitKillK).toFixed(1)}
   </div>
 );

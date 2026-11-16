@@ -63,7 +63,8 @@ public class OptionsBuilderImpl implements OptionsBuilder {
             unitOption.setUnitTags(unit.getTags().stream().map(TagModel::getGameId).toList());
             unitOption.setCategory(unit.getCategory());
             unitOption.setAdvancedCategory(unit.getAdvancedCategory());
-            unitOption.setKillValue(unit.getKillValue());
+            unitOption.setScoreValue(unit.getScoreValue());
+            unitOption.setCostValue(unit.getCostValue());
             unitOption.setAdditionalClassifiers(unit.getAdditionalClassifiers());
             return unitOption;
         }).toList();

@@ -34,6 +34,12 @@ function getInterpolatedLabelAndValue(meta) {
       // label is interpolated x value, used for the title of tooltip
       label += (pt.x - prevPixel) / len;
     }
+    // the drawn line can be smoothed: the value is interpolated linearly between the neighbor original points
+    const rawData = meta._dataset?.rawData;
+    if (rawData?.length && prev >= 0 && prev < rawData.length) {
+      const rawNext = Math.min(prev + 1, rawData.length - 1);
+      value = rawData[prev] + (rawData[rawNext] - rawData[prev]) * (label - prev);
+    }
   }
   return {
     label: label,
@@ -67,6 +73,8 @@ LineController.prototype.getLabelAndValue = function (index) {
 Interaction.modes.interpolate = function (chart, e) {
   const x = e.x;
   const items = [];
+  // cursor position for the tooltip callbacks
+  chart._interactionX = x;
 
   const metas = chart.getSortedVisibleDatasetMetas();
   for (let i = 0; i < metas.length; i++) {
@@ -90,6 +98,7 @@ const InterpolatedPointStateCleanUp = {
   afterEvent(chart, args) {
     // remove point when hovering out of chart area
     if (!args.inChartArea) {
+      chart._interactionX = null;
       const metas = chart.getSortedVisibleDatasetMetas();
       for (let i = 0; i < metas.length; i++) {
         metas[i]._pt = null;

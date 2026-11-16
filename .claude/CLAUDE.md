@@ -28,7 +28,11 @@ touching the game file reading.
   The game folder is found through the Steam registry (`warselection.dir = autodetect`, app id 1022450);
   files are read from `<game>/Cache`. A run takes under a minute; it ends with `Total: N, completed: N, error: 0`.
 - Data flow: exporter → `output/files` → copy into `com.wsunitstats.ui/public/files` → `npm start` (dev, port 3000)
-  or `npm run build` (type check + build into `../output`).
+  or `npm run build` (type check + build into `../output`, not cleaned: clear `output/assets` of old builds before deploying).
+- `ws-replay-analyzer` source is chosen in `vite.config.ts` and printed at start (`ws-replay-analyzer: local|pulled|stub`):
+  `npm run build` and `npm run start:pulled` use the installed package. A `stub` build has no additional replay data, so
+  check that line. Update the package with `npm install ws-replay-analyzer@github:IbubussI/ws-replay-analyzer#main`;
+  its install script is approved for any commit in `package.json` `allowScripts`.
 - UI check: `npx tsc --noEmit -p .` in `com.wsunitstats.ui`.
 - Replays come from `https://games-api.warselect.io`; to test the replay pages with a fixed replay, intercept that host
   (e.g. Chrome DevTools protocol `Fetch.enable`) instead of changing the code.
@@ -55,8 +59,8 @@ All relative to `<game>/Cache`, configured in `com.wsunitstats.exporter/src/main
 
 | File | Used for |
 |---|---|
-| `Content/units/WarSelection/**.pack`, `Content/envs/...`, `Content/projectiles/...` | GEMPACK packs: `unit.json` / `env.json` / `projectile.json` (`gameplay`, `visual`, `localization`, `version`) + `icon.ktx2` |
-| `Projects/WarSelection/gameplay.json` | researches, upgrades, build list, `scenes.unitOverrides` (patches over unit packs), `version` |
+| `Content/units/WarSelection/**.pack`, `Content/envs/...`, `Content/projectiles/...` | GEMPACK packs: `unit.json` / `env.json` / `projectile.json` (`gameplay`, `visual`, `localization`, `version`) + `icon.ktx2`. Since engine 289 all units are assets (see below) |
+| `Projects/WarSelection/gameplay.json` | researches, upgrades, build list, `scenes.unitOverrides` (patches over unit packs), `version`; `unitAddressAliases` (not used, see below) |
 | `Projects/WarSelection/scripts/gameplay.pack#group.json` | `upgradesScripts.list`: upgrade scripts by program id (in `gameplay.json` before engine 277) |
 | `Projects/WarSelection/visual.json` | `unitOverrides` (patches over the visual part of unit packs) |
 | `Projects/WarSelection/main.json` | `version` |
@@ -74,8 +78,11 @@ Since engine 277 scripts are entries of GEMPACK files: a configured path `<file>
 Part of the content is stored as assets in `<game>/modsStorage` (`ContentAssets`): `Content/asset-redirects.json` maps a content
 path (`projectiles/WarSelection/bow.pack`) to an asset path (`projectiles/asset-<code>_<ver>/bow.pack`), the manifest
 `modsStorage/manifests/<code>_<ver>-*.json` gives its sha256, the file is `modsStorage/blobs/<sha256>.pack` (any file type).
-All projectiles, the horde units and some UI atlases are there. Data inside the assets refers to them by asset address
-(`asset-<code>_<ver>/horde/elves/king`), resolved to the entity path through the redirects.
+All units (since engine 289, `Content/units/WarSelection` is gone), all projectiles and some UI atlases are there.
+Data inside the horde assets refers to them by asset address (`asset-<code>_<ver>/horde/elves/king`), resolved to the entity
+path through the redirects; everything else (game data, scripts, replays) still uses the unit paths.
+`gameplay.json unitAddressAliases` (engine 289) maps every unit path to the asset address the engine loads. Some aliases point to
+newer asset versions than the redirects and are not installed locally, so the exporter ignores them and reads the redirects.
 
 Lua tables are read from source (`LuaSourceReader`) or from compiled bytecode (`LuaBytecodeReader`); the dance units
 are found by a text pattern, so they are unknown (warning only) if `_start.lua` is compiled.
@@ -95,9 +102,9 @@ places below. Unit references are paths like `WarSelection/4/de/pillbox/heavy`; 
 
 | Place | Hardcoded |
 |---|---|
-| `utils/Constants.java` | `LIVESTOCK_LIMIT` (50, checked in game), `LIVESTOCK_SUPPLY_INDEX` (supply cost index 1 = livestock), `INIT_HEALTH_MODIFIER`, `BUILDING_PROGRESS_FULL` (2^23), `TICK_TIME` and value scales, `TYPED_ARMOR_MAX`, `DAMAGE_TYPE_NAMES` (damage type 1 → ranged), `WALL_UNITS` (wall unit paths), `GROUND_COMBAT_VEHICLE_EXTRA_UNITS` (Polish tankettes, no turret in the data), enums of ability types, ability container types, damage area types (0–2; 4 is unnamed), resource icon atlas assets |
+| `utils/Constants.java` | `LIVESTOCK_LIMIT` (50, checked in game), `LIVESTOCK_SUPPLY_INDEX` (supply cost index 1 = livestock), `INIT_HEALTH_MODIFIER`, `BUILDING_PROGRESS_FULL` (2^23), `TICK_TIME` and value scales, `TYPED_ARMOR_MAX`, `DAMAGE_TYPE_NAMES` (damage type 1 → ranged, 2 → fire), `WALL_UNITS` (wall unit paths), `GROUND_COMBAT_VEHICLE_EXTRA_UNITS` (Polish tankettes, no turret in the data), enums of ability types, ability container types, damage area types (0–2; 4 is unnamed), resource icon atlas assets |
 | `service/impl/UnitCategoryServiceImpl.java` | category exception units (paths), unit tag ids used by the categories (see below), search tag ids (0–2 obtaining, 7 land capture, 9 next age); ground combat vehicle rule (turret + Equipment + Land forces + weapon damage to Land forces ≠ 0) |
-| `service/impl/UnitValueCalculatorImpl.java` | kill value tuning: values by category and by nation id, cost exceptions by unit path (workers, fishers, tractor, immortal), TC/wonder costs |
+| `service/impl/UnitValueCalculatorImpl.java` | `scoreValue` (MVP score of killed units) tuning: values by category and by nation id; `costValue` (K/D: cost value / 100, the same for any category, age and nation); cost exceptions by unit path (workers, fishers, tractor, immortal), TC/wonder costs |
 | `service/impl/FileContentServiceImpl.java` | pack entry names, localization key prefixes (`<*unitName`, `<*unitText`, `<*upgrade`, `<*envName`) |
 | `service/impl/FileReaderServiceImpl.java` | Lua table names listed in the table above, `setCanDance` call pattern |
 | `service/impl/ModelTransformingServiceImpl.java` | `TICKS_PER_SECOND`, `ANGLE_MODIFIER`, default upgrade scripts path `gameplay/upgrades` |
@@ -110,11 +117,12 @@ places below. Unit references are paths like `WarSelection/4/de/pillbox/heavy`; 
 |---|---|
 | `utils/constants.ts` | `STONE_AGE_UNIT_ID` (stone age town hall), engine scales (`TICK_RATE`, `ENGINE_FLOAT_SHIFT`, `ENGINE_STORAGE_MULTIPLIER`), ability type ids, file paths |
 | `utils/researches.ts` | `UPGRADE_SCRIPTS`: upgrade program id (index in `gameplay.json upgradesScripts.list`) → JS port of the Lua script; value scales (`BUILD_SPEED_SCALE` = 2^23 / (20 × 100)). New or reordered scripts change the ids |
-| `pages/ReplaysPage/ReplayInfo/replayInfoParser.js` | replay `extraData` layout: `0` match, `1` players lost, `2` timeline (per period: units created, killed, land, workers [points, workers, boats, tractors], resources [delta×3, collected×3, now×3]), `3` stats, `4` researches, `6` kills, `7` unit index → path (absent in legacy replays → `public/static/legacyIds.json`); timeline period 30 s; faction/team colors (faction palette and a port of the game's regrouping of the palette by hue in two team matches, `groupFactionColorsByHue` in `scripts/common.pack`); research types `researchTypeAgeTransition` / `researchTypeWonderTransition`; matchmaking detection: `matchmaking=1` (rated searches only) or a `mode` in the match data (private rooms have none) |
+| `pages/ReplaysPage/ReplayInfo/replayInfoParser.js` | replay `extraData` layout: `0` match, `1` players lost, `2` timeline (per period: units created, killed, land, workers [points, workers, boats, tractors], resources [delta×3, collected×3, now×3]), `3` stats, `4` researches, `6` kills, `7` unit index → path (absent in legacy replays → `public/static/legacyIds.json`; asset addresses since mid-Nov 2026, mapped back to paths by prefix); timeline army/kill/worker points come from the game mod `WvyVbqp8LDf` (`timelineData` in `common.pack`), which values units by `unit.address`: since units report asset addresses, v13 returns 0 for all of them; timeline period 30 s; faction/team colors (faction palette and a port of the game's regrouping of the palette by hue in two team matches, `groupFactionColorsByHue` in `scripts/common.pack`); research types `researchTypeAgeTransition` / `researchTypeWonderTransition`; matchmaking detection: `matchmaking=1` (rated searches only) or a `mode` in the match data (private rooms have none) |
 | `pages/ReplaysPage/ReplayInfo/ageNationFinder.ts` | research ids of every age/nation transition (port of a game mod script) |
-| `pages/ReplaysPage/ReplayInfo/gatherEfficiencyLookupTable.js` | gather speeds and warehouse efficiency by age/nation (MVP score) |
-| `pages/ReplaysPage/ReplayInfo/scoreCalculator.js` | `MVP_CONST` tuning |
+| `pages/ReplaysPage/ReplayInfo/gatherEfficiencyLookupTable.js` | gather speeds and warehouse efficiency by age/nation (gather efficiency and gather speed charts; the age-up period mixes the old and new values by the time after the age up) |
+| `pages/ReplaysPage/ReplayInfo/scoreCalculator.js` | `MVP_CONST` tuning; `resourcesSharedK`: resources sent to other players, counted once the additional replay data is loaded (`sharedResourcesScore.ts` recalculates the scores) |
 | `pages/ReplaysPage/ReplayInfo/Awards/index.tsx` | award rules: unit tag ids, unit paths (university, airfield and carriers, stone age prefix), `advancedCategory` names (`build-def`, `wall`, `mine`, `worker`), icon image paths, thresholds |
+| `pages/ReplaysPage/ReplayInfo/playerActivity.ts` | `IDLE_MIN_PAUSE` (30 s): shortest pause counted as idle time (Deep Sleep award); the Activity chart shows actions per timeline period |
 | `pages/ReplaysPage/StatsTable`, `components/TimeLineChart/chartIconResolver.ts` | resource images `resource/0..2.png`, dataset container names |
 | `public/static/legacyIds.json` | snapshot of the game's `Projects/WarSelection/legacyIds.json` for replays recorded before path ids |
 
@@ -124,6 +132,9 @@ From `onProjectLoad.lua unitTagNames` (`<*unitTag#N>`): 2 Building, 3 Worker, 4 
 13 Equipment, 14 Aviation, 15 Land forces, 16 Fleet, 25 Horseman (any mount), 32 Large Land Collider (not moved aside
 by tanks, "large units" in `UnitPage/AbilityIcons.tsx`), 34 Heavy vehicle, 35 Horse.
 If the tag list changes, check `UnitCategoryServiceImpl`, `Awards/index.tsx`, `AbilityIcons.tsx` and the tag filters of the unit selector.
+
+Tag masks are not always unit tags: `tagsNeeded` / `tagsExclude` of `attack.agro` and of the unit `agro` (engine 289, deer:
+with `retreat`, it flees) are search tag bits (`tagsNeeded: 1024` = search tag 10 "Auto Attack Target", all units but walls).
 
 ### Values found by testing in game
 

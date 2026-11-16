@@ -11,9 +11,16 @@ const VALUE_TRANSFORMERS = {
 };
 
 /**
- * @param {{ id: string, timeLine: any[], stepTime: number, restrictByGroupName?: string, restrictByDatasetIndex?: number }} props
+ * @param {{
+ *   id: string,
+ *   timeLine: any[],
+ *   stepTime: number,
+ *   restrictByGroupName?: string,
+ *   restrictByPlayerId?: number,
+ *   markerProvider?: import('@/pages/ReplaysPage/ReplayInfo/transferMarkers').ChartMarkerProvider
+ * }} props
  */
-export const ChartBox = ({ id, timeLine, stepTime, restrictByGroupName, restrictByDatasetIndex }) => {
+export const ChartBox = ({ id, timeLine, stepTime, restrictByGroupName, restrictByPlayerId, markerProvider }) => {
   const { t } = useTranslation();
   const [currentDatasetContainerIndex, setCurrentDatasetContainerIndex] = React.useState(0);
   const [currentDatasetGroupIndex, setCurrentDatasetGroupIndex] = React.useState(0);
@@ -40,8 +47,8 @@ export const ChartBox = ({ id, timeLine, stepTime, restrictByGroupName, restrict
   const currentDatasetContainerOption = datasetContainerOptions[currentDatasetContainerIndex];
 
   const filterDatasetObjects = React.useCallback((datasetGroup) =>
-    datasetGroup.datasets.filter((_, index) => restrictByDatasetIndex == null || restrictByDatasetIndex === index),
-    [restrictByDatasetIndex]);
+    datasetGroup.datasets.filter((dataset) => restrictByPlayerId == null || restrictByPlayerId === dataset.playerId),
+    [restrictByPlayerId]);
   const filteredDatasetObjects = React.useMemo(() => filterDatasetObjects(datasetGroup), [datasetGroup, filterDatasetObjects]);
   const datasetOptions = React.useMemo(() =>
     filteredDatasetObjects.map((dataset, index) => {
@@ -80,6 +87,19 @@ export const ChartBox = ({ id, timeLine, stepTime, restrictByGroupName, restrict
       return filteredDatasetObjects.map(datasetObject => datasetObject.result);
     }
   }, [filteredDatasetObjects, isMultiRow, datasetContainer.rowIcons]);
+
+  // marks on the lines: on each row of the shown dataset in multi-row mode, otherwise on each dataset
+  const markers = React.useMemo(() => {
+    if (!markerProvider) {
+      return undefined;
+    }
+    const containerName = datasetContainer.containerName;
+    if (isMultiRow) {
+      const datasetObject = currentDatasetOptions.length > 0 ? filteredDatasetObjects[currentDatasetOptions[0].index] : null;
+      return datasetObject ? datasetObject.values.map((_, row) => markerProvider(containerName, datasetObject, row)) : [];
+    }
+    return filteredDatasetObjects.map(datasetObject => markerProvider(containerName, datasetObject));
+  }, [markerProvider, datasetContainer, filteredDatasetObjects, currentDatasetOptions, isMultiRow]);
 
   const colors = React.useMemo(() => {
     if (isMultiRow) {
@@ -125,6 +145,7 @@ export const ChartBox = ({ id, timeLine, stepTime, restrictByGroupName, restrict
     results,
     stepTime,
     colors,
+    markers,
     valTransformer,
     infoText: !chartDescription.startsWith('replayDataset') ?
       <Typography variant="caption" sx={{ whiteSpace: 'pre-line' }}>

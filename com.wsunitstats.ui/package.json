@@ -65,5 +65,8 @@
   },
   "optionalDependencies": {
     "ws-replay-analyzer": "github:IbubussI/ws-replay-analyzer#main"
+  },
+  "allowScripts": {
+    "github:IbubussI/ws-replay-analyzer": true
   }
 }

@@ -26,6 +26,8 @@ import { ReplayHistory } from '@/pages/ReplaysPage/ReplayHistory';
 import { useReplayHistoryStore } from '@/store/replayHistoryStore';
 import { loadReplayExtraData, type ReplayExtraData } from '@/pages/ReplaysPage/ReplayInfo/replayAnalyzer';
 import { ReplayEvents } from '@/pages/ReplaysPage/ReplayEvents';
+import type { ReplayOutletContext } from '@/pages/ReplaysPage/replayOutletContext';
+import { withSharedResources } from '@/pages/ReplaysPage/ReplayInfo/sharedResourcesScore';
 
 const FormContainer = styled('form')(({ theme }) => ({
   display: 'flex',
@@ -109,9 +111,13 @@ export const ReplayPage = () => {
   }, [params.replayCode]);
 
   const isSuccess = replayInfo?.error === 0;
-  const parsedReplay = isSuccess ? replayInfo as ReplayParseResult : null;
+  const loadedReplay = isSuccess ? replayInfo as ReplayParseResult : null;
   // both parts must be of the same replay: either can still be loading for the previous one
-  const replayExtraData = extraData && extraData.replayCode === parsedReplay?.match.replayCode ? extraData.data : null;
+  const replayExtraData = extraData && extraData.replayCode === loadedReplay?.match.replayCode ? extraData.data : null;
+  // MVP scores count shared resources once they are known
+  const parsedReplay = React.useMemo(
+    () => loadedReplay && replayExtraData ? withSharedResources(loadedReplay, replayExtraData, !!isDebug) : loadedReplay,
+    [loadedReplay, replayExtraData, isDebug]);
   const views: ReplayPageView[] = replayExtraData ? ['replay', 'events', 'history'] : ['replay', 'history'];
   const activeView = views.includes(view) ? view : 'replay';
   const showReplay = isWide || activeView === 'replay';
@@ -203,8 +209,8 @@ export const ReplayPage = () => {
 
         {/* hidden instead of unmounted, so the replay view keeps its state while the history is open */}
         <Box sx={{ display: showReplay ? 'block' : 'none' }}>
-          {isSuccess
-            ? <Outlet context={replayInfo} />
+          {parsedReplay
+            ? <Outlet context={{ replayInfo: parsedReplay, extraData: replayExtraData } satisfies ReplayOutletContext} />
             : <ErrorViewer errorData={replayInfo} />}
         </Box>
         {!showReplay && (activeView === 'events' ? events : history)}

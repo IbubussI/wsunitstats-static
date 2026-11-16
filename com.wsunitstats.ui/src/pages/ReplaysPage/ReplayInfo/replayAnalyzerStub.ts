@@ -2,14 +2,15 @@
 
 interface StubReplayInfo {
   chat: { time: number; playerId: number; message: string; destination: string }[];
-  disconnect: { time: number; playerId: number; type: string }[];
+  connectInfo: { time: number; playerId: number; type: 'connect' | 'disconnect' | 'leave' }[];
   resShare: {
     time: number;
     senderId: number;
     receiverId: number;
-    resources: { food: number; wood: number; r2: number; r3: number; r4: number };
+    resources: number[];
     deliveryTax: number;
   }[];
+  activity: { playerId: number; step: number; data: number[] }[];
 }
 
 export async function generateReplayInfo(_code: string): Promise<StubReplayInfo | null> {

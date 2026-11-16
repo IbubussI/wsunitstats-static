@@ -8,6 +8,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WifiOffIcon from '@mui/icons-material/WifiOff';
+import WifiIcon from '@mui/icons-material/Wifi';
 import { useTranslation } from 'react-i18next';
 import { ColorIndicator } from '@/components/common/misc';
 import { useGameContext } from '@/store/gameDataStore';
@@ -16,8 +17,8 @@ import type { SidePanelLayoutProps } from '@/pages/ReplaysPage/ReplayHistory';
 import type { ReplayParseResult, Team } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 import type {
   ReplayChatMessage,
+  ReplayConnectionEvent,
   ReplayExtraData,
-  ReplayPlayerLeave,
   ReplayResourceTransfer
 } from '@/pages/ReplaysPage/ReplayInfo/replayAnalyzer';
 
@@ -33,30 +34,41 @@ const formatTime = (timeSec: number) => Utils.formatDuration(Math.max(0, timeSec
 
 type ReplayEvent =
   | { time: number; playerId: number; message: ReplayChatMessage }
-  | { time: number; playerId: number; leave: ReplayPlayerLeave }
+  | { time: number; playerId: number; connection: ReplayConnectionEvent }
   | { time: number; playerId: number; transfer: ReplayResourceTransfer };
 
-type EventKind = 'chat' | 'leave' | 'transfer';
+type EventKind = 'chat' | 'leave' | 'disconnect' | 'reconnect' | 'transfer';
 
 const getEventKind = (event: ReplayEvent): EventKind =>
-  'message' in event ? 'chat' : 'leave' in event ? 'leave' : 'transfer';
+  'message' in event ? 'chat' : 'connection' in event ? event.connection.type : 'transfer';
 
-const EVENT_FILTERS: { kind: EventKind; label: string; icon: typeof LogoutIcon }[] = [
-  { kind: 'chat', label: 'replayEventsFilterChat', icon: ForumIcon },
-  { kind: 'leave', label: 'replayEventsFilterLeaves', icon: LogoutIcon },
-  { kind: 'transfer', label: 'replayEventsFilterResources', icon: SwapHorizIcon }
+/** Connection events: icon and text */
+const CONNECTION_EVENTS: Record<ReplayConnectionEvent['type'], { icon: typeof LogoutIcon; text: string }> = {
+  leave: { icon: LogoutIcon, text: 'replayChatLeave' },
+  disconnect: { icon: WifiOffIcon, text: 'replayChatDisconnect' },
+  reconnect: { icon: WifiIcon, text: 'replayChatReconnect' }
+};
+
+/** Filter buttons, each shows or hides its event kinds together */
+const EVENT_FILTERS: { id: string; kinds: EventKind[]; label: string; icon: typeof LogoutIcon }[] = [
+  { id: 'chat', kinds: ['chat'], label: 'replayEventsFilterChat', icon: ForumIcon },
+  { id: 'leave', kinds: ['leave'], label: 'replayEventsFilterLeaves', icon: CONNECTION_EVENTS.leave.icon },
+  { id: 'transfer', kinds: ['transfer'], label: 'replayEventsFilterResources', icon: SwapHorizIcon },
+  { id: 'connection', kinds: ['disconnect', 'reconnect'], label: 'replayEventsFilterConnections', icon: CONNECTION_EVENTS.disconnect.icon }
 ];
 
-const ALL_EVENT_KINDS = EVENT_FILTERS.map(filter => filter.kind);
+const ALL_EVENT_KINDS = EVENT_FILTERS.flatMap(filter => filter.kinds);
+/** Connection drops are frequent and rarely interesting, so they are hidden until selected */
+const DEFAULT_EVENT_KINDS: EventKind[] = ['chat', 'leave', 'transfer'];
 
-/** Shown kinds stored in the browser; all kinds if nothing is stored yet */
+/** Shown kinds stored in the browser; the default ones if nothing is stored yet */
 const readStoredFilter = (): EventKind[] => {
   try {
     const stored = localStorage.getItem(Constants.LOCAL_REPLAY_EVENTS_FILTER);
-    const kinds = stored == null ? ALL_EVENT_KINDS : JSON.parse(stored);
-    return Array.isArray(kinds) ? kinds.filter(kind => ALL_EVENT_KINDS.includes(kind)) : ALL_EVENT_KINDS;
+    const kinds = stored == null ? DEFAULT_EVENT_KINDS : JSON.parse(stored);
+    return Array.isArray(kinds) ? kinds.filter(kind => ALL_EVENT_KINDS.includes(kind)) : DEFAULT_EVENT_KINDS;
   } catch {
-    return ALL_EVENT_KINDS;
+    return DEFAULT_EVENT_KINDS;
   }
 };
 
@@ -68,19 +80,22 @@ const storeFilter = (kinds: EventKind[]) => {
   }
 };
 
-/** Chat messages, player leaves and resource transfers of the match in time order */
+/** Chat messages, player connection events and resource transfers of the match in time order */
 export const ReplayEvents = ({ replayInfo, extraData, ...layoutProps }: ReplayEventsProps) => {
   const { t } = useTranslation();
   const events = React.useMemo<ReplayEvent[]>(() => [
     ...extraData.chat.map(message => ({ time: message.time, playerId: message.playerId, message })),
-    ...extraData.leaves.map(leave => ({ time: leave.time, playerId: leave.playerId, leave })),
+    ...extraData.connections.map(connection => ({ time: connection.time, playerId: connection.playerId, connection })),
     ...extraData.resourceTransfers.map(transfer => ({ time: transfer.time, playerId: transfer.senderId, transfer }))
   ].sort((a, b) => a.time - b.time), [extraData]);
 
-  // shown kinds, all by default
+  // shown kinds
   const [filter, setFilter] = React.useState<EventKind[]>(readStoredFilter);
-  const toggleFilter = (kind: EventKind) => {
-    const next = filter.includes(kind) ? filter.filter(k => k !== kind) : [...filter, kind];
+  // a button is on if any of its kinds is shown (a filter stored before the kinds were joined can have only one)
+  const isShown = (kinds: EventKind[]) => kinds.some(kind => filter.includes(kind));
+  const toggleFilter = (kinds: EventKind[]) => {
+    const rest = filter.filter(kind => !kinds.includes(kind));
+    const next = isShown(kinds) ? rest : [...rest, ...kinds];
     storeFilter(next);
     setFilter(next);
   };
@@ -104,21 +119,23 @@ export const ReplayEvents = ({ replayInfo, extraData, ...layoutProps }: ReplayEv
       storageKey={Constants.LOCAL_REPLAY_EVENTS_OPEN}
       toolbar={events.length > 0 &&
         <Stack direction='row' flexWrap='wrap' gap={0.5}>
-          {EVENT_FILTERS.map(({ kind, label, icon: Icon }) => {
-            const count = kindCounts[kind] ?? 0;
+          {EVENT_FILTERS.map(({ id, kinds, label, icon: Icon }) => {
+            const count = kinds.reduce((sum, kind) => sum + (kindCounts[kind] ?? 0), 0);
             const name = `${t(label)}: ${count}`;
+            // without events of the kinds in this replay the button is off and disabled; the stored choice is kept
+            // for the next replays
+            const selected = count > 0 && isShown(kinds);
             return (
-              <Tooltip key={kind} title={name}>
+              <Tooltip key={id} title={name}>
                 {/* a disabled button gets no mouse events, the wrapper keeps the tooltip */}
                 <span>
                   <ToggleButton
-                    value={kind}
+                    value={id}
                     size='small'
                     color='primary'
-                    selected={filter.includes(kind)}
-                    // an empty kind can still be unselected
-                    disabled={count === 0 && !filter.includes(kind)}
-                    onChange={() => toggleFilter(kind)}
+                    selected={selected}
+                    disabled={count === 0}
+                    onChange={() => toggleFilter(kinds)}
                     aria-label={name}
                     sx={{ p: 0.5 }}>
                     <Icon sx={{ fontSize: '1rem' }} />
@@ -158,8 +175,8 @@ const EventList = ({ replayInfo, events }: { replayInfo: ReplayParseResult; even
         <EventRow key={i} background={teamBackground(event.playerId)}>
           {'message' in event
             ? <ChatMessageCells replayInfo={replayInfo} message={event.message} />
-            : 'leave' in event
-              ? <LeaveCells replayInfo={replayInfo} leave={event.leave} />
+            : 'connection' in event
+              ? <ConnectionCells replayInfo={replayInfo} connection={event.connection} />
               : <TransferCells replayInfo={replayInfo} transfer={event.transfer} />}
           <Stack alignItems='flex-end' gap={0.5}>
             <EventTime time={event.time} />
@@ -232,16 +249,15 @@ const ChatMessageCells = ({ replayInfo, message }: { replayInfo: ReplayParseResu
   );
 };
 
-const LeaveCells = ({ replayInfo, leave }: { replayInfo: ReplayParseResult; leave: ReplayPlayerLeave }) => {
+const ConnectionCells = ({ replayInfo, connection }: { replayInfo: ReplayParseResult; connection: ReplayConnectionEvent }) => {
   const { t } = useTranslation();
+  const { icon, text } = CONNECTION_EVENTS[connection.type];
 
   return (
     <>
-      <EventIcon icon={leave.isDisconnect ? WifiOffIcon : LogoutIcon} />
+      <EventIcon icon={icon} />
       <Box component='span' sx={{ color: 'text.secondary', fontStyle: 'italic', overflowWrap: 'anywhere' }}>
-        {t(leave.isDisconnect ? 'replayChatDisconnect' : 'replayChatLeave', {
-          name: shortenNickname(getPlayerName(replayInfo, leave.playerId))
-        })}
+        {t(text, { name: shortenNickname(getPlayerName(replayInfo, connection.playerId)) })}
       </Box>
     </>
   );

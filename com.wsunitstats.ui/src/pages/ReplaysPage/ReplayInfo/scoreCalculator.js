@@ -4,7 +4,7 @@ import { expDecay, calcArea } from "./mathUtils";
 /**
  * Returns an object that describes gathering speed for the given time/age/nation
  */
-export function getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp, timeLinePeriod, time) {
+export function getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp, timeLinePeriod) {
   function getOrDefaultNationEntry(ageNation) {
     const ageEntry = gatherEfficiencyLookupTable[ageNation[0]];
     const nationEntry = ageEntry[ageNation[1]] || ageEntry.default;
@@ -30,17 +30,10 @@ export function getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp,
 
   const currNationEntry = getOrDefaultNationEntry(currAgeNation);
   const prevNationEntry = getOrDefaultNationEntry(prevAgeNation);
-  const isInCurrentPeriod = (time - timeSinceLastAgeUp) <= timeLinePeriod;
-  const currTimeK = (timeLinePeriod - timeSinceLastAgeUp) / timeLinePeriod;
-  const prevTimeK = timeSinceLastAgeUp / timeLinePeriod;
   function getValueCountingTime(currUpTime, currVal, prevVal) {
-    // check if upgr time passed and if it passed in currect timeLine frame
-    const isEnoughTimePassed = (timeSinceLastAgeUp - currUpTime * 1000) >= 0;
-    if (isEnoughTimePassed) {
-      return isInCurrentPeriod ? currVal * currTimeK + prevVal * prevTimeK : currVal;
-    } else {
-      return prevVal;
-    }
+    // the new value is in effect from its up time after the age up to the end of the period, the previous one before
+    const currShare = Math.min(1, Math.max(0, (timeSinceLastAgeUp - currUpTime * 1000) / timeLinePeriod));
+    return currVal * currShare + prevVal * (1 - currShare);
   }
 
   const gatherEntry = {
@@ -164,6 +157,9 @@ export const MVP_CONST = {
   unitKillK: 0.8,
   territoryK: 0.000025,
   resourcesSpentK: 0.25,
+  // resources sent to other players count more than spent ones (sent resources are counted as spent as well):
+  // little sharing changes nothing, sharing a big part of the economy gives about as much as spending does
+  resourcesSharedK: 1.2,
   firstWonderPoints: 600,
   firstWonderPointsDecayRate: 1/2000000,
   winWonderPoints: 250,
@@ -185,6 +181,7 @@ export function calcMVPScore(options, debug = false, nickname = '') {
     unitKillPointsArray, // defined as array of unit-points/number (final result)
     territorySum,
     resourcesSpentAvg,
+    resourcesSharedAvg = 0, // resources sent to other players per timeline period, as resourcesSpentAvg
     armySizeAvg,
     researchPoints, // -
     isWonder,
@@ -211,12 +208,14 @@ export function calcMVPScore(options, debug = false, nickname = '') {
   const playerKillK = ucp / 2;
   const pkp = playerKillsData ? calcPlayerKillValue(playerKillsData) * playerKillK : 0;
   const ter = territorySum * MVP_CONST.territoryK * (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime));
-  const res = resourcesSpentAvg * MVP_CONST.resourcesSpentK * (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime))**5;
+  const resGrowK = (1 - expDecay(1, MVP_CONST.indirectGrowRate, survivalTime))**5;
+  const res = resourcesSpentAvg * MVP_CONST.resourcesSpentK * resGrowK;
+  const shr = resourcesSharedAvg * MVP_CONST.resourcesSharedK * resGrowK;
   const arm = armySizeAvg * MVP_CONST.armySizeK;
   const tec = researchPoints * MVP_CONST.researchPointsK;
 
   const directPoints = pkp + ucp + ukp;
-  const indirectPoints = ter + res;
+  const indirectPoints = ter + res + shr;
   const bonusPoints = wdp + arm + tec;
   const winTeamK = isWinTeam ? MVP_CONST.winTeamK : MVP_CONST.looseTeamK;
   const result = winTeamK * (directPoints + indirectPoints + bonusPoints) * 1000 / matchTime;
@@ -234,6 +233,7 @@ export function calcMVPScore(options, debug = false, nickname = '') {
     Unit Kill: ${ukp.toFixed(0)}
     Territory: ${ter.toFixed(0)}
     Resources Spent: ${res.toFixed(0)}
+    Resources Shared: ${shr.toFixed(0)}
     Army Size: ${arm.toFixed(0)}
     Researches: ${tec.toFixed(0)}
     'Groups:'
@@ -263,9 +263,12 @@ function calcPlayerKillValue(playerKillsData) {
     const teamAvgMvpScore = killEntry.teamInstantMvpScore.size > 0 ? teamMvpScore / killEntry.teamInstantMvpScore.size : 1;
 
     // the later kill - the less points will be given
-    const killValue = killEntry.victimMvpScore / (teamAvgMvpScore * Math.sqrt(killIndex + 1));
-    const playerArmyValue = playerArmyScore / teamArmyScore;
-    const playerMvpValue = 0.8 * killEntry.playerInstantMvpScore / teamMvpScore;
+    const killValue = teamAvgMvpScore > 0 ? killEntry.victimMvpScore / (teamAvgMvpScore * Math.sqrt(killIndex + 1)) : 0;
+    // the team sums are 0 when the replay has no army points (timeline mod WvyVbqp8LDf_13 values units by unit
+    // path while the engine gives asset addresses): the kill is shared equally then
+    const contributors = killEntry.teamArmyScore.size || 1;
+    const playerArmyValue = teamArmyScore > 0 ? playerArmyScore / teamArmyScore : 1 / contributors;
+    const playerMvpValue = 0.8 * (teamMvpScore > 0 ? killEntry.playerInstantMvpScore / teamMvpScore : 1 / contributors);
     playerValue += (playerArmyValue + playerMvpValue) * 0.5 * killValue;
   });
   return playerValue;

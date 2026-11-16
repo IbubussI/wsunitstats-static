@@ -9,6 +9,7 @@ Current main features:
 - ability to apply researches to unit stats
 - researches list
 - modding facilities: ability to navigate through in-game engine data structure
+- replay analysis: player stats, charts, awards, MVP score etc
 
 ## Exporter module
 
@@ -18,7 +19,7 @@ data depending on the final goal. Default task configuration is stored under [ex
 List of current tasks available:
 - writeFile - writes the unit/researches stats to file (.json file)
 - writeExcelSpecial - writes the unit stats to Excel file (.xlsx file)
-- writeExcelCosts - writes unit cost values and kill values to Excel file (.xlsx file)
+- writeExcelCosts - writes unit cost and score values to Excel file (.xlsx file)
 - writeBuildIdsSpecial - writes "build id -> unit name, id, nation" entries in the file (.txt file)
 - exportUnits - writes unit stats for website assets in the output folder (.json files)
 - exportResearches - writes research stats for website assets in the output folder (.json files)

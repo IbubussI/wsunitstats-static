@@ -39,7 +39,8 @@ public class WriteExcelUnitCostTask implements ExecutionTask {
             "ID",
             "Nation",
             "Cost value",
-            "Kill value",
+            "Score value",
+            "Cost value / 100",
             "Group",
             "Name"
     );
@@ -106,7 +107,10 @@ public class WriteExcelUnitCostTask implements ExecutionTask {
             addNumericCell(row, counter, unitValueCalculator.calcUnitCostValue(unitModel));
             counter++;
 
-            addNumericCell(row, counter, unitModel.getKillValue());
+            addNumericCell(row, counter, unitModel.getScoreValue());
+            counter++;
+
+            addNumericCell(row, counter, unitModel.getCostValue());
             counter++;
 
             addStringCell(row, counter, unitModel.getAdvancedCategory(), localizationModel);

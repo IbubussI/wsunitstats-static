@@ -59,7 +59,8 @@ public class UnitModel extends GenericEntityModel {
     private List<UnitSourceModel> sources;
     private String category;
     private String advancedCategory;
-    private double killValue;
+    private double scoreValue;
+    private double costValue;
     private AdditionalClassifiersModel additionalClassifiers;
 
     // Technical data to render research selector
