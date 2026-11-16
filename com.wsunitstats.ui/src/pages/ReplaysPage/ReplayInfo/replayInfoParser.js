@@ -117,7 +117,7 @@ export class ReplayInfoParser {
       this.#unitsKilled = replayApiResponseData.extraData?.['6'] && JSON.parse(replayApiResponseData.extraData['6']);
       // newer replays contain the mapping of unit indexes to path ids, older ones use legacy numeric ids
       this.#unitIds = replayApiResponseData.extraData?.['7']
-        ? JSON.parse(replayApiResponseData.extraData['7'])
+        ? toUnitPaths(JSON.parse(replayApiResponseData.extraData['7']))
         : this.#legacyUnitIds;
       this.#initData = replayApiResponseData.initData;
       this.#scriptParameters = this.#parseScriptParams(replayApiResponseData.initData.scriptParameters);
@@ -268,7 +268,8 @@ export class ReplayInfoParser {
       }
 
       if (this.#isTimelineOn && this.#isUnitsKilledOn) {
-        player.mvpScore = calcMVPScore({
+        // kept to recalculate the score with additional replay data (see sharedResourcesScore.ts)
+        player.mvpScoreInput = {
           isWonder: player.isWonderBuilt,
           isWinTeam: this.#teamWinners.has(player.team),
           isFirstWonder: player.firstWonderTime > 0,
@@ -279,7 +280,8 @@ export class ReplayInfoParser {
           survivalTime: player.survivalTime,
           matchTime: this.#matchData.duration,
           ...mvpScoreData[playerId]
-        }, this.#isDebug, player.nickname);
+        };
+        player.mvpScore = calcMVPScore(player.mvpScoreInput, this.#isDebug, player.nickname);
         mvp.score = mvp.score > player.mvpScore ? mvp.score : player.mvpScore;
         mvp.index = mvp.score > player.mvpScore ? mvp.index : playerId;
       }
@@ -394,6 +396,7 @@ export class ReplayInfoParser {
         } else {
           dataset = new TimeLineDataset(playerNickname, false, null, getPlayerResult(i), this.#getFactionColor(playerFaction), tlSize, kFunc);
         }
+        dataset.playerId = i;
         playerDatasetGroup.addDataset(dataset);
       }
 
@@ -540,7 +543,7 @@ export class ReplayInfoParser {
           playerMetadata.workers = currWorkers;
 
           const timeSinceLastAgeUp = this.#findPrevAgeResearchPassedTime(time, playerId);
-          const gatherEntry = getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp, ReplayInfoParser.timeLinePeriod, time)
+          const gatherEntry = getGatherEntry(prevAgeNation, currAgeNation, timeSinceLastAgeUp, ReplayInfoParser.timeLinePeriod)
           const gatherMetrics = calcGatherMetrics(gatherEntry, prevWorkers, currWorkers, resDelta, ReplayInfoParser.timeLinePeriod);
 
           unitCreatePointsData.players[playerId].push(unitCreatePoints, time);
@@ -645,6 +648,8 @@ export class ReplayInfoParser {
         unitCombatPointsArray: unitKillPointsData.players[playerId].values,
         territorySum: landPointsData.players[playerId].pointsSum,
         resourcesSpentAvg: resourcesSpentData.players[playerId].pointsAvgLocal,
+        // number of periods resourcesSpentAvg is the average over: to average other resource amounts the same way
+        resourcePeriods: resourcesSpentData.players[playerId].values[0].length,
         armySizeAvg: unitCreatePointsData.players[playerId].pointsAvgLocal,
       });
     }
@@ -1042,7 +1047,7 @@ export class ReplayInfoParser {
           const unitKilled = new PlayerUnitStat();
           unitKilled.id = unitContext.gameId;
           unitKilled.number = number;
-          unitKilled.points = unitContext.killValue;
+          unitKilled.points = unitContext.scoreValue;
           const unitCategory = unitContext.category;
 
           // add to units killed plain
@@ -1189,7 +1194,7 @@ export class ReplayInfoParser {
       const id = researchEntry[1];
       const research = this.#context.researches[id];
       const timeDiff = time - rTime;
-      if (research.type === 'ageTransition' && timeDiff >= 0) {
+      if (research.type === 'researchTypeAgeTransition' && timeDiff >= 0) {
         return timeDiff;
       }
     }
@@ -1217,7 +1222,20 @@ export class ReplayInfoParser {
 
 function gameEngineIndexShift(container) {
   return Array.isArray(container) ? 1 : 0;
-} 
+}
+
+/**
+ * Since engine 289 the replay unit mapping holds asset addresses (asset-<code>_<ver>/3/ew/barracks_armory_imp)
+ * instead of unit paths (WarSelection/3/ew/barracks_armory_imp). The unit packs keep their path inside the asset
+ * (Content/asset-redirects.json), so the address maps to the path by its prefix, whatever the asset version.
+ */
+function toUnitPaths(unitIds) {
+  const result = Array.isArray(unitIds) ? [] : {};
+  for (const [index, id] of Object.entries(unitIds)) {
+    result[index] = typeof id === 'string' ? id.replace(/^asset-[^/]+\//, 'WarSelection/') : id;
+  }
+  return result;
+}
 
 function getSetBitPositions(bitset) {
   const result = [];

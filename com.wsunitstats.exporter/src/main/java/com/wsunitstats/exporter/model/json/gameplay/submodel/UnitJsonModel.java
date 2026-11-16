@@ -40,4 +40,8 @@ public class UnitJsonModel {
     private Integer lifeTime;
     private UnitAuraJsonModel aura;
     private Integer halfLength;
+    /** When the unit notices enemies without an attack (deer: to retreat), same format as attack.agro; not used */
+    private Map<String, Object> agro;
+    /** Moving away from enemies noticed by agro (deer): safeDistance, calmTime; not used */
+    private Map<String, Object> retreat;
 }

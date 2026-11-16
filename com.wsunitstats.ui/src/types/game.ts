@@ -354,7 +354,9 @@ export interface Unit {
   armorTyped?: TypedArmor[];
   category: string;
   advancedCategory: string;
-  killValue: number;
+  scoreValue: number;
+  /** Cost value / 100 (cost 100 = 1), the same for any category, age and nation; used for K/D */
+  costValue: number;
   additionalClassifiers: AdditionalClassifiers;
   applicableResearches?: UnitResearch[];
   movement?: Movement;
@@ -423,7 +425,9 @@ export interface UnitOption {
   nationId: number;
   category: string;
   advancedCategory: string;
-  killValue: number;
+  scoreValue: number;
+  /** Cost value / 100 (cost 100 = 1), the same for any category, age and nation; used for K/D */
+  costValue: number;
   additionalClassifiers: AdditionalClassifiers;
   searchTags: number[];
   unitTags: number[];
@@ -437,6 +441,15 @@ export interface ResearchOption {
   type: string;
 }
 
+export interface ResourceOption {
+  /** index in the game resource list */
+  gameId: number;
+  /** localization key */
+  name: string;
+  /** null if the resource has no icon */
+  image?: string | null;
+}
+
 export interface GameContext {
   /** "{engine}.{gameplay}_{main}" versions of the game files, e.g. 252.4005_29231 */
   gameVersion?: string;
@@ -445,6 +458,8 @@ export interface GameContext {
   localeOptions: string[];
   units: UnitOption[];
   researches: ResearchOption[];
+  /** all resources of the game in game list order */
+  resources: ResourceOption[];
 }
 
 // units/unitSelector.json

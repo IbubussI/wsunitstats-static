@@ -81,6 +81,9 @@ export class Player {
   firstWonderTime;
   unitsLostOn = false;
   mvpScore;
+  // options of calcMVPScore the score was calculated with
+  mvpScoreInput;
+  isMvp = false;
   timeLine;
 
   researchOn = false;

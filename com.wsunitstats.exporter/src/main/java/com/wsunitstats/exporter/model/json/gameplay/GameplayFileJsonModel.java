@@ -34,4 +34,6 @@ public class GameplayFileJsonModel {
     private Integer version;
     private List<AuraJsonModel> auras;
     private Object collisionSolver;
+    /** Unit path (unit id in the game data and replays) → asset address of the unit files; not used */
+    private Map<String, String> unitAddressAliases;
 }

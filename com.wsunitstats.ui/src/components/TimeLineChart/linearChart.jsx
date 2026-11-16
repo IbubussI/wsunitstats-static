@@ -15,8 +15,11 @@ import { useThemeStore } from '@/store/themeStore';
 import { resolveEndIcon } from './chartIconResolver';
 import { useChartState } from '@/hooks/useChartState';
 import { ChartHead } from './chartHead';
-import { dotIndicator, endIcon, hideDatasets, vRuler } from './plugins';
+import { dotIndicator, endIcon, getHoveredMarkerTexts, hideDatasets, lineMarkers, vRuler } from './plugins';
 import { getDefaultOptions } from './helpers';
+
+/** Marks of the lines within this distance from the cursor are listed in the tooltip, px */
+const MARKER_HOVER_DISTANCE = 6;
 
 const ModalContent = styled(Paper)(({ theme }) => ({
   position: 'absolute',
@@ -41,6 +44,7 @@ const TimeLineChartContent = (props) => {
     stepTime,
     infoText,
     pointMarkers,
+    markers, // per dataset: marks on the line, see the lineMarkers plugin
     results,
     valTransformer = (val) => val > 0 && val < 1 ? val.toFixed(1) : val.toFixed(0),
     isModalOpen,
@@ -85,6 +89,8 @@ const TimeLineChartContent = (props) => {
     datasets: processedPoints.map((points, i) => ({
       label: labels[i],
       data: points,
+      // original points for the tooltip values, the line can be smoothed
+      rawData: datasets[i],
       fill: false,
       cubicInterpolationMode: 'monotone',
       borderColor: colors[i] || defaultColor,
@@ -94,7 +100,8 @@ const TimeLineChartContent = (props) => {
       dotIndicatorColor: colors[i] || defaultColor,
       dotIndicatorBgColor: 'white',
       visible: datasetsVisible[i],
-      endIcon: endImages[i]
+      endIcon: endImages[i],
+      markers: markers?.[i]
     })),
   };
 
@@ -127,7 +134,10 @@ const TimeLineChartContent = (props) => {
         title: (tooltipItems) =>
           tooltipItems.length ? Utils.formatDurationChartLong(tooltipItems[0].label * stepTime) : '',
         label: (tooltipItem) => tooltipItem.dataset.label.name + ': ' + valTransformer(tooltipItem.formattedValue),
-        labelColor: (tooltipItem) => ({ backgroundColor: tooltipItem.dataset.backgroundColor })
+        labelColor: (tooltipItem) => ({ backgroundColor: tooltipItem.dataset.backgroundColor }),
+        afterBody: function () {
+          return getHoveredMarkerTexts(this.chart, MARKER_HOVER_DISTANCE);
+        }
       }
     };
     return opts;
@@ -154,7 +164,7 @@ const TimeLineChartContent = (props) => {
           ref={chartRef}
           options={options}
           data={data}
-          plugins={[vRuler, dotIndicator, endIcon, hideDatasets, zoomPlugin]}
+          plugins={[vRuler, lineMarkers, dotIndicator, endIcon, hideDatasets, zoomPlugin]}
         />
       </Box>
     </Stack>

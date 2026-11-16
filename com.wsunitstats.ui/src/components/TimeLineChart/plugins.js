@@ -151,3 +151,64 @@ export const hideDatasets = {
       chart.setDatasetVisibility(i, dataset.visible));
   }
 };
+
+const MARKER_COLORS = { in: '#2e7d32', out: '#c62828' };
+const MARKER_RADIUS = 5;
+
+/**
+ * Marks on the lines (dataset `markers`: [{ id, x, kind: 'in' | 'out', text }], x in data indexes):
+ * a triangle pointing up for incoming, down for outgoing. The drawn marks are kept for the tooltip
+ */
+export const lineMarkers = {
+  id: 'lineMarkers',
+  afterDatasetsDraw(chart) {
+    const metas = chart.getSortedVisibleDatasetMetas();
+    for (const meta of metas) {
+      const markers = meta._dataset.markers;
+      meta._markerItems = [];
+      if (!markers?.length || meta.data.length < 2) {
+        continue;
+      }
+      const lastX = meta.data.length - 1;
+      for (const marker of markers) {
+        if (marker.x > lastX) {
+          continue;
+        }
+        const x = meta.iScale.getPixelForValue(marker.x);
+        const point = meta.dataset.interpolate({ x }, 'x');
+        const y = point ? point.y : meta.vScale.getPixelForValue(0);
+        if (!chart.isPointInArea({ x, y })) {
+          continue;
+        }
+        new PointElement({
+          x, y, options: {
+            pointStyle: 'triangle',
+            rotation: marker.kind === 'out' ? 180 : 0,
+            radius: MARKER_RADIUS,
+            backgroundColor: MARKER_COLORS[marker.kind],
+            borderColor: 'white',
+            borderWidth: 1
+          }
+        }).draw(chart.ctx);
+        meta._markerItems.push({ ...marker, px: x });
+      }
+    }
+  }
+};
+
+/** Texts of the drawn marks within the distance from the cursor (horizontally), each mark once */
+export const getHoveredMarkerTexts = (chart, distance) => {
+  const cursorX = chart._interactionX;
+  if (cursorX == null) {
+    return [];
+  }
+  const items = new Map();
+  for (const meta of chart.getSortedVisibleDatasetMetas()) {
+    for (const item of meta._markerItems ?? []) {
+      if (Math.abs(item.px - cursorX) <= distance && !items.has(item.id)) {
+        items.set(item.id, item);
+      }
+    }
+  }
+  return [...items.values()].sort((a, b) => a.x - b.x).map(item => item.text);
+};

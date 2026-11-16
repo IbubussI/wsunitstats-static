@@ -20,7 +20,8 @@ public class UnitOption {
     private EntityId gameId;
     private String category;
     private String advancedCategory;
-    private double killValue;
+    private double scoreValue;
+    private double costValue;
     private AdditionalClassifiersModel additionalClassifiers;
 
     // filters

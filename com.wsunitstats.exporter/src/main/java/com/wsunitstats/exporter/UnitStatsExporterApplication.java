@@ -92,6 +92,7 @@ public class UnitStatsExporterApplication {
             context.setExportDate(LocalDate.now().toString());
             context.setResearches(researchOptions);
             context.setUnits(unitOptions);
+            context.setResources(optionsBuilder.buildResourceOptions());
             context.setLocaleOptions(localeOptions);
 
             LOG.info("Executing configured tasks...");

@@ -23,29 +23,31 @@ import java.util.Map;
 public class UnitValueCalculatorImpl implements UnitValueCalculator {
     private static final int TC_COST = 4000;
     private static final int WONDER_COST = 5000;
-    private static final Map<AdvancedUnitCategory, Integer> CATEGORY_VALUES = new HashMap<>();
+    private static final Map<AdvancedUnitCategory, Integer> SCORE_CATEGORY_WEIGHTS = new HashMap<>();
     private static final Map<Integer, Integer> NATION_VALUES = new HashMap<>();
     /** Costs by unit reference, resolved by the unit provider */
     private static final Map<String, Integer> EXCEPTION_COST_UNITS = new HashMap<>();
     private static final double GLOBAL_SCALE = 1d / 180;
     private static final double HIGH_VALUE_REDUCTION_RATE = 1d / 16000;
+    /** Cost value of a unit of cost 100 is 1: a K/D without losses (the number of kills) is in units of that cost */
+    private static final double COST_VALUE_SCALE = 1d / 100;
 
     static {
-        CATEGORY_VALUES.put(AdvancedUnitCategory.TC, 11);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.WORKER, 10);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.SECONDARY_BUILDING, 1);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.HOUSE, 5);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.DEFENCE_BUILDING, 1);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.PRODUCTION_BUILDING, 2);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.LAND, 1);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.GAMEPLAY_BUILDING, 4);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.OTHER, 0);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.FLEET, 3);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.ECO_BUILDING, 5);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.WALL, 20);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.WONDER, 18);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.MINE, 4);
-        CATEGORY_VALUES.put(AdvancedUnitCategory.AIR, 2);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.TC, 11);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.WORKER, 10);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.SECONDARY_BUILDING, 1);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.HOUSE, 5);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.DEFENCE_BUILDING, 1);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.PRODUCTION_BUILDING, 2);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.LAND, 1);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.GAMEPLAY_BUILDING, 4);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.OTHER, 0);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.FLEET, 3);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.ECO_BUILDING, 5);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.WALL, 20);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.WONDER, 18);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.MINE, 4);
+        SCORE_CATEGORY_WEIGHTS.put(AdvancedUnitCategory.AIR, 2);
 
         NATION_VALUES.put(0, 1); // animals
         NATION_VALUES.put(1, 11); // stone
@@ -81,14 +83,20 @@ public class UnitValueCalculatorImpl implements UnitValueCalculator {
     }
 
     @Override
-    public double calcKillValue(UnitModel unit) {
+    public double calcScoreValue(UnitModel unit) {
         AdvancedUnitCategory category = AdvancedUnitCategory.fromName(unit.getAdvancedCategory());
         double avgCost = calcUnitCostValue(unit);
         // cost with reduced high values (the less exp divider - the more reduce effect)
         double nCost = avgCost * Math.exp(-avgCost * HIGH_VALUE_REDUCTION_RATE);
-        int categoryK = CATEGORY_VALUES.get(category);
+        int categoryK = SCORE_CATEGORY_WEIGHTS.get(category);
         int nationK = NATION_VALUES.getOrDefault(unit.getNation().getNationId(), NATION_VALUES.get(-1));
         return nCost * (categoryK + nationK) * GLOBAL_SCALE;
+    }
+
+    /** Cost value / 100 ({@link #calcUnitCostValue}), the same for any category, age and nation; used for K/D */
+    @Override
+    public double calcCostValue(UnitModel unit) {
+        return calcUnitCostValue(unit) * COST_VALUE_SCALE;
     }
 
     @Override

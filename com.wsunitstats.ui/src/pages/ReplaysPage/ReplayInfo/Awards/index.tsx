@@ -11,12 +11,19 @@ import { countAllUnits } from '@/pages/ReplaysPage/PlayerInfo/UnitsInfo/unitsInf
 import type { Player, ReplayParseResult, Team } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 import type { UnitOption } from '@/types/game';
 import { SectionTitle } from '@/pages/ReplaysPage/SectionTitle';
+import { calcIdleTime, findPlayerActivity } from '@/pages/ReplaysPage/ReplayInfo/playerActivity';
+import type { ReplayExtraData } from '@/pages/ReplaysPage/ReplayInfo/replayAnalyzer';
 
 /** Iron is worth more due to its lower mining speed, the same as in the unit cost value of the exporter */
 const IRON_VALUE = 1.5;
 const WONDER_RESEARCH_TYPE = 'researchTypeWonderTransition';
 /** Tryhard: the first wonder of the match built in this time or faster */
 const TRYHARD_MAX_WONDER_TIME = 30 * 60 * 1000;
+/** Investor: the value of the resources sent to other players, iron weighted as in the collected resources */
+const INVESTOR_MIN_SENT_VALUE = 10000;
+const IRON_RESOURCE_ID = 2;
+/** Deep sleep: total time of the long pauses between the player's actions */
+const DEEP_SLEEP_MIN_IDLE_TIME = 8 * 60 * 1000;
 /** Unit tags (game ids) */
 const WORKER_TAG = 3;
 const ARMY_TAG = 4;
@@ -49,6 +56,8 @@ const BATTLESHIP_IMAGE = 'unit/WarSelection/5/judgedredd.png';
 const FISH_IMAGE = 'env/WarSelection/nature/water/fish/big.png';
 const MINE_IMAGE = 'unit/WarSelection/4/mine_iron.png';
 const HEAVY_PILLBOX_IMAGE = 'unit/WarSelection/4/de/pillbox/heavy.png';
+const GOLD_RABBIT_IMAGE = 'unit/WarSelection/decor/hugh.png';
+const COW_IMAGE = 'unit/WarSelection/animals/cow/male.png';
 /** Static image of the site, not of the game files */
 const WONDER_WIN_IMAGE = '/static/wonder_active.png';
 /** Medal drawing size: the icon is in the middle of its disc, the ribbons go below */
@@ -118,9 +127,10 @@ const findLeader = (players: Player[], teams: Team[], category: AwardCategory): 
 
 /**
  * Players with the best performance in a match: the wonder win, the most resources, units and kills, and the conditional
- * awards for outstanding numbers of special units and buildings; absent if nobody is awarded
+ * awards for outstanding numbers of special units and buildings; absent if nobody is awarded.
+ * The awards based on the additional replay data are given only if it is loaded
  */
-export const Awards = ({ replayInfo }: { replayInfo: ReplayParseResult }) => {
+export const Awards = ({ replayInfo, extraData }: { replayInfo: ReplayParseResult; extraData: ReplayExtraData | null }) => {
   const { t, i18n } = useTranslation();
   const gameContext = useGameContext();
   const columns = useMediaQuery('(min-width:800px)') ? 4 : 2;
@@ -180,6 +190,25 @@ export const Awards = ({ replayInfo }: { replayInfo: ReplayParseResult }) => {
       const buildings = sumUnits(player.unitsCreated, unit => unit.advancedCategory === 'build-def' && !hasTag(unit, ARMY_TAG));
       const walls = sumUnits(player.unitsCreated, unit => unit.advancedCategory === 'wall');
       return { value: buildings + walls * WALL_WEIGHT };
+    };
+
+    // value of the resources the player sent to others
+    const sentValue = (player: Player) => {
+      if (!extraData) {
+        return undefined;
+      }
+      const value = extraData.resourceTransfers
+        .filter(transfer => transfer.senderId === player.id)
+        .flatMap(transfer => transfer.amounts.map((amount, resourceId) => resourceId === IRON_RESOURCE_ID ? amount * IRON_VALUE : amount))
+        .reduce((sum, amount) => sum + amount, 0);
+      return { value };
+    };
+
+    // until the defeat: a defeated player is not idle, the pause after the last action counts until then
+    const idleTime = (player: Player) => {
+      const activity = findPlayerActivity(extraData, player.id, replayInfo.match.duration,
+        player.isDead ? player.survivalTime : undefined);
+      return activity && { value: calcIdleTime(activity) * 1000 };
     };
 
     // unconditional awards first, then the conditional ones
@@ -326,13 +355,29 @@ export const Awards = ({ replayInfo }: { replayInfo: ReplayParseResult }) => {
         measure: defensiveBuildings,
         condition: atLeast(90),
         format: formatNumber
+      },
+      {
+        title: 'replayAwardsInvestor',
+        description: 'replayAwardsInvestorDescription',
+        image: GOLD_RABBIT_IMAGE,
+        measure: sentValue,
+        condition: atLeast(INVESTOR_MIN_SENT_VALUE),
+        format: formatNumber
+      },
+      {
+        title: 'replayAwardsDeepSleep',
+        description: 'replayAwardsDeepSleepDescription',
+        image: COW_IMAGE,
+        measure: idleTime,
+        condition: atLeast(DEEP_SLEEP_MIN_IDLE_TIME),
+        format: formatTime
       }
     ];
     return categories
       .map(category => ({ category, leader: findLeader(players, teams, category) }))
       .filter((award): award is { category: AwardCategory; leader: Leader } =>
         !!award.leader && (award.category.condition?.(award.leader) ?? true));
-  }, [replayInfo, gameContext.units, gameContext.researches, i18n.language]);
+  }, [replayInfo, extraData, gameContext.units, gameContext.researches, i18n.language]);
 
   if (awards.length === 0) {
     return null;

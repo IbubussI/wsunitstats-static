@@ -18,7 +18,12 @@
     "allowImportingTsExtensions": false,
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // optional dependency, stub when not installed
+      "ws-replay-analyzer": [
+        "./node_modules/ws-replay-analyzer",
+        "./src/pages/ReplaysPage/ReplayInfo/replayAnalyzerStub.ts"
+      ]
     },
     "types": ["vite/client"]
   },

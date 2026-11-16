@@ -10,8 +10,13 @@ Site labels are in `public/static/localization/{en,ru}.json`, game texts come fr
 ## Scripts
 
 - `npm start` - dev server on http://localhost:3000
+- `npm run start:pulled` - dev server with the installed `ws-replay-analyzer`
 - `npm run typecheck` - TypeScript check
 - `npm run build` - type check and production build into `../output`
+
+`ws-replay-analyzer` (optional dependency) loads additional replay data. The build uses the installed package and
+prints which one it took (`ws-replay-analyzer: pulled`); without it the site is built with a stub and works without the
+additional replay data.
 
 ## Structure
 
@@ -20,6 +25,9 @@ Site labels are in `public/static/localization/{en,ru}.json`, game texts come fr
 - `src/types/game.ts` - types of the exported data
 - `src/components` - shared components (`common`, `layout`, `Header`, `Footer`, `TimeLineChart`)
 - `src/pages` - pages; unit tabs are in `pages/UnitPage`
+- `src/pages/ReplaysPage` - replay page: `ReplayInfo/replayInfoParser.js` parses the replay data of the games API,
+  `ReplayInfo/scoreCalculator.js` calculates the MVP score; side panels with the replay events and the viewed replays
+  (stored in the browser, can be downloaded and loaded as a JSON file)
 - `src/utils/researches.ts` - applies research upgrades to a unit
 
 Unit ids are paths (`WarSelection/1/slinger`), so a unit url is `/<locale>/unit/<id>/<tab>`.

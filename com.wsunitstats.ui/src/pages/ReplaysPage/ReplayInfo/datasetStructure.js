@@ -65,6 +65,7 @@ class BaseDataset {
   localizationDynamicValue;
   result; // string that represents icon at the end of dataset
   color; // color of dataset
+  playerId; // id of the player in datasets of a single player
 
   constructor(name, isLocalizeName, localizationDynamicValue, result, color) {
     this.datasetName = name;

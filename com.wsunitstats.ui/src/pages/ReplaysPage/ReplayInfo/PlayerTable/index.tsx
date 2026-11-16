@@ -22,9 +22,11 @@ import { NoBottomBorderRow } from '@/components/common/misc';
 import { Link, useSearchParams } from 'react-router-dom';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useGameContext } from '@/store/gameDataStore';
-import type { ReplayParseResult, Team } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
+import type { Player, ReplayParseResult, Team } from '@/pages/ReplaysPage/ReplayInfo/replayStructure';
 import { ColorIndicator } from '@/components/common/misc';
 import { calcKillDeath } from '@/pages/ReplaysPage/ReplayInfo/killDeath';
+import { calcApm, findPlayerActivity } from '@/pages/ReplaysPage/ReplayInfo/playerActivity';
+import type { ReplayExtraData } from '@/pages/ReplaysPage/ReplayInfo/replayAnalyzer';
 
 const PlayerTableCell = styled(TableCell)(({ theme }) => ({
   borderColor: alpha(theme.palette.grey[700], 0.6),
@@ -39,6 +41,9 @@ const PlayerTableHeaderCell = styled(TableCell)(({ theme }) => ({
   lineHeight: '1rem',
   color: theme.palette.grey[700]
 }));
+
+/** Width of the rating column: fits a chip of a 4-digit rating with the cell padding, the same for any ratings */
+const RATING_WIDTH = '60px';
 
 const RatingTag = styled(TagChip)(() => ({
   '& span': {
@@ -85,6 +90,63 @@ export const ColoredTableRow = styled(NoBottomBorderRow, {
   };
 });
 
+/** APM chip colors from the highest APM: the color of the first range the APM is not less than */
+const APM_COLORS = [
+  { min: 120, color: '#8e24aa' }, // purple
+  { min: 50, color: '#43a047' }, // green
+  { min: -Infinity, color: '#e53935' } // red
+];
+
+/** APM value in a chip, colored by its range; none for 0 APM */
+const ApmTag = ({ value }: { value: number }) => {
+  const rounded = Math.round(value);
+  if (rounded === 0) {
+    return null;
+  }
+  return <RatingTag label={rounded} bgColor={APM_COLORS.find(range => rounded >= range.min)!.color} />;
+};
+
+interface MvpShare {
+  percent: number;
+  /** the highest or the lowest score of the team; absent if all the scores of the team are equal */
+  rank?: 'best' | 'least';
+}
+
+/** Colors of the best and the least share of a team: light and dark theme */
+const MVP_SHARE_COLORS = {
+  best: { light: '#8e24aa', dark: '#ce93d8' },
+  least: { light: '#d32f2f', dark: '#ef5350' }
+};
+
+/**
+ * Player id → whole percent of the score of the player's team. Rounded by the largest remainder, so the shares of a team
+ * sum up to exactly 100%; absent for players without a score and in teams of one scored player
+ */
+const calcMvpShares = (teams: Team[], players: Player[]) => {
+  const shares = new Map<number, MvpShare>();
+  for (const team of teams) {
+    const scored = (team.players as number[])
+      .map(playerId => players[playerId])
+      .filter(player => player.mvpScore != null && player.mvpScore >= 0);
+    const total = scored.reduce((sum, player) => sum + Number(player.mvpScore), 0);
+    if (scored.length < 2 || total <= 0) {
+      continue;
+    }
+    const exact = scored.map(player => ({ id: player.id as number, value: Number(player.mvpScore) * 100 / total }));
+    // ranks by the exact values, the rounded ones can tie
+    const best = Math.max(...exact.map(entry => entry.value));
+    const least = Math.min(...exact.map(entry => entry.value));
+    const getRank = (value: number) => best === least ? undefined : value === best ? 'best' : value === least ? 'least' : undefined;
+    exact.forEach(entry => shares.set(entry.id, { percent: Math.floor(entry.value), rank: getRank(entry.value) }));
+    const missing = 100 - exact.reduce((sum, entry) => sum + Math.floor(entry.value), 0);
+    [...exact]
+      .sort((a, b) => (b.value - Math.floor(b.value)) - (a.value - Math.floor(a.value)))
+      .slice(0, missing)
+      .forEach(entry => shares.get(entry.id)!.percent++);
+  }
+  return shares;
+};
+
 /** Column header text with a tooltip explaining the column */
 const HeaderLabel = ({ label, tooltip }: { label: string; tooltip: string }) => (
   <Tooltip arrow title={tooltip}>
@@ -92,7 +154,8 @@ const HeaderLabel = ({ label, tooltip }: { label: string; tooltip: string }) => 
   </Tooltip>
 );
 
-export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) => {
+/** @param extraData additional replay data: the APM column is shown only with it */
+export const PlayerTable = ({ replayInfo, extraData }: { replayInfo: ReplayParseResult; extraData: ReplayExtraData | null }) => {
   const { t } = useTranslation();
   const gameContext = useGameContext();
   const [searchParams] = useSearchParams();
@@ -100,19 +163,30 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
   const isDebug = !!searchParams.get('debug');
   // shown as the age of players that did not research any age
   const stoneAgeUnit = gameContext.units.find(unit => unit.gameId === Constants.STONE_AGE_UNIT_ID)!;
-  const killValues = React.useMemo(
-    () => new Map(gameContext.units.map(unit => [unit.gameId as string, unit.killValue])),
+  const costValues = React.useMemo(
+    () => new Map(gameContext.units.map(unit => [unit.gameId as string, unit.costValue])),
     [gameContext.units]);
+  const mvpShares = React.useMemo(
+    () => calcMvpShares(replayInfo.teams.filter((team: Team) => team.isPlayerTeam), replayInfo.players),
+    [replayInfo]);
+  // player id → average actions per minute
+  const apms = React.useMemo(() => extraData && new Map<number, number | undefined>(replayInfo.players.map((player: Player) => {
+    const activity = findPlayerActivity(extraData, player.id, replayInfo.match.duration);
+    return [player.id, activity && calcApm(activity)];
+  })), [replayInfo, extraData]);
 
   return (
     <TableContainer component={Paper} >
       <Table>
         <TableHead>
           <NoBottomBorderRow>
-            {/* Link, Color, Nickname */}
-            <PlayerTableHeaderCell colSpan={replayInfo.match.isMapGen ? 3 : 2}>
+            {/* Link, Color (empty on fixed maps, the cell is always there), Nickname */}
+            <PlayerTableHeaderCell colSpan={3}>
               <HeaderLabel label={t('replayPlayerTablePlayerHeader')} tooltip={t('replayPlayerTablePlayerTooltip')} />
             </PlayerTableHeaderCell>
+            {apms && <PlayerTableHeaderCell align='center'>
+              <HeaderLabel label={t('replayPlayerTableApmHeader')} tooltip={t('replayPlayerTableApmTooltip')} />
+            </PlayerTableHeaderCell>}
             {/* K/D: raw (debug), by unit value */}
             {isDebug && <PlayerTableHeaderCell align='center'>
               <HeaderLabel label={t('replayPlayerTableKdHeader')} tooltip={t('replayPlayerTableKdTooltip')} />
@@ -120,8 +194,8 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
             <PlayerTableHeaderCell align='center'>
               <HeaderLabel label={t('replayPlayerTableKdvHeader')} tooltip={t('replayPlayerTableKdvTooltip')} />
             </PlayerTableHeaderCell>
-            {/* MVP Rating, MVP Icon */}
-            <PlayerTableHeaderCell colSpan={2} align='center'>
+            {/* MVP Rating, share of the team score, MVP Icon */}
+            <PlayerTableHeaderCell colSpan={3} align='center'>
               <HeaderLabel label={t('replayPlayerTableMVPHeader')} tooltip={t('replayPlayerTableMVPTooltip')} />
             </PlayerTableHeaderCell>
             {/* Squad */}
@@ -133,7 +207,7 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
               <HeaderLabel label={t('replayPlayerTableSurvivalHeader')} tooltip={t('replayPlayerTableSurvivalTooltip')} />
             </PlayerTableHeaderCell>
             {/* Rating */}
-            <PlayerTableHeaderCell align='right'>
+            <PlayerTableHeaderCell align='right' sx={{ width: RATING_WIDTH, minWidth: RATING_WIDTH, whiteSpace: 'nowrap' }}>
               <HeaderLabel label={t('replayPlayerTableRatingHeader')} tooltip={t('replayPlayerTableRatingTooltip')} />
             </PlayerTableHeaderCell>
           </NoBottomBorderRow>
@@ -142,7 +216,8 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
           {replayInfo.teams.filter((team: Team) => team.isPlayerTeam).map((team: Team) => {
             return team.players.map((playerId: number) => {
               const player = replayInfo.players[playerId];
-              const killDeath = calcKillDeath(player, killValues);
+              const killDeath = calcKillDeath(player, costValues);
+              const mvpShare = mvpShares.get(player.id);
               const lastAgeResearch = player.lastAgeResearch
                 ? { name: gameContext.researches[player.lastAgeResearch].name, image: gameContext.researches[player.lastAgeResearch].image }
                 : { name: stoneAgeUnit.nation.ir1, image: stoneAgeUnit.image };
@@ -178,6 +253,11 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
                     </Box>
                   </PlayerTableCell>
 
+                  {/* APM */}
+                  {apms && <PlayerTableCell align="center" sx={{ width: '50px' }}>
+                    {apms.get(player.id) != null && <ApmTag value={apms.get(player.id)!} />}
+                  </PlayerTableCell>}
+
                   {/* K/D: raw (debug), by unit value */}
                   {isDebug && <PlayerTableCell align="center" sx={{ width: '50px' }}>
                     {killDeath && <KdTag value={killDeath.raw} />}
@@ -187,9 +267,25 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
                   </PlayerTableCell>
 
                   {/* MVP Rating */}
-                  <PlayerTableCell align="right" sx={{ width: '30px' }}>
+                  <PlayerTableCell align="right" sx={{ width: '30px', pr: 0 }}>
                     {player.mvpScore != null &&
                       <MVPTag bgColor="#bb6911" label={Number(player.mvpScore).toFixed(0)} />}
+                  </PlayerTableCell>
+
+                  {/* Share of the team score: its own column is as wide as the widest share, next to the chips */}
+                  <PlayerTableCell align="left" sx={{ width: '1px', pl: 0.5, pr: 0.5, whiteSpace: 'nowrap' }}>
+                    {mvpShare &&
+                      <Tooltip arrow title={t('replayPlayerTableMVPShareTooltip')}>
+                        <Box component='span' sx={(theme) => ({
+                          fontSize: '0.85em',
+                          fontWeight: mvpShare.rank === 'best' ? 700 : undefined,
+                          color: mvpShare.rank ? MVP_SHARE_COLORS[mvpShare.rank][theme.palette.mode] : 'text.secondary',
+                          fontVariantNumeric: 'tabular-nums',
+                          cursor: 'help'
+                        })}>
+                          {mvpShare.percent}%
+                        </Box>
+                      </Tooltip>}
                   </PlayerTableCell>
 
                   {/* MVP Icon */}
@@ -279,7 +375,7 @@ export const PlayerTable = ({ replayInfo }: { replayInfo: ReplayParseResult }) =
                   </PlayerTableCell>
 
                   {/* Rating */}
-                  <PlayerTableCell align="right" sx={{ maxWidth: '100%', width: '100px' }}>
+                  <PlayerTableCell align="right" sx={{ width: RATING_WIDTH, minWidth: RATING_WIDTH, whiteSpace: 'nowrap' }}>
                     {player.rating != null &&
                       <RatingTag label={player.rating} />}
                   </PlayerTableCell>
